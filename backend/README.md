@@ -29,6 +29,10 @@ poetry run uvicorn app.main:app --reload
 Acesse o docs adicionando o /docs:
 
 http://127.0.0.1:8000/docs
+E acesse http://localhost:5173/
+
+para rodar o frontend 
+npm run dev
 
 ## Funções no `/docs`
 
