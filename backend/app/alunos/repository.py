@@ -14,6 +14,13 @@ def buscar(db: Session, aluno_id: int):
     return db.query(Aluno).filter(Aluno.id == aluno_id).first()
 
 
+def buscar_por_ids(db: Session, aluno_ids: list[int]):
+    if not aluno_ids:
+        return []
+
+    return db.query(Aluno).filter(Aluno.id.in_(aluno_ids)).all()
+
+
 def criar(db: Session, dados: dict):
     aluno = Aluno(**dados)
     db.add(aluno)

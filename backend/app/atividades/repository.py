@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 
-from ..alunos.models import Aluno
 from .models import Atividade
 
 
@@ -35,13 +34,6 @@ def buscar(db: Session, atividade_id: int):
         .filter(Atividade.id == atividade_id)
         .first()
     )
-
-
-def buscar_alunos(db: Session, aluno_ids: list[int]):
-    if not aluno_ids:
-        return []
-
-    return db.query(Aluno).filter(Aluno.id.in_(aluno_ids)).all()
 
 
 def criar(db: Session, dados: dict):

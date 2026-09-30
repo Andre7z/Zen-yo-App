@@ -8,6 +8,10 @@ from . import repository
 from .erros import CredenciaisInvalidas, EmailJaCadastrado
 
 
+def buscar(db, usuario_id):
+    return repository.buscar(db, usuario_id)
+
+
 def cadastrar(db, dados):
     # RN04: um e-mail, uma conta.
     if repository.buscar_por_email(db, dados["email"]):

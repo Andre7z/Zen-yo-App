@@ -1,15 +1,13 @@
 """Regras do dominio das turmas."""
 
 from . import repository
-from ..usuarios.models import Usuario
 from .erros import ProfessorForaDoDojo, TurmaNaoEncontrada
 
 
-def _validar_professor(db, dojo_id, professor_id):
+def _validar_professor(dojo_id, professor_id, professor):
     if professor_id is None:
         return
 
-    professor = db.query(Usuario).filter(Usuario.id == professor_id).first()
     if professor is None or professor.dojo_id != dojo_id:
         raise ProfessorForaDoDojo(
             "O professor precisa estar vinculado ao mesmo dojo da turma"
@@ -27,16 +25,19 @@ def buscar(db, turma_id):
     return turma
 
 
-def criar(db, dados):
-    _validar_professor(db, dados["dojo_id"], dados.get("professor_id"))
+def criar(db, dados, professor=None):
+    _validar_professor(
+        dados["dojo_id"],
+        dados.get("professor_id"),
+        professor,
+    )
     return repository.criar(db, dados)
 
 
-def atualizar(db, turma_id, mudancas):
-    turma = buscar(db, turma_id)
+def atualizar(db, turma, mudancas, professor=None):
     dojo_id = mudancas.get("dojo_id", turma.dojo_id)
     professor_id = mudancas.get("professor_id", turma.professor_id)
-    _validar_professor(db, dojo_id, professor_id)
+    _validar_professor(dojo_id, professor_id, professor)
     return repository.atualizar(db, turma, mudancas)
 
 

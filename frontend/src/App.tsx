@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { AlertCircle, ArrowRight, Check, Fingerprint, LockKeyhole, LogOut, Mail, ShieldCheck, UserRound } from 'lucide-react'
-import { apiRequest, clearToken, getToken, saveToken, type Usuario } from './api'
+import type { Usuario } from './api'
+import { autenticacaoFacade } from './autenticacao-dependencias'
 import './App.css'
 
 function BeltMark() {
@@ -15,53 +16,29 @@ function App() {
   useEffect(() => {
     let ativo = true
     async function restaurarSessao() {
-      if (!getToken()) {
-        setVerificandoSessao(false)
-        return
+      const perfil = await autenticacaoFacade.restaurarSessao()
+      if (ativo && perfil) {
+        setUsuario(perfil)
+        setTela('inicio')
       }
-      try {
-        const perfil = await apiRequest<Usuario>('/usuarios/eu')
-        if (ativo) {
-          setUsuario(perfil)
-          setTela('inicio')
-        }
-      } catch {
-        clearToken()
-      } finally {
-        if (ativo) setVerificandoSessao(false)
-      }
+      if (ativo) setVerificandoSessao(false)
     }
     void restaurarSessao()
     return () => { ativo = false }
   }, [])
 
   async function entrar(email: string, senha: string) {
-    const token = await apiRequest<{ access_token: string }>('/usuarios/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ username: email, password: senha }),
-    }, false)
-    saveToken(token.access_token)
-    try {
-      setUsuario(await apiRequest<Usuario>('/usuarios/eu'))
-      setTela('inicio')
-    } catch (error) {
-      clearToken()
-      throw error
-    }
+    setUsuario(await autenticacaoFacade.entrar(email, senha))
+    setTela('inicio')
   }
 
   async function cadastrar(nome: string, email: string, senha: string) {
-    await apiRequest<Usuario>('/usuarios/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, email, senha }),
-    }, false)
-    await entrar(email, senha)
+    setUsuario(await autenticacaoFacade.cadastrar(nome, email, senha))
+    setTela('inicio')
   }
 
   function sair() {
-    clearToken()
+    autenticacaoFacade.sair()
     setUsuario(null)
     setTela('login')
   }

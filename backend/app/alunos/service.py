@@ -25,6 +25,13 @@ def buscar(db, aluno_id):
     return aluno
 
 
+def buscar_por_ids(db, aluno_ids):
+    alunos = repository.buscar_por_ids(db, aluno_ids)
+    if len(alunos) != len(set(aluno_ids)):
+        raise AlunoNaoEncontrado("Um ou mais alunos nao estao cadastrados")
+    return alunos
+
+
 def criar(db, dados):
     return repository.criar(db, dados)
 

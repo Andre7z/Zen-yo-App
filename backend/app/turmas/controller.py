@@ -5,6 +5,8 @@ from ..database import get_db
 from ..seguranca import get_current_user
 from ..usuarios.models import Usuario
 from . import service
+from .dependencias import obter_facade
+from .facade import TurmaFacade
 from .schemas import TurmaAtualizar, TurmaEntrada, TurmaPublico
 
 router = APIRouter(
@@ -27,8 +29,9 @@ def criar(
     dados: TurmaEntrada,
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
+    facade: TurmaFacade = Depends(obter_facade),
 ):
-    return service.criar(db, dados.model_dump())
+    return facade.criar(db, dados.model_dump())
 
 
 @router.get("/{turma_id}", response_model=TurmaPublico)
@@ -46,8 +49,13 @@ def atualizar(
     dados: TurmaAtualizar,
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
+    facade: TurmaFacade = Depends(obter_facade),
 ):
-    return service.atualizar(db, turma_id, dados.model_dump(exclude_unset=True))
+    return facade.atualizar(
+        db,
+        turma_id,
+        dados.model_dump(exclude_unset=True),
+    )
 
 
 @router.delete("/{turma_id}", status_code=204)
