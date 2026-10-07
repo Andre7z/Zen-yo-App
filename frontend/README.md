@@ -1,4 +1,16 @@
-# React + TypeScript + Vite
+# Zen'yo App — React + TypeScript + Vite
+
+## Navegação e sessão
+
+O app usa `react-router-dom` e os nomes de rota definidos em `src/routes.ts`. Login (`/login`) e cadastro (`/cadastro`) são públicos; início (`/inicio`) e perfil (`/perfil`) passam pelo guarda de rota e redirecionam para o login quando não há sessão válida.
+
+O `AutenticacaoProvider` compartilha usuário, carregamento e ações de autenticação com as telas por meio do hook `useAutenticacao`; as mudanças no estado do contexto atualizam suas telas consumidoras, como uma notificação de `ChangeNotifier` no Flutter. O token fica somente na memória: ao recarregar a página, a sessão termina e o guarda redireciona para o login. O menu lateral mostra o nome e o e-mail da sessão. Ao sair, o app limpa o token e substitui a rota atual pelo login; como no navegador não há API para apagar arbitrariamente toda a pilha de histórico, o guarda também impede que o botão Voltar reabra conteúdo protegido.
+
+Para iniciar o frontend, execute `npm run dev` nesta pasta. A API usa `http://localhost:8000` por padrão; configure `VITE_API_URL` em `.env` quando necessário.
+
+Execute `npm test` nesta pasta para rodar os testes de guarda de rota, menu/sessão, logout e atualização da interface pelo Provider.
+
+## Estrutura original do Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 

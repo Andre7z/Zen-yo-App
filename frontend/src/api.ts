@@ -1,11 +1,11 @@
 export type Usuario = { id: number; nome: string; email: string; dojo_id: number | null }
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '')
-const TOKEN_KEY = 'zenyo_access_token'
+let tokenEmMemoria: string | null = null
 
-export function getToken() { return localStorage.getItem(TOKEN_KEY) }
-export function saveToken(token: string) { localStorage.setItem(TOKEN_KEY, token) }
-export function clearToken() { localStorage.removeItem(TOKEN_KEY) }
+export function getToken() { return tokenEmMemoria }
+export function saveToken(token: string) { tokenEmMemoria = token }
+export function clearToken() { tokenEmMemoria = null }
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}, autenticada = true): Promise<T> {
   const headers = new Headers(init.headers)
