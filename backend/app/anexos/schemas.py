@@ -5,6 +5,8 @@ from pydantic import BaseModel, ConfigDict, field_validator
 CATEGORIAS_ANEXO = {
     "Calendarios",
     "Panilhas",
+    "Fichas",
+    "Regulamento",
     "Regulamentos",
     "Outro",
 }
