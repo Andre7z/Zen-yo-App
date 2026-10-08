@@ -51,41 +51,40 @@ app.include_router(dojos_controller.router)
 app.include_router(turmas_controller.router)
 
 
+def _resposta_erro_de_dominio(erro: Exception, tipo_nao_encontrado: type[Exception]):
+    codigo = 404 if isinstance(erro, tipo_nao_encontrado) else 409
+    return JSONResponse(status_code=codigo, content={"detail": str(erro)})
+
+
 @app.exception_handler(ErroAluno)
 def traduzir_recusa(request: Request, erro: ErroAluno):
     """O unico lugar do sistema que transforma recusa em numero HTTP."""
-    codigo = 404 if isinstance(erro, AlunoNaoEncontrado) else 409
-    return JSONResponse(status_code=codigo, content={"detail": str(erro)})
+    return _resposta_erro_de_dominio(erro, AlunoNaoEncontrado)
 
 
 @app.exception_handler(ErroAtividade)
 def traduzir_recusa_de_atividade(request: Request, erro: ErroAtividade):
-    codigo = 404 if isinstance(erro, AtividadeNaoEncontrada) else 409
-    return JSONResponse(status_code=codigo, content={"detail": str(erro)})
+    return _resposta_erro_de_dominio(erro, AtividadeNaoEncontrada)
 
 
 @app.exception_handler(ErroAnexo)
 def traduzir_recusa_de_anexo(request: Request, erro: ErroAnexo):
-    codigo = 404 if isinstance(erro, AnexoNaoEncontrado) else 409
-    return JSONResponse(status_code=codigo, content={"detail": str(erro)})
+    return _resposta_erro_de_dominio(erro, AnexoNaoEncontrado)
 
 
 @app.exception_handler(ErroFaixa)
 def traduzir_recusa_de_faixa(request: Request, erro: ErroFaixa):
-    codigo = 404 if isinstance(erro, FaixaNaoEncontrada) else 409
-    return JSONResponse(status_code=codigo, content={"detail": str(erro)})
+    return _resposta_erro_de_dominio(erro, FaixaNaoEncontrada)
 
 
 @app.exception_handler(ErroDojo)
 def traduzir_recusa_de_dojo(request: Request, erro: ErroDojo):
-    codigo = 404 if isinstance(erro, DojoNaoEncontrado) else 409
-    return JSONResponse(status_code=codigo, content={"detail": str(erro)})
+    return _resposta_erro_de_dominio(erro, DojoNaoEncontrado)
 
 
 @app.exception_handler(ErroTurma)
 def traduzir_recusa_de_turma(request: Request, erro: ErroTurma):
-    codigo = 404 if isinstance(erro, TurmaNaoEncontrada) else 409
-    return JSONResponse(status_code=codigo, content={"detail": str(erro)})
+    return _resposta_erro_de_dominio(erro, TurmaNaoEncontrada)
 
 
 @app.exception_handler(ErroDeUsuario)
