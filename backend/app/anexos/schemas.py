@@ -1,6 +1,7 @@
 from datetime import date
 
 from pydantic import BaseModel, ConfigDict, field_validator
+from ..validacoes import texto_legivel as _texto_legivel
 
 CATEGORIAS_ANEXO = {
     "Calendarios",
@@ -10,15 +11,6 @@ CATEGORIAS_ANEXO = {
     "Regulamentos",
     "Outro",
 }
-
-
-def _texto_legivel(texto, campo):
-    if texto is None:
-        return None
-    valor = texto.strip()
-    if len(valor) < 2:
-        raise ValueError(f"o {campo} precisa ter pelo menos 2 caracteres")
-    return valor
 
 
 class AnexoEntrada(BaseModel):

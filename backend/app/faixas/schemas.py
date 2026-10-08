@@ -1,13 +1,5 @@
 from pydantic import BaseModel, ConfigDict, field_validator
-
-
-def _texto_legivel(texto, campo):
-    if texto is None:
-        return None
-    valor = texto.strip()
-    if len(valor) < 2:
-        raise ValueError(f"o {campo} precisa ter pelo menos 2 caracteres")
-    return valor
+from ..validacoes import texto_legivel as _texto_legivel
 
 
 class FaixaEntrada(BaseModel):

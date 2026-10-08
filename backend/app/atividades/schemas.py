@@ -1,12 +1,7 @@
 from datetime import date
 
 from pydantic import BaseModel, ConfigDict, field_validator
-
-
-def _texto_legivel(texto, campo):
-    if len(texto.strip()) < 2:
-        raise ValueError(f"o {campo} precisa ter pelo menos 2 caracteres")
-    return texto.strip()
+from ..validacoes import texto_legivel as _texto_legivel
 
 
 class AtividadeEntrada(BaseModel):  # ENTRA no cadastro
