@@ -66,7 +66,7 @@ describe("detalhe da atividade", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Adicionar alunos" }))
     fireEvent.click(screen.getByRole("button", { name: /Bruno Henrique Lima/ }))
-    fireEvent.click(screen.getByRole("button", { name: "Adicionar", exact: true }))
+    fireEvent.click(screen.getByRole("button", { name: /^Adicionar$/ }))
 
     expect(screen.getByText("Bruno Henrique Lima")).toBeTruthy()
     expect(resumoVisivel().textContent).toBe("1/3 presente")
