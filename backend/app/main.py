@@ -33,7 +33,7 @@ from .usuarios.erros import CredenciaisInvalidas, ErroDeUsuario
 app = FastAPI(title="API do Meu Projeto", version="0.4.0")
 origens_cors = os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173",
+    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173",
 ).split(",")
 app.add_middleware(
     CORSMiddleware,

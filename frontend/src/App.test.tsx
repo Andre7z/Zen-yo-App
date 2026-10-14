@@ -73,10 +73,20 @@ describe('sessão e navegação protegida', () => {
     expect(getToken()).toBe('token-de-teste')
   })
 
-  it('mantém o token somente na memória', () => {
-    saveToken('token-efemero')
+  it('restaura a sessão persistida ao carregar o aplicativo', async () => {
+    localStorage.setItem('zenyo_access_token', 'token-persistido')
 
-    expect(getToken()).toBe('token-efemero')
-    expect(localStorage.getItem('zenyo_access_token')).toBeNull()
+    render(<App />)
+
+    expect(await screen.findByRole('navigation', { name: 'Navegação principal' })).toBeTruthy()
+    expect(screen.getAllByText(usuario.nome).length).toBeGreaterThan(0)
+    expect(getToken()).toBe('token-persistido')
+  })
+
+  it('armazena o token no localStorage', () => {
+    saveToken('token-persistido')
+
+    expect(getToken()).toBe('token-persistido')
+    expect(localStorage.getItem('zenyo_access_token')).toBe('token-persistido')
   })
 })

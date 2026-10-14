@@ -1,6 +1,7 @@
 "use client"
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
+import { autenticacaoService, ErroAutenticacao, limparToken, obterToken, salvarToken } from "@/lib/autenticacao"
 import { ALUNOS_INICIAIS, type Aluno } from "@/lib/alunos"
 import {
   dataHojeISO,
@@ -69,7 +70,12 @@ const ATIVIDADES_INICIAIS: Atividade[] = [
 
 type AppContextType = {
   autenticado: boolean
-  entrar: () => void
+  autenticacaoCarregando: boolean
+  erroAutenticacao: string | null
+  mensagemSucessoCadastro: string | null
+  limparMensagemSucessoCadastro: () => void
+  entrar: (email: string, senha: string) => Promise<void>
+  cadastrar: (nome: string, email: string, senha: string) => Promise<void>
   sair: () => void
   // Alunos
   alunos: Aluno[]
@@ -97,15 +103,80 @@ const AppContext = createContext<AppContextType | null>(null)
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [autenticado, setAutenticado] = useState(false)
+  const [autenticacaoCarregando, setAutenticacaoCarregando] = useState(true)
+  const [erroAutenticacao, setErroAutenticacao] = useState<string | null>(null)
+  const [mensagemSucessoCadastro, setMensagemSucessoCadastro] = useState<string | null>(null)
   const [alunos, setAlunos] = useState<Aluno[]>(ALUNOS_INICIAIS)
   const [atividades, setAtividades] = useState<Atividade[]>(ATIVIDADES_INICIAIS)
   const [anexos, setAnexos] = useState<Anexo[]>([])
 
+  useEffect(() => {
+    let ativo = true
+    const token = obterToken()
+
+    if (!token) {
+      setAutenticacaoCarregando(false)
+      return () => { ativo = false }
+    }
+
+    void autenticacaoService.obterPerfil(token)
+      .then(() => {
+        if (ativo) setAutenticado(true)
+      })
+      .catch((erro: unknown) => {
+        if (!ativo) return
+        if (erro instanceof ErroAutenticacao && (erro.status === 401 || erro.status === 403)) {
+          limparToken()
+          setAutenticado(false)
+          return
+        }
+        setErroAutenticacao(erro instanceof Error ? erro.message : "Não foi possível verificar sua sessão.")
+      })
+      .finally(() => {
+        if (ativo) setAutenticacaoCarregando(false)
+      })
+
+    return () => { ativo = false }
+  }, [])
+
+  async function entrar(email: string, senha: string) {
+    setErroAutenticacao(null)
+    setMensagemSucessoCadastro(null)
+    const { access_token: token } = await autenticacaoService.entrar(email, senha)
+    try {
+      salvarToken(token)
+      await autenticacaoService.obterPerfil(token)
+      setAutenticado(true)
+    } catch (erro) {
+      limparToken()
+      setAutenticado(false)
+      throw erro
+    }
+  }
+
+  async function cadastrar(nome: string, email: string, senha: string) {
+    await autenticacaoService.cadastrar(nome, email, senha)
+    await entrar(email, senha)
+    setMensagemSucessoCadastro("Conta criada com sucesso. Você já está conectado.")
+  }
+
+  function sair() {
+    limparToken()
+    setErroAutenticacao(null)
+    setMensagemSucessoCadastro(null)
+    setAutenticado(false)
+  }
+
   const value = useMemo<AppContextType>(
     () => ({
       autenticado,
-      entrar: () => setAutenticado(true),
-      sair: () => setAutenticado(false),
+      autenticacaoCarregando,
+      erroAutenticacao,
+      mensagemSucessoCadastro,
+      limparMensagemSucessoCadastro: () => setMensagemSucessoCadastro(null),
+      entrar,
+      cadastrar,
+      sair,
 
       alunos,
       obterAluno: (id) => alunos.find((a) => a.id === id),
@@ -196,7 +267,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setAnexos((atuais) => atuais.filter((a) => a.id !== id))
       },
     }),
-    [autenticado, alunos, atividades, anexos],
+    [autenticado, autenticacaoCarregando, erroAutenticacao, mensagemSucessoCadastro, alunos, atividades, anexos],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
