@@ -6,6 +6,8 @@ from ..seguranca import get_current_user
 from ..usuarios.models import Usuario
 
 from . import service
+from .dependencias import obter_facade
+from .facade import AtividadeFacade
 from .schemas import (
     AtividadeEntrada,
     AtividadeAtualizar,
@@ -43,8 +45,9 @@ def criar(
     dados: AtividadeEntrada,
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
+    facade: AtividadeFacade = Depends(obter_facade),
 ):
-    return service.criar(
+    return facade.criar(
         db,
         usuario,
         dados.model_dump(),
@@ -70,8 +73,9 @@ def atualizar(
     dados: AtividadeAtualizar,
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
+    facade: AtividadeFacade = Depends(obter_facade),
 ):
-    return service.atualizar(
+    return facade.atualizar(
         db,
         usuario,
         atividade_id,

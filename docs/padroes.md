@@ -1,12 +1,12 @@
 1. Injeção de Dependência
 Que problema ele resolve?
-Evita repetir o código de conexão do banco em cada rota. O FastAPI, usando o Depends, passa o banco para a rota usar.
+Permite que o FastAPI entregue a conexão do banco para a rota. Assim, cada rota não precisa criar sua própria conexão.
 
 O que aconteceria sem ele?
-Cada rota teria que criar o Service. Assim, teria o mesmo código repetido várias vezes em várias rotas. Caso o banco mudasse, teria que mudar várias rotas.
+O código para criar a conexão ficaria repetido nas rotas. Se a forma de acessar o banco mudasse, seria preciso alterar cada uma delas.
 
-Quando vale e quando é burocracia — no meu sistema:
-Vale a pena quando várias rotas precisam do banco e o Depends evita repetir o código de conexão. Seria burocracia se fosse usado em algo muito simples que não precisasse ser reutilizado.
+Quando vale e quando é burocracia — neste projeto:
+Vale a pena porque várias rotas usam o banco. Seria desnecessário em uma operação isolada que não precisasse compartilhar essa dependência.
 
 no controller
 @router.post("/", response_model=AlunoPublico, status_code=201)
@@ -24,13 +24,13 @@ def get_db():
 
 2. Corrente de Responsabilidade
 Que problema ele resolve?
-Centraliza o tratamento dos erros da aplicação, evitando que cada rota precise ter vários try/except para tratar os erros.
+Centraliza o tratamento dos erros da aplicação, para que as rotas não precisem repetir vários blocos `try/except`.
 
 O que aconteceria sem ele?
-O mesmo tratamento de erros teria que ser repetido em várias rotas. Se fosse necessário mudar algum erro, seria preciso alterar em vários lugares.
+Cada rota trataria os mesmos erros por conta própria. Uma mudança precisaria ser repetida em vários arquivos.
 
-Quando vale e quando é burocracia — no meu sistema:
-Vale a pena quando o sistema possui vários erros e eles podem ser tratados em um único lugar. Seria burocracia se o sistema tivesse poucos erros e fosse muito pequeno.
+Quando vale e quando é burocracia — neste projeto:
+Vale a pena porque vários módulos podem gerar erros que precisam virar respostas HTTP. Em uma aplicação pequena, com poucos erros, essa estrutura poderia ser desnecessária.
 
 no erros
 class ErroAluno(Exception):
@@ -54,13 +54,13 @@ def traduzir_recusa(request: Request, erro: ErroAluno):
 
 3. Composite (include_router)
 Que problema ele resolve?
-Ajuda a organizar as rotas em grupos. Dessa maneira pode colocar várias rotas dentro de um router e depois adicionar esse grupo ao aplicativo usando include_router().
+Agrupa rotas relacionadas em um `router`. O `main.py` inclui esse grupo no aplicativo com `include_router()`.
 
 O que aconteceria sem ele?
-As rotas ficariam todas no main.py. Conforme o projeto fosse crescendo, o arquivo ficaria muito grande e mais difícil de organizar.
+Todas as rotas ficariam no `main.py`, que cresceria e ficaria mais difícil de manter.
 
-Quando vale e quando é burocracia — no meu sistema:
-Vale a pena quando o sistema possui várias rotas e o router ajuda a organizá-las. Seria burocracia se o sistema tivesse poucas rotas e não precisasse de organização por grupos.
+Quando vale e quando é burocracia — neste projeto:
+Vale a pena porque o sistema tem vários grupos de rotas. Para poucas rotas sem relação entre si, criar grupos poderia ser desnecessário.
 
 no controller
 router = APIRouter(prefix="/aluno", tags=["Aluno"])
@@ -76,15 +76,87 @@ def apagar():
 no main
 app.include_router(alunos_controller.router)
 
-4. Unit of Work (Session + commit)
+5. Facade
 Que problema ele resolve?
-Permite que a Session junte várias alterações no banco e salve tudo de uma vez usando o commit. Assim, em um commit, as mudanças são confirmadas no banco.
+Oferece uma chamada simples para uma operação que precisa coordenar mais de um módulo. Na criação de atividade, a Facade busca os alunos e depois chama o service de atividades.
 
 O que aconteceria sem ele?
-As alterações poderiam ser salvas separadamente. Se uma alteração desse erro depois de outra já ter sido salvao, assim o banco poderia ficar com apenas parte das mudanças.
+O service de atividades também precisaria conhecer a busca de alunos. Isso aumentaria o acoplamento entre os módulos.
 
-Quando vale e quando é burocracia — no meu sistema:
-Vale a pena porque o sistema faz alterações no banco usando a Session e o commit para confirmar as mudanças. Seria burocracia se o sistema tivesse operações muito simples e não precisasse controlar várias alterações no banco.
+Quando vale e quando é burocracia — neste projeto:
+Vale a pena ao criar ou editar uma atividade com alunos, pois esse fluxo usa os módulos de alunos e atividades. Listar, buscar, apagar e gerar relatório continuam no service de atividades, porque não precisam coordenar outros módulos.
+
+em atividades/facade
+class AtividadeFacade:
+    def __init__(self, atividades_service, alunos_service):
+        self.atividades_service = atividades_service
+        self.alunos_service = alunos_service
+
+    def criar(self, db, usuario, dados):
+        dados_atividade = dict(dados)
+        aluno_ids = dados_atividade.pop("aluno_ids", [])
+        dados_atividade["alunos"] = self.alunos_service.buscar_por_ids(db, aluno_ids)
+        return self.atividades_service.criar(
+            db,
+            usuario,
+            dados_atividade,
+        )
+
+em atividades/dependencias
+def obter_facade():
+    return AtividadeFacade(atividades_service, alunos_service)
+
+no controller
+facade: AtividadeFacade = Depends(obter_facade)
+return facade.criar(db, usuario, dados.model_dump())
+
+Na criação e edição de turmas, a Facade também busca o professor pelo módulo
+de usuários. O service de turmas verifica se ele pertence ao mesmo dojo.
+Listagem, busca e exclusão continuam fora da Facade.
+
+em turmas/facade
+class TurmaFacade:
+    def __init__(self, turmas_service, usuarios_service):
+        self.turmas_service = turmas_service
+        self.usuarios_service = usuarios_service
+
+    def criar(self, db, dados):
+        professor = self.usuarios_service.buscar(db, dados.get("professor_id"))
+        return self.turmas_service.criar(db, dados, professor)
+
+em turmas/dependencias
+def obter_facade():
+    return TurmaFacade(turmas_service, usuarios_service)
+
+no controller
+facade: TurmaFacade = Depends(obter_facade)
+return facade.criar(db, dados.model_dump())
+
+Diario do Encontro 09 — Facade de atividades
+O fluxo escolhido é a criação de uma atividade com alunos associados. Antes,
+o service de atividades recebia `aluno_ids`, buscava os alunos e depois criava
+a atividade. Assim, esse service conhecia o módulo de alunos, e a consulta dos
+alunos ficava no repository de atividades.
+
+Agora a `AtividadeFacade` chama `alunos_service.buscar_por_ids` e depois
+`atividades_service.criar`. O service de alunos valida os IDs, o service de
+atividades define o dono e os repositories continuam responsáveis pelo SQL.
+A Facade apenas coordena essas chamadas.
+
+O service de atividades foi simplificado: não precisa mais buscar alunos e
+fica focado nas regras da atividade. O controller usa a Facade nesse fluxo.
+Antes, porém, o controller já fazia uma única chamada ao service; o ganho
+principal é reduzir o acoplamento entre os módulos, não diminuir chamadas na rota.
+
+4. Unit of Work (Session + commit)
+Que problema ele resolve?
+Permite agrupar alterações na sessão do banco e confirmá-las juntas com `commit()`.
+
+O que aconteceria sem ele?
+Uma parte das alterações poderia ser salva antes de outra falhar. O banco ficaria com apenas uma parte da operação concluída.
+
+Quando vale e quando é burocracia — neste projeto:
+Vale a pena em operações que precisam salvar várias alterações juntas. Para uma única alteração simples, controlar uma transação pode ser desnecessário.
 
 no database
 SessionLocal = sessionmaker(bind=engine)

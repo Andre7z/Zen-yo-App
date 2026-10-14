@@ -1,0 +1,15 @@
+export const ROTAS = {
+  login: '/login',
+  cadastro: '/cadastro',
+  inicio: '/inicio',
+  perfil: '/perfil',
+  alunos: '/alunos',
+  novoAluno: '/alunos/novo',
+  detalheAluno: '/alunos/:id',
+  editarAluno: '/alunos/:id/editar',
+  atividades: '/atividades',
+  novaAtividade: '/atividades/nova',
+  detalheAtividade: '/atividades/:id',
+  anexos: '/anexos',
+  calendario: '/calendario',
+} as const

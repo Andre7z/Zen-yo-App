@@ -13,6 +13,10 @@ from app.database import Base
 import app.alunos.models      # noqa: F401
 import app.usuarios.models    # noqa: F401
 import app.atividades.models  # noqa: F401
+import app.anexos.models      # noqa: F401
+import app.dojos.models       # noqa: F401
+import app.faixas.models      # noqa: F401
+import app.turmas.models      # noqa: F401
 
 config = context.config
 

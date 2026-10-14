@@ -30,6 +30,10 @@ Acesse o docs adicionando o /docs:
 
 http://127.0.0.1:8000/docs
 
+para rodar o frontend 
+npm run dev
+E acesse http://localhost:5173/
+
 ## Funções no `/docs`
 
 Login;

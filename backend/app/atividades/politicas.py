@@ -21,32 +21,50 @@ class EstrategiaRelatorio:
         raise NotImplementedError
 
 
+def _alunos_da_atividade(atividade):
+    alunos = getattr(atividade, "alunos", None)
+    if alunos is not None:
+        return list(alunos)
+
+    aluno = getattr(atividade, "aluno", None)
+    return [aluno] if aluno is not None else []
+
+
 class RelatorioTrocaDeFaixa(EstrategiaRelatorio):
     def gerar(self, atividade):
-        return {
-            "aluno": atividade.aluno.nome,
-            "faixa_atual": atividade.aluno.faixa,
-            "nova_faixa": atividade.nova_faixa,
-            "tamanho_faixa": atividade.aluno.tamanho_faixa,
-        }
+        return [
+            {
+                "aluno": aluno.nome,
+                "faixa_atual": aluno.faixa_obj.nome,
+                "nova_faixa": atividade.nova_faixa,
+                "tamanho_faixa": getattr(aluno, "tamanho_faixa", None),
+            }
+            for aluno in _alunos_da_atividade(atividade)
+        ]
 
 
 class RelatorioEntregaKimono(EstrategiaRelatorio):
     def gerar(self, atividade):
-        return {
-            "aluno": atividade.aluno.nome,
-            "turma": atividade.aluno.turma,
-            "tamanho_kimono": atividade.aluno.tamanho_kimono,
-        }
+        return [
+            {
+                "aluno": aluno.nome,
+                "turma": getattr(aluno, "turma", None),
+                "tamanho_kimono": getattr(aluno, "tamanho_kimono", None),
+            }
+            for aluno in _alunos_da_atividade(atividade)
+        ]
 
 
 class RelatorioFrequencia(EstrategiaRelatorio):
     def gerar(self, atividade):
-        return {
-            "aluno": atividade.aluno.nome,
-            "presenca": atividade.presenca,
-            "data": atividade.data,
-        }
+        return [
+            {
+                "aluno": aluno.nome,
+                "presenca": atividade.presenca,
+                "data": atividade.data,
+            }
+            for aluno in _alunos_da_atividade(atividade)
+        ]
 
 
 class RelatorioFactory:

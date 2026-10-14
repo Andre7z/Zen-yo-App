@@ -1,8 +1,8 @@
 from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
+from ..associacoes import atividade_alunos
 from ..database import Base
-from ..alunos.models import atividade_alunos
 
 
 class Atividade(Base):
@@ -30,3 +30,6 @@ class Atividade(Base):
     
     dono_id = Column(Integer, ForeignKey("usuarios.id", name="fk_atividades_dono"), nullable=True)
     dono = relationship("Usuario", back_populates="atividades")
+
+
+from ..usuarios.models import Usuario  # noqa: E402

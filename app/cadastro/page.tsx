@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AlertCircle, ArrowLeft } from "lucide-react"
@@ -13,16 +13,22 @@ type Erros = { nome?: string; email?: string; senha?: string }
 
 export default function CadastroPage() {
   const router = useRouter()
-  const { entrar } = useApp()
+  const { entrar, cadastrar, autenticado, autenticacaoCarregando } = useApp()
   const [nome, setNome] = useState("")
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
   const [erros, setErros] = useState<Erros>({})
+  const [erroApi, setErroApi] = useState("")
+  const [enviando, setEnviando] = useState(false)
 
-  function handleSubmit(ev: FormEvent) {
+  useEffect(() => {
+    if (!autenticacaoCarregando && autenticado) router.replace("/alunos")
+  }, [autenticado, autenticacaoCarregando, router])
+
+  async function handleSubmit(ev: FormEvent) {
     ev.preventDefault()
     const novos: Erros = {}
-    if (!nome.trim()) novos.nome = "Informe seu nome completo."
+    if (nome.trim().length < 2) novos.nome = "Informe um nome com ao menos 2 caracteres."
     if (!email.trim()) novos.email = "Informe um e-mail válido."
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) novos.email = "E-mail em formato inválido."
     if (!senha) novos.senha = "Crie uma senha."
@@ -32,9 +38,17 @@ export default function CadastroPage() {
       setErros(novos)
       return
     }
-    // Protótipo: nenhuma conta é realmente criada, apenas simula o acesso
-    entrar()
-    router.push("/alunos")
+    setErros({})
+    setErroApi("")
+    setEnviando(true)
+    try {
+      await cadastrar(nome.trim(), email.trim(), senha)
+      router.push("/alunos")
+    } catch (falha) {
+      setErroApi(falha instanceof Error ? falha.message : "Não foi possível criar sua conta.")
+    } finally {
+      setEnviando(false)
+    }
   }
 
   return (
@@ -55,10 +69,13 @@ export default function CadastroPage() {
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            {erroApi && <p role="alert" className="text-sm text-destructive">{erroApi}</p>}
             <Campo>
               <Label htmlFor="nome">Nome completo</Label>
               <Input
                 id="nome"
+                autoComplete="name"
+                minLength={2}
                 value={nome}
                 onChange={(e) => {
                   setNome(e.target.value)
@@ -93,6 +110,7 @@ export default function CadastroPage() {
                 id="senha"
                 type="password"
                 autoComplete="new-password"
+                minLength={6}
                 value={senha}
                 onChange={(e) => {
                   setSenha(e.target.value)
@@ -104,13 +122,10 @@ export default function CadastroPage() {
               <ErroCampo>{erros.senha}</ErroCampo>
             </Campo>
 
-            <div className="flex items-start gap-2 rounded-lg bg-accent/60 px-3 py-2.5 text-xs text-muted-foreground">
-              <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
-              <span>Protótipo de demonstração: nenhuma conta real é criada.</span>
-            </div>
+            {erroApi && <div className="flex items-start gap-2 rounded-lg bg-accent/60 px-3 py-2.5 text-xs text-muted-foreground"><AlertCircle className="mt-0.5 size-3.5 shrink-0" /><span>A conta só é criada quando o backend confirma o cadastro.</span></div>}
 
-            <Button type="submit" size="lg" className="w-full">
-              Criar conta
+            <Button type="submit" size="lg" className="w-full" disabled={enviando}>
+              {enviando ? "Criando conta..." : "Criar conta"}
             </Button>
           </form>
 

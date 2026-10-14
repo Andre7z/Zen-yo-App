@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AlertCircle } from "lucide-react"
@@ -15,23 +15,32 @@ const SENHA_DEMO = "judo123"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { entrar } = useApp()
+  const { entrar, autenticado, autenticacaoCarregando } = useApp()
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
   const [erro, setErro] = useState("")
+  const [enviando, setEnviando] = useState(false)
 
-  function handleSubmit(ev: FormEvent) {
+  useEffect(() => {
+    if (!autenticacaoCarregando && autenticado) router.replace("/alunos")
+  }, [autenticado, autenticacaoCarregando, router])
+
+  async function handleSubmit(ev: FormEvent) {
     ev.preventDefault()
-    if (!email || !senha) {
+    if (!email.trim() || !senha) {
       setErro("Preencha o e-mail e a senha para continuar.")
       return
     }
-    if (email !== EMAIL_DEMO || senha !== SENHA_DEMO) {
-      setErro("E-mail ou senha incorretos. Verifique os dados e tente novamente.")
-      return
+    setErro("")
+    setEnviando(true)
+    try {
+      await entrar(email.trim(), senha)
+      router.push("/alunos")
+    } catch (falha) {
+      setErro(falha instanceof Error ? falha.message : "Não foi possível entrar. Tente novamente.")
+    } finally {
+      setEnviando(false)
     }
-    entrar()
-    router.push("/alunos")
   }
 
   return (
@@ -73,7 +82,7 @@ export default function LoginPage() {
                   setEmail(e.target.value)
                   setErro("")
                 }}
-                placeholder="professor@dojo.com"
+                placeholder="voce@exemplo.com"
               />
             </Campo>
 
@@ -92,8 +101,8 @@ export default function LoginPage() {
               />
             </Campo>
 
-            <Button type="submit" size="lg" className="w-full">
-              Entrar
+            <Button type="submit" size="lg" className="w-full" disabled={enviando}>
+              {enviando ? "Entrando..." : "Entrar"}
             </Button>
           </form>
 
@@ -105,10 +114,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <p className="mt-6 rounded-lg bg-accent/60 px-3 py-2.5 text-center text-xs text-muted-foreground">
-          Acesso de demonstração: <strong className="text-foreground">professor@dojo.com</strong> /{" "}
-          <strong className="text-foreground">judo123</strong>
-        </p>
       </div>
     </main>
   )
