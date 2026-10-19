@@ -1,7 +1,8 @@
 from datetime import date
 
-from sqlalchemy import Column, Date, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import expression
 
 from ..associacoes import atividade_alunos
 from ..database import Base
@@ -24,7 +25,9 @@ class Aluno(Base):
     turma_id = Column(Integer, ForeignKey("turmas.id", name="fk_alunos_turma"), nullable=True)
     tamanho_kimono = Column(String(5), nullable=True)
     tamanho_faixa = Column(String(5), nullable=True)
+    faixa_grossa = Column(Boolean, nullable=False, default=False, server_default=expression.false())
     codigo_zempo = Column(String(14), nullable=True)
+    dono_id = Column(Integer, ForeignKey("usuarios.id", name="fk_alunos_dono"), nullable=True)
 
     faixa_obj = relationship("Faixa", back_populates="alunos")
     turma_obj = relationship("Turma", back_populates="alunos")

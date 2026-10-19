@@ -2,7 +2,8 @@ import { apiRequest } from '../api'
 
 export type Identificado = { id: number }
 
-export type Faixa = Identificado & { nome: string; tipo: 'Kyu' | 'Dan'; ordem: number }
+export type Faixa = Identificado & { nome: string; tipo: 'Iniciante' | 'Kyu' | 'Dan'; grau: number | null; ordem: number }
+export const rotuloFaixa = (faixa: Faixa) => faixa.grau ? `${faixa.nome} - ${faixa.grau}º ${faixa.tipo}` : faixa.nome
 export type Turma = Identificado & { nome: string }
 export type Aluno = Identificado & {
   nome: string
@@ -14,6 +15,7 @@ export type Aluno = Identificado & {
   turma: string | null
   tamanho_kimono: string | null
   tamanho_faixa: string | null
+  faixa_grossa: boolean
   codigo_zempo: string | null
 }
 export type Atividade = Identificado & {
@@ -25,7 +27,6 @@ export type Atividade = Identificado & {
   aluno_ids: number[]
   aluno_ids_pagos: number[]
   nova_faixa: string | null
-  presenca: boolean | null
 }
 export type Anexo = Identificado & {
   titulo: string
@@ -78,6 +79,17 @@ export const anexosApi = {
 export const faixasApi = recurso<Faixa>('/faixas/')
 export const turmasApi = recurso<Turma>('/turmas/')
 
-export function relatorioAtividade(id: number) {
-  return apiRequest<Array<Record<string, string | boolean | null>>>(`/atividades/${id}/relatorio`)
+const RELATORIOS_XLSX_POR_TIPO: Record<string, string> = {
+  troca_de_faixa: 'controle-de-faixas',
+  entrega_de_kimono: 'controle-de-kimonos',
+  frequencia: 'controle-de-frequencia',
+}
+
+export function caminhoRelatorioXlsx(tipo: string, id: number) {
+  const nome = RELATORIOS_XLSX_POR_TIPO[tipo]
+  return nome ? `/atividades/${id}/relatorio/${nome}.xlsx` : null
+}
+
+export function nomeArquivoRelatorioXlsx(tipo: string) {
+  return `${RELATORIOS_XLSX_POR_TIPO[tipo] ?? 'relatorio'}.xlsx`
 }

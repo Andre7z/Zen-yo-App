@@ -12,17 +12,17 @@ class TurmaFacade:
             return None
         return self.usuarios_service.buscar(db, professor_id)
 
-    def criar(self, db, dados):
+    def criar(self, db, usuario, dados):
         dados_turma = dict(dados)
         professor = self._buscar_professor(
             db,
             dados_turma.get("professor_id"),
         )
-        return self.turmas_service.criar(db, dados_turma, professor)
+        return self.turmas_service.criar(db, usuario, dados_turma, professor)
 
-    def atualizar(self, db, turma_id, mudancas):
+    def atualizar(self, db, usuario, turma_id, mudancas):
         dados_atualizacao = dict(mudancas)
-        turma = self.turmas_service.buscar(db, turma_id)
+        turma = self.turmas_service.buscar(db, usuario, turma_id)
         professor_id = dados_atualizacao.get(
             "professor_id",
             turma.professor_id,

@@ -10,7 +10,7 @@ class AtividadeFacade:
     def criar(self, db, usuario, dados):
         dados_atividade = dict(dados)
         aluno_ids = dados_atividade.pop("aluno_ids", [])
-        dados_atividade["alunos"] = self.alunos_service.buscar_por_ids(db, aluno_ids)
+        dados_atividade["alunos"] = self.alunos_service.buscar_por_ids(db, usuario, aluno_ids)
 
         return self.atividades_service.criar(db, usuario, dados_atividade)
 
@@ -21,6 +21,7 @@ class AtividadeFacade:
             aluno_ids = dados_atualizacao.pop("aluno_ids") or []
             dados_atualizacao["alunos"] = self.alunos_service.buscar_por_ids(
                 db,
+                usuario,
                 aluno_ids,
             )
 

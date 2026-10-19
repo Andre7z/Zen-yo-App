@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from .models import Turma
 
 
-def listar(db: Session):
-    return db.query(Turma).order_by(Turma.nome.asc()).all()
+def listar(db: Session, dono_id: int):
+    return db.query(Turma).filter(Turma.dono_id == dono_id).order_by(Turma.nome.asc()).all()
 
 
 def buscar(db: Session, turma_id: int):

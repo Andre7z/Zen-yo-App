@@ -1,9 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Pencil, Plus, Trash2, X } from 'lucide-react'
-import { alunosApi, faixasApi, turmasApi, type Aluno, type Faixa, type Turma } from '../servicos/dominio'
+import { alunosApi, faixasApi, rotuloFaixa, turmasApi, type Aluno, type Faixa, type Turma } from '../servicos/dominio'
 import { useRecurso } from '../hooks/use-recurso'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
+import { ModalDetalhes } from '../components/ModalDetalhes'
+import { EntradaData } from '../components/EntradaData'
+import { converterDataParaIso, formatarDataParaEntrada } from '../servicos/datas'
 import { ROTAS } from '../routes'
 
 const vazio = {
@@ -23,6 +26,7 @@ export function AlunosPage() {
   const [editando, setEditando] = useState<number | null>(null)
   const [visualizando, setVisualizando] = useState<number | null>(null)
   const [formAberto, setFormAberto] = useState(false)
+  const [erroData, setErroData] = useState('')
 
   useEffect(() => {
     void faixasApi.listar().then(setFaixas).catch((falha: unknown) => {
@@ -40,7 +44,7 @@ export function AlunosPage() {
     setDados({
       nome: aluno.nome,
       cpf: aluno.cpf ?? '',
-      data_nascimento: aluno.data_nascimento ?? '',
+      data_nascimento: aluno.data_nascimento ? formatarDataParaEntrada(aluno.data_nascimento) : '',
       faixa_id: String(aluno.faixa_id),
       proxima_faixa: aluno.proxima_faixa ?? '',
       turma_id: String(turmaId),
@@ -55,10 +59,16 @@ export function AlunosPage() {
 
   async function salvar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const dataNascimento = dados.data_nascimento ? converterDataParaIso(dados.data_nascimento) : null
+    if (dados.data_nascimento && !dataNascimento) {
+      setErroData('Informe uma data válida no formato dd/mm/aaaa.')
+      return
+    }
+    setErroData('')
     const payload = {
       nome: dados.nome.trim(),
       cpf: dados.cpf.trim() || null,
-      data_nascimento: dados.data_nascimento || null,
+      data_nascimento: dataNascimento,
       faixa_id: Number(dados.faixa_id),
       proxima_faixa: dados.proxima_faixa || null,
       turma_id: Number(turmaId),
@@ -99,9 +109,9 @@ export function AlunosPage() {
           <div className="module-form-grid">
             <CampoModulo rotulo="Nome completo"><input required minLength={2} value={dados.nome} onChange={(event) => setDados({ ...dados, nome: event.target.value })} /></CampoModulo>
             <CampoModulo rotulo="CPF"><input value={dados.cpf} onChange={(event) => setDados({ ...dados, cpf: event.target.value })} /></CampoModulo>
-            <CampoModulo rotulo="Data de nascimento"><input type="date" value={dados.data_nascimento} onChange={(event) => setDados({ ...dados, data_nascimento: event.target.value })} /></CampoModulo>
-            <CampoModulo rotulo="Faixa"><select required value={dados.faixa_id} onChange={(event) => setDados({ ...dados, faixa_id: event.target.value })}><option value="">Selecione</option>{faixas.map((faixa) => <option key={faixa.id} value={faixa.id}>{faixa.nome}</option>)}</select></CampoModulo>
-            <CampoModulo rotulo="Próxima faixa"><select value={dados.proxima_faixa} onChange={(event) => setDados({ ...dados, proxima_faixa: event.target.value })}><option value="">Não definida</option>{faixas.map((faixa) => <option key={faixa.id} value={faixa.nome}>{faixa.nome}</option>)}</select></CampoModulo>
+            <CampoModulo rotulo="Data de nascimento"><EntradaData invalid={Boolean(erroData)} value={dados.data_nascimento} onChange={(data_nascimento) => { setErroData(''); setDados({ ...dados, data_nascimento }) }} />{erroData && <small className="module-field-error" role="alert">{erroData}</small>}</CampoModulo>
+            <CampoModulo rotulo="Faixa"><select required value={dados.faixa_id} onChange={(event) => setDados({ ...dados, faixa_id: event.target.value })}><option value="">Selecione</option>{faixas.map((faixa) => <option key={faixa.id} value={faixa.id}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
+            <CampoModulo rotulo="Próxima faixa"><select value={dados.proxima_faixa} onChange={(event) => setDados({ ...dados, proxima_faixa: event.target.value })}><option value="">Não definida</option>{faixas.map((faixa) => <option key={faixa.id} value={rotuloFaixa(faixa)}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
             <CampoModulo rotulo="Tamanho do kimono"><input value={dados.tamanho_kimono} onChange={(event) => setDados({ ...dados, tamanho_kimono: event.target.value })} /></CampoModulo>
             <CampoModulo rotulo="Tamanho da faixa"><input value={dados.tamanho_faixa} onChange={(event) => setDados({ ...dados, tamanho_faixa: event.target.value })} /></CampoModulo>
             <CampoModulo rotulo="Código Zempo"><input value={dados.codigo_zempo} onChange={(event) => setDados({ ...dados, codigo_zempo: event.target.value })} /></CampoModulo>
@@ -114,11 +124,10 @@ export function AlunosPage() {
         const aluno = alunosDaTurma.find((item) => item.id === visualizando)
         if (!aluno) return null
         return (
-          <section className="module-form" aria-label="Detalhes do aluno">
-            <div className="module-form-heading"><h2>{aluno.nome}</h2></div>
+          <ModalDetalhes titulo={aluno.nome} aoFechar={() => setVisualizando(null)}>
             <dl className="module-details">
               <div><dt>CPF</dt><dd>{aluno.cpf ?? 'Não informado'}</dd></div>
-              <div><dt>Data de nascimento</dt><dd>{aluno.data_nascimento ?? 'Não informada'}</dd></div>
+              <div><dt>Data de nascimento</dt><dd>{aluno.data_nascimento ? formatarDataParaEntrada(aluno.data_nascimento) : 'Não informada'}</dd></div>
               <div><dt>Faixa</dt><dd>{faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Não informada'}</dd></div>
               <div><dt>Próxima faixa</dt><dd>{aluno.proxima_faixa ?? 'Não definida'}</dd></div>
               <div><dt>Turma</dt><dd>{turmaAtual?.nome ?? aluno.turma ?? 'Não informada'}</dd></div>
@@ -126,8 +135,8 @@ export function AlunosPage() {
               <div><dt>Tamanho da faixa</dt><dd>{aluno.tamanho_faixa ?? 'Não informado'}</dd></div>
               <div><dt>Código Zempo</dt><dd>{aluno.codigo_zempo ?? 'Não informado'}</dd></div>
             </dl>
-            <div className="module-form-actions"><button className="module-primary" type="button" onClick={() => iniciarEdicao(aluno)}><Pencil size={16} />Editar</button><button className="module-secondary" type="button" onClick={() => setVisualizando(null)}>Fechar</button></div>
-          </section>
+            <div className="module-form-actions"><button className="module-primary" type="button" onClick={() => iniciarEdicao(aluno)}><Pencil size={16} />Editar</button></div>
+          </ModalDetalhes>
         )
       })()}
 

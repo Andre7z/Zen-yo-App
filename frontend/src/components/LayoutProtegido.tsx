@@ -22,8 +22,7 @@ export function LayoutProtegido() {
         <button className="mobile-menu-trigger" type="button" aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuAberto} aria-controls="menu-lateral" onClick={() => setMenuAberto((aberto) => !aberto)}>
           {menuAberto ? <X size={20} /> : <Menu size={20} />}
         </button>
-        <Link className="home-brand" to={ROTAS.inicio} aria-label="Zen'yo início"><span className="brand-mark"><Marca /></span><span className="brand-name">zen'yo<span>.</span></span></Link>
-        <div className="header-session"><i /> SESSÃO ATIVA</div>
+        <Link className="home-brand" to={ROTAS.inicio} aria-label="Zen'yo início"><span className="brand-mark"><Marca /></span><span className="brand-name">ZEN'YO APP</span></Link>
         <button aria-label="Sair" className="logout-button" onClick={encerrarSessao} type="button"><LogOut size={16} /><span>Sair</span></button>
       </header>
       {menuAberto && <button className="mobile-nav-backdrop" type="button" aria-label="Fechar menu lateral" onClick={() => setMenuAberto(false)} />}

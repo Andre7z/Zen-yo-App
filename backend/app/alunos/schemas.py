@@ -13,6 +13,7 @@ class AlunoCriar(BaseModel):
     turma: str | None = None
     tamanho_kimono: str | None = None
     tamanho_faixa: str | None = None
+    faixa_grossa: bool = False
     codigo_zempo: str | None = None
 
 
@@ -28,6 +29,7 @@ class AlunoPublico(BaseModel):
     turma: str | None
     tamanho_kimono: str | None
     tamanho_faixa: str | None
+    faixa_grossa: bool = False
     codigo_zempo: str | None
 
 
@@ -42,4 +44,5 @@ class AlunoAtualizar(BaseModel):
     turma: str | None = None
     tamanho_kimono: str | None = None
     tamanho_faixa: str | None = None
+    faixa_grossa: bool | None = None
     codigo_zempo: str | None = None

@@ -19,7 +19,7 @@ def listar(
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return service.listar(db)
+    return service.listar(db, usuario)
 
 
 @router.post("/", response_model=FaixaPublico, status_code=201)
@@ -28,7 +28,7 @@ def criar(
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return service.criar(db, dados.model_dump())
+    return service.criar(db, usuario, dados.model_dump())
 
 
 @router.get("/{faixa_id}", response_model=FaixaPublico)
@@ -37,7 +37,7 @@ def buscar(
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return service.buscar(db, faixa_id)
+    return service.buscar(db, usuario, faixa_id)
 
 
 @router.patch("/{faixa_id}", response_model=FaixaPublico)
@@ -47,7 +47,7 @@ def atualizar(
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return service.atualizar(db, faixa_id, dados.model_dump(exclude_unset=True))
+    return service.atualizar(db, usuario, faixa_id, dados.model_dump(exclude_unset=True))
 
 
 @router.delete("/{faixa_id}", status_code=204)
@@ -56,4 +56,4 @@ def apagar(
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    service.apagar(db, faixa_id)
+    service.apagar(db, usuario, faixa_id)

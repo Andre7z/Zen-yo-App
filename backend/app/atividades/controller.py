@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -106,4 +106,73 @@ def gerar_relatorio(
         db,
         usuario,
         atividade_id
+    )
+
+
+@router.get("/{atividade_id}/relatorio/controle-de-faixas")
+def controle_de_faixas(
+    atividade_id: int,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return service.controle_de_faixas(db, usuario, atividade_id)
+
+
+@router.get("/{atividade_id}/relatorio/controle-de-faixas.xlsx")
+def controle_de_faixas_xlsx(
+    atividade_id: int,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    conteudo = service.controle_de_faixas_xlsx(db, usuario, atividade_id)
+    return Response(
+        content=conteudo,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="controle-de-faixas.xlsx"'},
+    )
+
+
+@router.get("/{atividade_id}/relatorio/controle-de-kimonos")
+def controle_de_kimonos(
+    atividade_id: int,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return service.controle_de_kimonos(db, usuario, atividade_id)
+
+
+@router.get("/{atividade_id}/relatorio/controle-de-kimonos.xlsx")
+def controle_de_kimonos_xlsx(
+    atividade_id: int,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    conteudo = service.controle_de_kimonos_xlsx(db, usuario, atividade_id)
+    return Response(
+        content=conteudo,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="controle-de-kimonos.xlsx"'},
+    )
+
+
+@router.get("/{atividade_id}/relatorio/controle-de-frequencia")
+def controle_de_frequencia(
+    atividade_id: int,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return service.controle_de_frequencia(db, usuario, atividade_id)
+
+
+@router.get("/{atividade_id}/relatorio/controle-de-frequencia.xlsx")
+def controle_de_frequencia_xlsx(
+    atividade_id: int,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    conteudo = service.controle_de_frequencia_xlsx(db, usuario, atividade_id)
+    return Response(
+        content=conteudo,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="controle-de-frequencia.xlsx"'},
     )

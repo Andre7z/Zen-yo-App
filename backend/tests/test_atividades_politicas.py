@@ -67,15 +67,33 @@ def test_factory_gera_relatorio_para_varios_alunos():
     assert relatorio[1]["nova_faixa"] == "azul"
 
 
+def test_relatorio_de_frequencia_retorna_presenca_individual():
+    atividade = SimpleNamespace(
+        data=date(2026, 10, 19),
+        aluno_ids_pagos=[7],
+        alunos=[
+            SimpleNamespace(id=7, nome="Ana"),
+            SimpleNamespace(id=8, nome="Beto"),
+        ],
+    )
+
+    relatorio = RelatorioFactory.criar("frequencia").gerar(atividade)
+
+    assert relatorio == [
+        {"aluno": "Ana", "presenca": True, "data": date(2026, 10, 19)},
+        {"aluno": "Beto", "presenca": False, "data": date(2026, 10, 19)},
+    ]
+
+
 def test_buscar_alunos_por_ids_recusa_ids_inexistentes(monkeypatch):
     monkeypatch.setattr(
         alunos_service.repository,
         "buscar_por_ids",
-        lambda db, aluno_ids: [SimpleNamespace(id=aluno_ids[0])],
+        lambda db, dono_id, aluno_ids: [SimpleNamespace(id=aluno_ids[0])],
     )
 
     with pytest.raises(AlunoNaoEncontrado):
-        alunos_service.buscar_por_ids(object(), [1, 2])
+        alunos_service.buscar_por_ids(object(), SimpleNamespace(id=1), [1, 2])
 
 
 def test_facade_cria_atividade_com_alunos_resolvidos():
@@ -83,7 +101,7 @@ def test_facade_cria_atividade_com_alunos_resolvidos():
     chamada_alunos = {}
     chamada_atividade = {}
 
-    def buscar_por_ids(db, aluno_ids):
+    def buscar_por_ids(db, usuario, aluno_ids):
         chamada_alunos["ids"] = aluno_ids
         return [aluno]
 
@@ -114,7 +132,7 @@ def test_facade_atualiza_atividade_sem_consultar_alunos():
         chamada["mudancas"] = mudancas
         return "atividade atualizada"
 
-    def buscar_por_ids(db, aluno_ids):
+    def buscar_por_ids(db, usuario, aluno_ids):
         raise AssertionError("Nao deve consultar alunos sem aluno_ids")
 
     facade = AtividadeFacade(
@@ -136,7 +154,7 @@ def test_facade_atualiza_atividade_sem_consultar_alunos():
 def test_facade_atualiza_e_limpa_vinculos_quando_lista_vazia():
     chamada = {}
 
-    def buscar_por_ids(db, aluno_ids):
+    def buscar_por_ids(db, usuario, aluno_ids):
         assert aluno_ids == []
         return []
 

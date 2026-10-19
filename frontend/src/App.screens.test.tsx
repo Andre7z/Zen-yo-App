@@ -5,8 +5,8 @@ import { clearToken, saveToken } from './api'
 import { ROTAS } from './routes'
 
 const usuario = { id: 4, nome: 'Ana Professora', email: 'ana@example.com' }
-const faixa = { id: 2, nome: 'Amarela', tipo: 'Kyu', ordem: 4 }
-const faixaSeguinte = { id: 3, nome: 'Laranja', tipo: 'Kyu', ordem: 5 }
+const faixa = { id: 2, nome: 'Amarela', tipo: 'Kyu', grau: 6, ordem: 994 }
+const faixaSeguinte = { id: 3, nome: 'Laranja', tipo: 'Kyu', grau: 5, ordem: 995 }
 const aluno = {
   id: 7,
   nome: 'Caio Silva',
@@ -67,7 +67,9 @@ function configurarApi() {
     if (caminho === '/turmas/') return Response.json([turma, turmaOutra])
     if (caminho === '/atividades/') return Response.json([atividade, atividadeFaixa])
     if (caminho === '/anexos/') return Response.json([anexo])
-    if (/^\/atividades\/\d+\/relatorio$/.test(caminho)) return Response.json([])
+    if (/^\/atividades\/\d+\/relatorio\/controle-de-(faixas|kimonos|frequencia)\.xlsx$/.test(caminho)) {
+      return new Response(new Blob(['conteudo']), { status: 200 })
+    }
     return Response.json({ detail: `Rota não encontrada: ${caminho}` }, { status: 404 })
   })
   vi.stubGlobal('fetch', requisicao)
@@ -101,30 +103,71 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(await screen.findByText('Caio Silva')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Novo aluno' }))
     fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'Bruna Costa' } })
+    fireEvent.change(screen.getByLabelText('Data de nascimento'), { target: { value: '15052010' } })
     fireEvent.change(screen.getByLabelText('Faixa'), { target: { value: '2' } })
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar aluno' }))
 
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/'), expect.objectContaining({ method: 'POST' })))
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/') && init?.method === 'POST')
-    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Bruna Costa', faixa_id: 2, turma_id: 5, cpf: null, tamanho_kimono: null, tamanho_faixa: null, codigo_zempo: null })
+    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Bruna Costa', data_nascimento: '2010-05-15', faixa_id: 2, turma_id: 5, cpf: null, tamanho_kimono: null, tamanho_faixa: null, codigo_zempo: null })
   })
 
-  it('cria atividade com participantes pelos IDs exigidos pelo backend', async () => {
+  it('abre os detalhes do aluno em um popup e fecha com Escape', async () => {
+    abrir('/turmas/5/alunos')
+    await screen.findByText('Caio Silva')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes de Caio Silva' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Caio Silva' })
+    expect(within(dialogo).getByText('12345678901')).toBeTruthy()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes de Caio Silva' }))
+    await screen.findByRole('dialog', { name: 'Caio Silva' })
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar detalhes' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('cria atividades sem alunos e permite gerenciar participantes nos detalhes', async () => {
     abrir(ROTAS.atividades)
     expect(await screen.findByText('Treino infantil')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Nova atividade' }))
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Treino de sábado' } })
-    fireEvent.change(screen.getByLabelText('Turma'), { target: { value: '5' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Adicionar aluno' }))
-    fireEvent.click(screen.getByLabelText('Adicionar Caio Silva'))
-    expect(screen.queryByLabelText('Adicionar Lia Santos')).toBeNull()
-    fireEvent.click(screen.getByLabelText('Pagamento confirmado de Caio Silva'))
-    expect(screen.queryByText('Pago')).toBeNull()
+    fireEvent.change(screen.getByLabelText('Data'), { target: { value: '13102026' } })
     fireEvent.click(screen.getByRole('button', { name: 'Criar atividade' }))
 
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/'), expect.objectContaining({ method: 'POST' })))
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/atividades/') && init?.method === 'POST')
-    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Treino de sábado', tipo: 'frequencia', aluno_ids: [7], aluno_ids_pagos: [7] })
+    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Treino de sábado', tipo: 'frequencia', data: '2026-10-13' })
+    expect(JSON.parse(String(envio?.[1]?.body))).not.toHaveProperty('aluno_ids')
+    expect(JSON.parse(String(envio?.[1]?.body))).not.toHaveProperty('presenca')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes de Treino infantil' }))
+    await screen.findByRole('dialog', { name: 'Treino infantil' })
+    expect(screen.queryByText('Presença', { selector: 'dt' })).toBeNull()
+    expect(screen.getByLabelText('Presença de Caio Silva')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Gerenciar alunos' }))
+    expect(await screen.findByRole('dialog', { name: 'Alunos · Treino infantil' })).toBeTruthy()
+    expect(screen.getByLabelText('Adicionar Lia Santos')).toBeTruthy()
+    fireEvent.click(screen.getByLabelText('Adicionar Lia Santos'))
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar participantes (2)' }))
+
+    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/9'), expect.objectContaining({ method: 'PATCH' })))
+    const atualizacao = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/atividades/9') && init?.method === 'PATCH')
+    expect(JSON.parse(String(atualizacao?.[1]?.body))).toMatchObject({ aluno_ids: [7, 8], aluno_ids_pagos: [] })
+  })
+
+  it('salva a presença individual do aluno na atividade', async () => {
+    abrir(ROTAS.atividades)
+    await screen.findByText('Treino infantil')
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes de Treino infantil' }))
+
+    fireEvent.click(await screen.findByLabelText('Presença de Caio Silva'))
+    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/9'), expect.objectContaining({ method: 'PATCH' })))
+    const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/atividades/9') && init?.method === 'PATCH')
+    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ aluno_ids: [7], aluno_ids_pagos: [7] })
+    expect(JSON.parse(String(envio?.[1]?.body))).not.toHaveProperty('presenca')
   })
 
   it('cria atividade sem participantes', async () => {
@@ -136,32 +179,28 @@ describe('telas conectadas aos recursos FastAPI', () => {
 
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/'), expect.objectContaining({ method: 'POST' })))
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/atividades/') && init?.method === 'POST')
-    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Treino livre', tipo: 'frequencia', aluno_ids: [], aluno_ids_pagos: [] })
+    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Treino livre', tipo: 'frequencia' })
+    expect(JSON.parse(String(envio?.[1]?.body))).not.toHaveProperty('aluno_ids')
   })
 
-  it('remove alunos ocultos ao trocar a turma da atividade', async () => {
+  it('filtra a lista de alunos por turma ao gerenciar uma atividade', async () => {
     abrir(ROTAS.atividades)
     await screen.findByText('Treino infantil')
-    fireEvent.click(screen.getByRole('button', { name: 'Nova atividade' }))
-    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Treino de outra turma' } })
-    fireEvent.change(screen.getByLabelText('Turma'), { target: { value: '5' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Adicionar aluno' }))
-    fireEvent.click(screen.getByLabelText('Adicionar Caio Silva'))
-    fireEvent.change(screen.getByLabelText('Turma'), { target: { value: '6' } })
-    expect(screen.queryByLabelText('Adicionar Caio Silva')).toBeNull()
-    fireEvent.click(screen.getByLabelText('Adicionar Lia Santos'))
-    fireEvent.click(screen.getByRole('button', { name: 'Criar atividade' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes de Treino infantil' }))
+    await screen.findByRole('dialog', { name: 'Treino infantil' })
+    fireEvent.click(screen.getByRole('button', { name: 'Gerenciar alunos' }))
 
-    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/'), expect.objectContaining({ method: 'POST' })))
-    const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/atividades/') && init?.method === 'POST')
-    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ aluno_ids: [8] })
+    fireEvent.change(screen.getByLabelText('Filtrar por turma'), { target: { value: '6' } })
+    expect(screen.queryByLabelText('Adicionar Caio Silva')).toBeNull()
+    expect(screen.getByLabelText('Adicionar Lia Santos')).toBeTruthy()
   })
 
   it('gradua o participante para a faixa seguinte pelo catálogo', async () => {
     abrir(ROTAS.atividades)
     await screen.findByText('Treino infantil')
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes de Exame de graduação' }))
-    fireEvent.change(screen.getByLabelText('Próxima faixa de Caio Silva'), { target: { value: 'Laranja' } })
+    expect(await screen.findByRole('dialog', { name: 'Exame de graduação' })).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Próxima faixa de Caio Silva'), { target: { value: 'Laranja - 5º Kyu' } })
     fireEvent.change(screen.getByLabelText('Tamanho da faixa de Caio Silva'), { target: { value: '3' } })
 
     const confirmar = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
@@ -205,13 +244,19 @@ describe('telas conectadas aos recursos FastAPI', () => {
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/7'), expect.objectContaining({ method: 'DELETE' })))
   })
 
-  it('consulta o relatório de uma atividade pela rota específica', async () => {
+  it('exporta o relatório de uma atividade em xlsx sem pré-visualização', async () => {
+    const criarObjectURL = vi.fn(() => 'blob:mock')
+    const revogarObjectURL = vi.fn()
+    URL.createObjectURL = criarObjectURL
+    URL.revokeObjectURL = revogarObjectURL
+
     abrir(ROTAS.atividades)
     expect(await screen.findByText('Treino infantil')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Relatório de Treino infantil' }))
 
-    expect(await screen.findByRole('region', { name: 'Relatório da atividade' })).toBeTruthy()
-    expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/9/relatorio'), expect.anything())
+    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/9/relatorio/controle-de-frequencia.xlsx'), expect.anything()))
+    expect(criarObjectURL).toHaveBeenCalled()
+    expect(screen.queryByRole('region', { name: 'Relatório da atividade' })).toBeNull()
   })
 
   it('envia arquivo e metadados de anexo em multipart', async () => {
@@ -232,18 +277,18 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(formulario.get('arquivo')).toMatchObject({ name: 'regulamento.pdf' })
   })
 
-  it('lista e cria faixas com tipo e ordem validados', async () => {
+  it('lista e cria faixas com tipo e número do Kyu/Dan', async () => {
     abrir(ROTAS.faixas)
     expect(await screen.findByText('Amarela')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Nova faixa' }))
     fireEvent.change(screen.getByLabelText('Nome da faixa'), { target: { value: 'Laranja' } })
     fireEvent.change(screen.getByLabelText('Classificação'), { target: { value: 'Kyu' } })
-    fireEvent.change(screen.getByLabelText('Ordem'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Número do Kyu/Dan'), { target: { value: '5' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
 
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/faixas/'), expect.objectContaining({ method: 'POST' })))
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/faixas/') && init?.method === 'POST')
-    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Laranja', tipo: 'Kyu', ordem: 5 })
+    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Laranja', tipo: 'Kyu', grau: 5 })
   })
 
   it('lista e cria turmas sem exigir dojo', async () => {
