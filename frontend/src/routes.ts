@@ -12,4 +12,7 @@ export const ROTAS = {
   detalheAtividade: '/atividades/:id',
   anexos: '/anexos',
   calendario: '/calendario',
+  faixas: '/faixas',
+  turmas: '/turmas',
+  turmaAlunos: '/turmas/:turmaId/alunos',
 } as const

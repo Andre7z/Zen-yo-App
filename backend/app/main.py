@@ -13,9 +13,6 @@ from .anexos.erros import AnexoNaoEncontrado, ErroAnexo
 from .atividades import controller as atividades_controller
 from .atividades.erros import ErroAtividade, AtividadeNaoEncontrada
 
-from .dojos import controller as dojos_controller
-from .dojos.erros import DojoNaoEncontrado, ErroDojo
-
 from .faixas import controller as faixas_controller
 from .faixas.erros import ErroFaixa, FaixaNaoEncontrada
 
@@ -47,7 +44,6 @@ app.include_router(alunos_controller.router)
 app.include_router(atividades_controller.router)
 app.include_router(anexos_controller.router)
 app.include_router(faixas_controller.router)
-app.include_router(dojos_controller.router)
 app.include_router(turmas_controller.router)
 
 
@@ -75,11 +71,6 @@ def traduzir_recusa_de_anexo(request: Request, erro: ErroAnexo):
 @app.exception_handler(ErroFaixa)
 def traduzir_recusa_de_faixa(request: Request, erro: ErroFaixa):
     return _resposta_erro_de_dominio(erro, FaixaNaoEncontrada)
-
-
-@app.exception_handler(ErroDojo)
-def traduzir_recusa_de_dojo(request: Request, erro: ErroDojo):
-    return _resposta_erro_de_dominio(erro, DojoNaoEncontrado)
 
 
 @app.exception_handler(ErroTurma)

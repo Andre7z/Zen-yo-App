@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { clearToken, getToken, saveToken } from './api'
@@ -8,7 +8,6 @@ const usuario = {
   id: 7,
   nome: 'Ana Silva',
   email: 'ana@example.com',
-  dojo_id: null,
 }
 
 function configurarApi() {
@@ -50,7 +49,7 @@ describe('sessão e navegação protegida', () => {
     expect(await screen.findByRole('navigation', { name: 'Navegação principal' })).toBeTruthy()
     expect(screen.getAllByText(usuario.nome).length).toBeGreaterThan(0)
     expect(screen.getAllByText(usuario.email).length).toBeGreaterThan(0)
-    fireEvent.click(screen.getByRole('link', { name: 'Atividades' }))
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: 'Atividades' }))
     expect(await screen.findByRole('heading', { name: 'Atividades' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Sair' }))

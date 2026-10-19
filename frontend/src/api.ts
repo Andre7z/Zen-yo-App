@@ -1,4 +1,4 @@
-export type Usuario = { id: number; nome: string; email: string; dojo_id: number | null }
+export type Usuario = { id: number; nome: string; email: string }
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '')
 const CHAVE_TOKEN = 'zenyo_access_token'
@@ -43,6 +43,24 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}, autent
   const payload: unknown = await response.json().catch(() => null)
   if (!response.ok) throw new Error(mensagemErro(payload, response.status))
   return payload as T
+}
+
+export async function baixarArquivo(path: string): Promise<Blob> {
+  const headers = new Headers()
+  const token = getToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+
+  let response: Response
+  try {
+    response = await fetch(`${API_URL}${path}`, { headers })
+  } catch {
+    throw new Error(`Não foi possível conectar à API em ${API_URL}. Verifique se o backend está iniciado.`)
+  }
+  if (!response.ok) {
+    const payload: unknown = await response.json().catch(() => null)
+    throw new Error(mensagemErro(payload, response.status))
+  }
+  return response.blob()
 }
 
 function mensagemErro(payload: unknown, status: number): string {

@@ -5,18 +5,16 @@ import pytest
 from app.alunos.erros import AlunoNaoEncontrado, CampoNaoEditavel
 from app.anexos.erros import ErroAnexo
 from app.atividades.erros import AtividadeNaoEncontrada, TipoDeAtividadeDesconhecido
-from app.dojos.erros import DojoNaoEncontrado, ErroDojo
 from app.faixas.erros import ErroFaixa, FaixaNaoEncontrada
 from app.main import (
     traduzir_recusa,
     traduzir_recusa_de_atividade,
     traduzir_recusa_de_anexo,
-    traduzir_recusa_de_dojo,
     traduzir_recusa_de_faixa,
     traduzir_recusa_de_turma,
     traduzir_recusa_de_usuario,
 )
-from app.turmas.erros import ErroTurma, ProfessorForaDoDojo, TurmaNaoEncontrada
+from app.turmas.erros import ErroTurma, TurmaNaoEncontrada
 from app.usuarios.erros import CredenciaisInvalidas, EmailJaCadastrado
 
 
@@ -30,10 +28,8 @@ from app.usuarios.erros import CredenciaisInvalidas, EmailJaCadastrado
         (traduzir_recusa_de_anexo, ErroAnexo, 409),
         (traduzir_recusa_de_faixa, FaixaNaoEncontrada, 404),
         (traduzir_recusa_de_faixa, ErroFaixa, 409),
-        (traduzir_recusa_de_dojo, DojoNaoEncontrado, 404),
-        (traduzir_recusa_de_dojo, ErroDojo, 409),
         (traduzir_recusa_de_turma, TurmaNaoEncontrada, 404),
-        (traduzir_recusa_de_turma, ProfessorForaDoDojo, 409),
+        (traduzir_recusa_de_turma, ErroTurma, 409),
     ],
 )
 def test_erros_de_dominio_preservam_status_e_corpo(handler, erro, status):

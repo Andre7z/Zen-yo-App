@@ -19,6 +19,7 @@ class Aluno(Base):
     cpf = Column(String(14), nullable=True)
     data_nascimento = Column(Date, nullable=True)
     faixa_id = Column(Integer, ForeignKey("faixas.id", name="fk_alunos_faixa"), nullable=False)
+    proxima_faixa = Column(String(120), nullable=True)
     turma = Column(String(120), nullable=True)
     turma_id = Column(Integer, ForeignKey("turmas.id", name="fk_alunos_turma"), nullable=True)
     tamanho_kimono = Column(String(5), nullable=True)

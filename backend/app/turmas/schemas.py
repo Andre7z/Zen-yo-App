@@ -4,8 +4,6 @@ from ..validacoes import texto_legivel as _texto_legivel
 
 class TurmaEntrada(BaseModel):
     nome: str
-    dojo_id: int
-    professor_id: int | None = None
 
     @field_validator("nome")
     @classmethod
@@ -18,14 +16,10 @@ class TurmaPublico(BaseModel):
 
     id: int
     nome: str
-    dojo_id: int
-    professor_id: int | None = None
 
 
 class TurmaAtualizar(BaseModel):
     nome: str | None = None
-    dojo_id: int | None = None
-    professor_id: int | None = None
 
     @field_validator("nome")
     @classmethod

@@ -5,7 +5,6 @@ class UsuarioCriar(BaseModel):        # ENTRA no cadastro
     nome: str = Field(min_length=2)
     email: EmailStr                   # "abc" nem chega ao seu codigo: 422
     senha: str = Field(min_length=6)
-    dojo_id: int | None = None
 
 
 class UsuarioPublico(BaseModel):      # SAI na resposta -- sem senha, sem hash
@@ -14,7 +13,6 @@ class UsuarioPublico(BaseModel):      # SAI na resposta -- sem senha, sem hash
     id: int
     nome: str
     email: EmailStr
-    dojo_id: int | None = None
 
 
 class Token(BaseModel):               # SAI no login
