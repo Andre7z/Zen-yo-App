@@ -15,6 +15,13 @@ def buscar(db, usuario, anexo_id):
     return anexo
 
 
+def buscar_por_url(db, usuario, arquivo_url):
+    anexo = repository.buscar_por_url(db, usuario.id, arquivo_url)
+    if anexo is None:
+        raise AnexoNaoEncontrado("Arquivo nao encontrado")
+    return anexo
+
+
 def criar(db, usuario, dados):
     return repository.criar(db, {**dados, "dono_id": usuario.id})
 
@@ -27,3 +34,4 @@ def atualizar(db, usuario, anexo_id, mudancas):
 def apagar(db, usuario, anexo_id):
     anexo = buscar(db, usuario, anexo_id)
     repository.apagar(db, anexo)
+    return anexo

@@ -4,10 +4,21 @@ import pytest
 from pydantic import ValidationError
 
 from app.atividades.schemas import AtividadeAtualizar, AtividadeEntrada
+from app.alunos.schemas import AlunoCriar
 from app.anexos.schemas import AnexoAtualizar, AnexoEntrada
-from app.dojos.schemas import DojoAtualizar, DojoEntrada
 from app.faixas.schemas import FaixaAtualizar, FaixaEntrada
 from app.turmas.schemas import TurmaAtualizar, TurmaEntrada
+
+
+def test_aluno_exige_nome_e_faixa_e_deixa_dados_adicionais_opcionais():
+    aluno = AlunoCriar(nome="Caio", faixa_id=2)
+
+    assert aluno.nome == "Caio"
+    assert aluno.faixa_id == 2
+    assert aluno.cpf is None
+
+    with pytest.raises(ValidationError):
+        AlunoCriar(nome="Caio")
 
 
 def test_schemas_normalizam_textos_de_entrada():
@@ -26,9 +37,8 @@ def test_schemas_normalizam_textos_de_entrada():
         arquivo_url=" https://cdn.exemplo.com/regulamento.pdf ",
         link=" https://exemplo.com/regulamento ",
     )
-    dojo = DojoEntrada(nome=" Academia Central ", cidade=" Curitiba ")
     faixa = FaixaEntrada(nome=" Azul ", tipo=" Kyu ", ordem=4)
-    turma = TurmaEntrada(nome=" Adultos ", dojo_id=3)
+    turma = TurmaEntrada(nome=" Adultos ")
 
     assert (atividade.tipo, atividade.nome, atividade.local, atividade.descricao) == (
         "frequência",
@@ -44,7 +54,6 @@ def test_schemas_normalizam_textos_de_entrada():
     assert anexo.nome_arquivo == "regulamento.pdf"
     assert anexo.arquivo_url == "https://cdn.exemplo.com/regulamento.pdf"
     assert anexo.link == "https://exemplo.com/regulamento"
-    assert (dojo.nome, dojo.cidade) == ("Academia Central", "Curitiba")
     assert (faixa.nome, faixa.tipo) == ("Azul", "Kyu")
     assert turma.nome == "Adultos"
 
@@ -62,9 +71,8 @@ def test_schemas_normalizam_textos_de_entrada():
             {"titulo": "x", "categoria": "Fichas"},
             "titulo",
         ),
-        (DojoEntrada, {"nome": "x"}, "nome"),
         (FaixaEntrada, {"nome": "x", "tipo": "Kyu"}, "nome"),
-        (TurmaEntrada, {"nome": "x", "dojo_id": 3}, "nome"),
+        (TurmaEntrada, {"nome": "x"}, "nome"),
     ],
 )
 def test_schemas_rejeitam_textos_com_menos_de_dois_caracteres(schema, dados, campo):
@@ -77,9 +85,8 @@ def test_schemas_rejeitam_textos_com_menos_de_dois_caracteres(schema, dados, cam
 def test_schemas_de_atualizacao_preservam_none_e_normalizam_texto():
     atividade = AtividadeAtualizar(tipo=None, nome=None, local=None, descricao=" Nota ")
     anexo = AnexoAtualizar(titulo=None, categoria=None, descricao=" Documento ")
-    dojo = DojoAtualizar(nome=None, cidade=None)
     faixa = FaixaAtualizar(nome=None, tipo=None, ordem=None)
-    turma = TurmaAtualizar(nome=None, dojo_id=None, professor_id=None)
+    turma = TurmaAtualizar(nome=None)
 
     assert (atividade.tipo, atividade.nome, atividade.local, atividade.descricao) == (
         None,
@@ -88,6 +95,5 @@ def test_schemas_de_atualizacao_preservam_none_e_normalizam_texto():
         "Nota",
     )
     assert (anexo.titulo, anexo.categoria, anexo.descricao) == (None, None, "Documento")
-    assert (dojo.nome, dojo.cidade) == (None, None)
     assert (faixa.nome, faixa.tipo, faixa.ordem) == (None, None, None)
-    assert (turma.nome, turma.dojo_id, turma.professor_id) == (None, None, None)
+    assert turma.nome is None

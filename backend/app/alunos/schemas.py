@@ -5,26 +5,30 @@ from pydantic import BaseModel, Field
 class AlunoCriar(BaseModel):
 
     nome: str = Field(min_length=2)
-    cpf: str = Field(min_length=11)
+    cpf: str | None = None
     data_nascimento: date | None = None
     faixa_id: int
-    turma: str | None = Field(default=None, min_length=2)
-    tamanho_kimono: str = Field(min_length=2)
-    tamanho_faixa: str = Field(min_length=1)
-    codigo_zempo: str = Field(min_length=2)
+    proxima_faixa: str | None = None
+    turma_id: int | None = None
+    turma: str | None = None
+    tamanho_kimono: str | None = None
+    tamanho_faixa: str | None = None
+    codigo_zempo: str | None = None
 
 
 class AlunoPublico(BaseModel):
 
     id: int
     nome: str
-    cpf: str
+    cpf: str | None
     data_nascimento: date | None = None
     faixa_id: int
+    proxima_faixa: str | None = None
+    turma_id: int | None = None
     turma: str | None
-    tamanho_kimono: str
-    tamanho_faixa: str
-    codigo_zempo: str
+    tamanho_kimono: str | None
+    tamanho_faixa: str | None
+    codigo_zempo: str | None
 
 
 class AlunoAtualizar(BaseModel):
@@ -33,6 +37,8 @@ class AlunoAtualizar(BaseModel):
     cpf: str | None = None
     data_nascimento: date | None = None
     faixa_id: int | None = None
+    proxima_faixa: str | None = None
+    turma_id: int | None = None
     turma: str | None = None
     tamanho_kimono: str | None = None
     tamanho_faixa: str | None = None
