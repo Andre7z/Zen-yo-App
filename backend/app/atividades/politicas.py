@@ -57,10 +57,11 @@ class RelatorioEntregaKimono(EstrategiaRelatorio):
 
 class RelatorioFrequencia(EstrategiaRelatorio):
     def gerar(self, atividade):
+        alunos_presentes = set(getattr(atividade, "aluno_ids_pagos", []) or [])
         return [
             {
                 "aluno": aluno.nome,
-                "presenca": atividade.presenca,
+                "presenca": aluno.id in alunos_presentes,
                 "data": atividade.data,
             }
             for aluno in _alunos_da_atividade(atividade)

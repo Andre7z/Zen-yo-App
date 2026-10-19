@@ -3,8 +3,8 @@ from app.faixas.schemas import FaixaEntrada
 
 
 def test_faixa_aceita_tipo_kyu_e_dan():
-    faixa_kyu = FaixaEntrada(nome="Azul", tipo="Kyu", ordem=4)
-    faixa_dan = FaixaEntrada(nome="Preta", tipo="Dan", ordem=9)
+    faixa_kyu = FaixaEntrada(nome="Azul", tipo="Kyu", grau=4)
+    faixa_dan = FaixaEntrada(nome="Preta", tipo="Dan", grau=9)
 
     assert faixa_kyu.tipo == "Kyu"
     assert faixa_dan.tipo == "Dan"

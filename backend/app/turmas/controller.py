@@ -21,7 +21,7 @@ def listar(
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return service.listar(db)
+    return service.listar(db, usuario)
 
 
 @router.post("/", response_model=TurmaPublico, status_code=201)
@@ -31,7 +31,7 @@ def criar(
     db: Session = Depends(get_db),
     facade: TurmaFacade = Depends(obter_facade),
 ):
-    return facade.criar(db, dados.model_dump())
+    return facade.criar(db, usuario, dados.model_dump())
 
 
 @router.get("/{turma_id}", response_model=TurmaPublico)
@@ -40,7 +40,7 @@ def buscar(
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return service.buscar(db, turma_id)
+    return service.buscar(db, usuario, turma_id)
 
 
 @router.patch("/{turma_id}", response_model=TurmaPublico)
@@ -53,6 +53,7 @@ def atualizar(
 ):
     return facade.atualizar(
         db,
+        usuario,
         turma_id,
         dados.model_dump(exclude_unset=True),
     )
@@ -64,4 +65,4 @@ def apagar(
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    service.apagar(db, turma_id)
+    service.apagar(db, usuario, turma_id)

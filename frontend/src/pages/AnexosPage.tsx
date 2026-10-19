@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Download, ExternalLink, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
+import { ModalDetalhes } from '../components/ModalDetalhes'
 import { useRecurso } from '../hooks/use-recurso'
 import { anexosApi, type Anexo } from '../servicos/dominio'
 import { baixarArquivo } from '../api'
@@ -12,6 +13,7 @@ export function AnexosPage() {
   const recurso = useRecurso(anexosApi)
   const [dados, setDados] = useState<DadosAnexo>(vazio)
   const [editando, setEditando] = useState<number | null>(null)
+  const [visualizando, setVisualizando] = useState<Anexo | null>(null)
   const [formAberto, setFormAberto] = useState(false)
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [erroArquivo, setErroArquivo] = useState('')
@@ -80,7 +82,20 @@ export function AnexosPage() {
         <CampoModulo rotulo="Link externo"><input type="url" maxLength={500} value={dados.link} onChange={(event) => setDados({ ...dados, link: event.target.value })} /></CampoModulo>
         <CampoModulo rotulo="Descrição"><textarea rows={3} value={dados.descricao} onChange={(event) => setDados({ ...dados, descricao: event.target.value })} /></CampoModulo>
       </div><div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando}>{recurso.salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Cadastrar anexo'}</button><button className="module-secondary" type="button" onClick={() => setFormAberto(false)}>Cancelar</button></div></form>}
-      <div className="module-list" aria-label="Lista de anexos">{recurso.itens.map((anexo) => <article className="module-record" key={anexo.id}><div className="record-main"><strong>{anexo.titulo}</strong><span>{anexo.categoria} · {anexo.nome_arquivo ?? 'Link de referência'}{anexo.criado_em ? ` · ${anexo.criado_em}` : ''}</span>{anexo.descricao && <p>{anexo.descricao}</p>}</div><div className="record-actions">{anexo.arquivo_url?.startsWith('/anexos/arquivos/') && <BotaoIcone label={`Baixar ${anexo.titulo}`} onClick={() => void baixar(anexo)}><Download size={16} /></BotaoIcone>}{anexo.link && <a className="icon-action" href={anexo.link} target="_blank" rel="noreferrer" aria-label={`Abrir ${anexo.titulo}`} title={`Abrir ${anexo.titulo}`}><ExternalLink size={16} /></a>}{anexo.arquivo_url && !anexo.arquivo_url.startsWith('/anexos/arquivos/') && <a className="icon-action" href={anexo.arquivo_url} target="_blank" rel="noreferrer" aria-label={`Abrir arquivo ${anexo.titulo}`} title={`Abrir arquivo ${anexo.titulo}`}><ExternalLink size={16} /></a>}<BotaoIcone label={`Editar ${anexo.titulo}`} onClick={() => iniciarEdicao(anexo)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${anexo.titulo}`} onClick={() => void apagar(anexo)}><Trash2 size={16} /></BotaoIcone></div></article>)}{!recurso.itens.length && <p className="module-empty">Nenhum anexo cadastrado.</p>}</div>
+      {visualizando && <ModalDetalhes titulo={visualizando.titulo} aoFechar={() => setVisualizando(null)}>
+        <dl className="module-details">
+          <div><dt>Categoria</dt><dd>{visualizando.categoria}</dd></div>
+          <div><dt>Arquivo</dt><dd>{visualizando.nome_arquivo ?? 'Não informado'}</dd></div>
+          <div><dt>Data de cadastro</dt><dd>{visualizando.criado_em || 'Não informada'}</dd></div>
+          <div><dt>Descrição</dt><dd>{visualizando.descricao ?? 'Sem descrição'}</dd></div>
+          <div><dt>Link</dt><dd>{visualizando.link ? <a href={visualizando.link} target="_blank" rel="noreferrer">{visualizando.link}</a> : 'Não informado'}</dd></div>
+        </dl>
+        <div className="module-form-actions">
+          {visualizando.arquivo_url?.startsWith('/anexos/arquivos/') && <button className="module-secondary" type="button" onClick={() => void baixar(visualizando)}><Download size={16} />Baixar arquivo</button>}
+          <button className="module-primary" type="button" onClick={() => { setVisualizando(null); iniciarEdicao(visualizando) }}><Pencil size={16} />Editar</button>
+        </div>
+      </ModalDetalhes>}
+      <div className="module-list" aria-label="Lista de anexos">{recurso.itens.map((anexo) => <article className="module-record" key={anexo.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${anexo.titulo}`} onClick={() => setVisualizando(anexo)}><strong>{anexo.titulo}</strong><span>{anexo.categoria} · {anexo.nome_arquivo ?? 'Link de referência'}{anexo.criado_em ? ` · ${anexo.criado_em}` : ''}</span>{anexo.descricao && <p>{anexo.descricao}</p>}</button><div className="record-actions">{anexo.arquivo_url?.startsWith('/anexos/arquivos/') && <BotaoIcone label={`Baixar ${anexo.titulo}`} onClick={() => void baixar(anexo)}><Download size={16} /></BotaoIcone>}{anexo.link && <a className="icon-action" href={anexo.link} target="_blank" rel="noreferrer" aria-label={`Abrir ${anexo.titulo}`} title={`Abrir ${anexo.titulo}`}><ExternalLink size={16} /></a>}{anexo.arquivo_url && !anexo.arquivo_url.startsWith('/anexos/arquivos/') && <a className="icon-action" href={anexo.arquivo_url} target="_blank" rel="noreferrer" aria-label={`Abrir arquivo ${anexo.titulo}`} title={`Abrir arquivo ${anexo.titulo}`}><ExternalLink size={16} /></a>}<BotaoIcone label={`Editar ${anexo.titulo}`} onClick={() => iniciarEdicao(anexo)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${anexo.titulo}`} onClick={() => void apagar(anexo)}><Trash2 size={16} /></BotaoIcone></div></article>)}{!recurso.itens.length && <p className="module-empty">Nenhum anexo cadastrado.</p>}</div>
     </PaginaModulo>
   )
 }

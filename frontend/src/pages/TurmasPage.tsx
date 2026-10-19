@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
+import { ModalDetalhes } from '../components/ModalDetalhes'
 import { useRecurso } from '../hooks/use-recurso'
 import { alunosApi, turmasApi, type Aluno, type Turma } from '../servicos/dominio'
 import { ROTAS } from '../routes'
@@ -15,6 +16,7 @@ export function TurmasPage() {
   const [erroAlunos, setErroAlunos] = useState('')
   const [dados, setDados] = useState<DadosTurma>(vazio)
   const [editando, setEditando] = useState<number | null>(null)
+  const [visualizando, setVisualizando] = useState<Turma | null>(null)
   const [formAberto, setFormAberto] = useState(false)
 
   useEffect(() => {
@@ -53,9 +55,13 @@ export function TurmasPage() {
       {formAberto && <form className="module-form" onSubmit={salvar}><div className="module-form-heading"><h2>{editando ? 'Editar turma' : 'Nova turma'}</h2></div><div className="module-form-grid">
         <CampoModulo rotulo="Nome da turma"><input required minLength={2} value={dados.nome} onChange={(event) => setDados({ ...dados, nome: event.target.value })} /></CampoModulo>
       </div><div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando}>{recurso.salvando ? 'Salvando...' : 'Salvar turma'}</button><button className="module-secondary" type="button" onClick={() => setFormAberto(false)}>Cancelar</button></div></form>}
+      {visualizando && <ModalDetalhes titulo={visualizando.nome} aoFechar={() => setVisualizando(null)}>
+        <dl className="module-details"><div><dt>Alunos</dt><dd>{alunos.filter((aluno) => aluno.turma_id === visualizando.id || (aluno.turma_id === null && aluno.turma === visualizando.nome)).length}</dd></div></dl>
+        <div className="module-form-actions"><Link className="module-primary" to={ROTAS.turmaAlunos.replace(':turmaId', String(visualizando.id))}>Gerenciar alunos</Link></div>
+      </ModalDetalhes>}
       <div className="module-list" aria-label="Lista de turmas">{recurso.itens.map((turma) => {
         const totalAlunos = alunos.filter((aluno) => aluno.turma_id === turma.id || (aluno.turma_id === null && aluno.turma === turma.nome)).length
-        return <article className="module-record" key={turma.id}><div className="record-main"><strong>{turma.nome}</strong><span>{totalAlunos} {totalAlunos === 1 ? 'aluno' : 'alunos'}</span></div><div className="record-actions"><Link className="module-secondary" to={ROTAS.turmaAlunos.replace(':turmaId', String(turma.id))}>Gerenciar alunos</Link><BotaoIcone label={`Editar ${turma.nome}`} onClick={() => iniciarEdicao(turma)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={totalAlunos ? `Exclua os alunos antes de excluir ${turma.nome}` : `Excluir ${turma.nome}`} disabled={totalAlunos > 0} onClick={() => void apagar(turma)}><Trash2 size={16} /></BotaoIcone></div></article>
+        return <article className="module-record" key={turma.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${turma.nome}`} onClick={() => setVisualizando(turma)}><strong>{turma.nome}</strong><span>{totalAlunos} {totalAlunos === 1 ? 'aluno' : 'alunos'}</span></button><div className="record-actions"><Link className="module-secondary" to={ROTAS.turmaAlunos.replace(':turmaId', String(turma.id))}>Gerenciar alunos</Link><BotaoIcone label={`Editar ${turma.nome}`} onClick={() => iniciarEdicao(turma)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={totalAlunos ? `Exclua os alunos antes de excluir ${turma.nome}` : `Excluir ${turma.nome}`} disabled={totalAlunos > 0} onClick={() => void apagar(turma)}><Trash2 size={16} /></BotaoIcone></div></article>
       })}{!recurso.itens.length && <p className="module-empty">Nenhuma turma cadastrada.</p>}</div>
     </PaginaModulo>
   )

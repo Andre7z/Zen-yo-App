@@ -8,12 +8,15 @@ export function FaixasPage() {
     rotuloNovo="Nova faixa"
     entidade="faixa"
     kicker="CONFIGURAÇÃO"
-    descricao="Mantenha a ordem e a classificação das graduações do judô."
+    descricao="Graduações do judô, ordenadas automaticamente: Iniciante, Kyu (decrescente) e Dan (crescente)."
     campos={[
       { nome: 'nome', rotulo: 'Nome da faixa' },
-      { nome: 'tipo', rotulo: 'Classificação', tipo: 'selecao', opcoes: [{ valor: 'Kyu', rotulo: 'Kyu' }, { valor: 'Dan', rotulo: 'Dan' }] },
-      { nome: 'ordem', rotulo: 'Ordem', tipo: 'numero' },
+      { nome: 'tipo', rotulo: 'Classificação', tipo: 'selecao', opcoes: [{ valor: 'Iniciante', rotulo: 'Iniciante' }, { valor: 'Kyu', rotulo: 'Kyu' }, { valor: 'Dan', rotulo: 'Dan' }] },
+      { nome: 'grau', rotulo: 'Número do Kyu/Dan', tipo: 'numero', obrigatorio: false },
     ]}
-    colunas={[{ rotulo: 'Nome', valor: (faixa) => faixa.nome }, { rotulo: 'Tipo', valor: (faixa) => faixa.tipo }, { rotulo: 'Ordem', valor: (faixa) => String(faixa.ordem) }]}
+    colunas={[
+      { rotulo: 'Nome', valor: (faixa) => faixa.nome },
+      { rotulo: 'Graduação', valor: (faixa) => faixa.grau ? `${faixa.grau}º ${faixa.tipo}` : faixa.tipo },
+    ]}
   />
 }

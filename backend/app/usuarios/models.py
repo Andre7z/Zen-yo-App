@@ -22,7 +22,7 @@ class Usuario(Base):
     # coluna nenhuma -- a chave estrangeira mora em livros.dono_id.
     atividades = relationship("Atividade", back_populates="dono")
     anexos = relationship("Anexo", back_populates="dono")
-    turmas = relationship("Turma", back_populates="professor")
+    turmas = relationship("Turma", back_populates="professor", foreign_keys="Turma.professor_id")
 
 
 from ..anexos.models import Anexo  # noqa: E402

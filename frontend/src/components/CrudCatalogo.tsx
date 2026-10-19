@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { BotaoIcone, CampoModulo, PaginaModulo } from './PaginaModulo'
+import { ModalDetalhes } from './ModalDetalhes'
 import { useRecurso } from '../hooks/use-recurso'
 import type { Identificado } from '../servicos/dominio'
 
@@ -30,9 +31,10 @@ type Props<T extends Identificado> = {
 
 export function CrudCatalogo<T extends Identificado>({ api, campos, titulo, rotuloNovo, entidade, kicker, descricao, colunas }: Props<T>) {
   const recurso = useRecurso(api)
-  const valoresIniciais = Object.fromEntries(campos.map((campo) => [campo.nome, campo.tipo === 'numero' ? '1' : '']))
+  const valoresIniciais = Object.fromEntries(campos.map((campo) => [campo.nome, campo.tipo === 'numero' && campo.obrigatorio !== false ? '1' : '']))
   const [valores, setValores] = useState<Record<string, string>>(valoresIniciais)
   const [editando, setEditando] = useState<T | null>(null)
+  const [visualizando, setVisualizando] = useState<T | null>(null)
   const [aberto, setAberto] = useState(false)
 
   function editar(item: T) {
@@ -45,7 +47,7 @@ export function CrudCatalogo<T extends Identificado>({ api, campos, titulo, rotu
     event.preventDefault()
     const payload = Object.fromEntries(campos.map((campo) => {
       const valor = valores[campo.nome].trim()
-      return [campo.nome, campo.tipo === 'numero' ? Number(valor) : valor || (campo.obrigatorio === false ? null : '')]
+      return [campo.nome, campo.tipo === 'numero' ? (valor || campo.obrigatorio !== false ? Number(valor) : null) : valor || (campo.obrigatorio === false ? null : '')]
     }))
     const sucesso = await recurso.executar(() => editando
       ? api.atualizar(editando.id, payload)
@@ -66,7 +68,14 @@ export function CrudCatalogo<T extends Identificado>({ api, campos, titulo, rotu
     <PaginaModulo kicker={kicker} titulo={titulo} descricao={descricao} carregando={recurso.carregando} erro={recurso.erro} recarregar={() => { void recurso.carregar() }}>
       <div className="module-toolbar"><p>{recurso.itens.length} registros</p><button className="module-primary" type="button" onClick={() => { setValores(valoresIniciais); setEditando(null); setAberto((atual) => !atual) }}>{aberto ? <X size={16} /> : <Plus size={16} />}{aberto ? 'Fechar formulário' : rotuloNovo}</button></div>
       {aberto && <form className="module-form" onSubmit={salvar}><div className="module-form-heading"><h2>{editando ? `Editar ${entidade}` : rotuloNovo}</h2></div><div className="module-form-grid">{campos.map((campo) => <CampoModulo key={campo.nome} rotulo={campo.rotulo}><CampoControle campo={campo} valor={valores[campo.nome]} alterar={(valor) => setValores({ ...valores, [campo.nome]: valor })} /></CampoModulo>)}</div><div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando}>{recurso.salvando ? 'Salvando...' : 'Salvar'}</button><button className="module-secondary" type="button" onClick={() => setAberto(false)}>Cancelar</button></div></form>}
-      <div className="module-list" aria-label={`Lista: ${titulo}`}>{recurso.itens.map((item) => <article className="module-record" key={item.id}><div className="record-main"><strong>{colunas[0]?.valor(item) ?? `#${item.id}`}</strong><span>{colunas.slice(1).map((coluna) => `${coluna.rotulo}: ${coluna.valor(item)}`).join(' · ')}</span></div><div className="record-actions"><BotaoIcone label={`Editar ${colunas[0]?.valor(item) ?? item.id}`} onClick={() => editar(item)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${colunas[0]?.valor(item) ?? item.id}`} onClick={() => void apagar(item)}><Trash2 size={16} /></BotaoIcone></div></article>)}{!recurso.itens.length && <p className="module-empty">Nenhum registro cadastrado.</p>}</div>
+      {visualizando && <ModalDetalhes titulo={colunas[0]?.valor(visualizando) ?? `#${visualizando.id}`} aoFechar={() => setVisualizando(null)}>
+        <dl className="module-details">{colunas.map((coluna) => <div key={coluna.rotulo}><dt>{coluna.rotulo}</dt><dd>{coluna.valor(visualizando)}</dd></div>)}</dl>
+        <div className="module-form-actions"><button className="module-primary" type="button" onClick={() => { setVisualizando(null); editar(visualizando) }}><Pencil size={16} />Editar</button></div>
+      </ModalDetalhes>}
+      <div className="module-list" aria-label={`Lista: ${titulo}`}>{recurso.itens.map((item) => {
+        const nome = colunas[0]?.valor(item) ?? `#${item.id}`
+        return <article className="module-record" key={item.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${nome}`} onClick={() => setVisualizando(item)}><strong>{nome}</strong><span>{colunas.slice(1).map((coluna) => `${coluna.rotulo}: ${coluna.valor(item)}`).join(' · ')}</span></button><div className="record-actions"><BotaoIcone label={`Editar ${nome}`} onClick={() => editar(item)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${nome}`} onClick={() => void apagar(item)}><Trash2 size={16} /></BotaoIcone></div></article>
+      })}{!recurso.itens.length && <p className="module-empty">Nenhum registro cadastrado.</p>}</div>
     </PaginaModulo>
   )
 }

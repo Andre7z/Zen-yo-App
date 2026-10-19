@@ -4,6 +4,7 @@ Nenhum HTTP, nenhum SQL e nenhum JWT aqui: o hash e o token vem de
 app/seguranca.py; a consulta vem do repository. O service so' decide.
 """
 from .. import seguranca
+from ..faixas import service as faixas_service
 from . import repository
 from .erros import CredenciaisInvalidas, EmailJaCadastrado
 
@@ -20,7 +21,9 @@ def cadastrar(db, dados):
     # A senha em texto chega ate' aqui e NAO passa deste ponto: o que vai
     # para o banco e' o hash.
     senha = dados.pop("senha")
-    return repository.criar(db, {**dados, "senha_hash": seguranca.gerar_hash(senha)})
+    usuario = repository.criar(db, {**dados, "senha_hash": seguranca.gerar_hash(senha)})
+    faixas_service.semear_padrao(db, usuario)
+    return usuario
 
 
 def autenticar(db, email, senha):

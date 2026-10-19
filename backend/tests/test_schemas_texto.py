@@ -37,7 +37,7 @@ def test_schemas_normalizam_textos_de_entrada():
         arquivo_url=" https://cdn.exemplo.com/regulamento.pdf ",
         link=" https://exemplo.com/regulamento ",
     )
-    faixa = FaixaEntrada(nome=" Azul ", tipo=" Kyu ", ordem=4)
+    faixa = FaixaEntrada(nome=" Azul ", tipo=" Kyu ")
     turma = TurmaEntrada(nome=" Adultos ")
 
     assert (atividade.tipo, atividade.nome, atividade.local, atividade.descricao) == (
@@ -85,7 +85,7 @@ def test_schemas_rejeitam_textos_com_menos_de_dois_caracteres(schema, dados, cam
 def test_schemas_de_atualizacao_preservam_none_e_normalizam_texto():
     atividade = AtividadeAtualizar(tipo=None, nome=None, local=None, descricao=" Nota ")
     anexo = AnexoAtualizar(titulo=None, categoria=None, descricao=" Documento ")
-    faixa = FaixaAtualizar(nome=None, tipo=None, ordem=None)
+    faixa = FaixaAtualizar(nome=None, tipo=None)
     turma = TurmaAtualizar(nome=None)
 
     assert (atividade.tipo, atividade.nome, atividade.local, atividade.descricao) == (
@@ -95,5 +95,5 @@ def test_schemas_de_atualizacao_preservam_none_e_normalizam_texto():
         "Nota",
     )
     assert (anexo.titulo, anexo.categoria, anexo.descricao) == (None, None, "Documento")
-    assert (faixa.nome, faixa.tipo, faixa.ordem) == (None, None, None)
+    assert (faixa.nome, faixa.tipo) == (None, None)
     assert turma.nome is None

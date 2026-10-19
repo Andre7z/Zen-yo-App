@@ -6,19 +6,23 @@ from .models import Aluno
 # Se aparecer um `db.query` fora daqui, a camada vazou.
 
 
-def listar(db: Session):
-    return db.query(Aluno).all()
+def listar(db: Session, dono_id: int):
+    return db.query(Aluno).filter(Aluno.dono_id == dono_id).all()
 
 
 def buscar(db: Session, aluno_id: int):
     return db.query(Aluno).filter(Aluno.id == aluno_id).first()
 
 
-def buscar_por_ids(db: Session, aluno_ids: list[int]):
+def buscar_por_ids(db: Session, dono_id: int, aluno_ids: list[int]):
     if not aluno_ids:
         return []
 
-    return db.query(Aluno).filter(Aluno.id.in_(aluno_ids)).all()
+    return (
+        db.query(Aluno)
+        .filter(Aluno.dono_id == dono_id, Aluno.id.in_(aluno_ids))
+        .all()
+    )
 
 
 def criar(db: Session, dados: dict):
