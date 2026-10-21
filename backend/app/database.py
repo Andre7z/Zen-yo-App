@@ -10,6 +10,11 @@ load_dotenv()
 # sobe apontando para o banco errado - ela reclama na hora de subir.
 URL = os.environ["DATABASE_URL"]
 
+if URL.startswith("postgres://"):
+    URL = URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif URL.startswith("postgresql://"):
+    URL = URL.replace("postgresql://", "postgresql+psycopg://", 1)
+
 # O SQLite recusa ser usado de uma thread diferente da que abriu a
 # conexao, e o FastAPI atende cada rota sincrona numa thread do pool.
 # Esta e a UNICA linha do projeto que sabe qual banco esta' rodando -
