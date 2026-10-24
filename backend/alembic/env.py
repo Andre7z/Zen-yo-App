@@ -22,7 +22,16 @@ config = context.config
 # A URL vem do .env, o mesmo que a aplicacao usa. (O `%` dobrado e' porque o
 # arquivo .ini trata `%` como caractere especial.)
 load_dotenv()
-config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL"].replace("%", "%%"))
+url = os.environ["DATABASE_URL"]
+
+if url.startswith("postgres://"):
+    url = url.replace("postgres://", "postgresql+psycopg://", 1)
+elif url.startswith("postgresql://"):
+    url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+elif url.startswith("postgresql+psycopg2://"):
+    url = url.replace("postgresql+psycopg2://", "postgresql+psycopg://", 1)
+
+config.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

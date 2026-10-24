@@ -11,7 +11,7 @@ from openpyxl.utils import get_column_letter
 from ._estilo_xlsx import AMARELO, AZUL, BORDA, CENTRO, ESQUERDA, NEGRITO, NORMAL
 
 TITULO = "CONTROLE DE ENTREGA DE KIMONOS"
-TAMANHOS = ["PP", "P", "N2", "M", "G", "N4", "GG"]
+TAMANHOS = ["M00", "M0", "M1", "M2", "M3", "A0", "A1", "A2", "A4","A5"]
 SEM_TURMA = "SEM TURMA"
 LINHAS_MINIMAS = 14
 
