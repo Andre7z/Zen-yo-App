@@ -10,7 +10,7 @@ o repository, que e quem sabe o que fazer com ele.
 Cada usuario enxerga e altera somente as suas proprias atividades.
 """
 
-from . import controle_faixas, controle_frequencia, controle_kimonos, repository
+from . import controle_campeonato, controle_faixas, controle_frequencia, controle_kimonos, repository
 from .erros import AtividadeNaoEncontrada, TipoDeAtividadeDesconhecido
 from .politicas import RelatorioFactory
 
@@ -120,6 +120,25 @@ def controle_de_kimonos(db, usuario, atividade_id):
 def controle_de_kimonos_xlsx(db, usuario, atividade_id):
     _, alunos = _atividade_de_entrega_kimono(db, usuario, atividade_id)
     return controle_kimonos.gerar_xlsx(alunos)
+
+
+def _atividade_de_campeonato(db, usuario, atividade_id):
+    atividade = buscar(db, usuario, atividade_id)
+    if atividade.tipo != "campeonato":
+        raise TipoDeAtividadeDesconhecido(
+            "O controle de campeonato so existe para atividades de campeonato"
+        )
+    return atividade, list(atividade.alunos)
+
+
+def controle_de_campeonato(db, usuario, atividade_id):
+    _, alunos = _atividade_de_campeonato(db, usuario, atividade_id)
+    return controle_campeonato.gerar_relatorio(alunos)
+
+
+def controle_de_campeonato_xlsx(db, usuario, atividade_id):
+    _, alunos = _atividade_de_campeonato(db, usuario, atividade_id)
+    return controle_campeonato.gerar_xlsx(alunos)
 
 
 def _atividade_de_frequencia(db, usuario, atividade_id):

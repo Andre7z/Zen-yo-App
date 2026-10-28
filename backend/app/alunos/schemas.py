@@ -15,6 +15,10 @@ class AlunoCriar(BaseModel):
     tamanho_faixa: str | None = None
     faixa_grossa: bool = False
     codigo_zempo: str | None = None
+    peso: float | None = Field(default=None, gt=0, le=500)
+    responsavel_nome: str | None = None
+    responsavel_cpf: str | None = None
+    responsavel_celular: str | None = None
 
 
 class AlunoPublico(BaseModel):
@@ -31,6 +35,10 @@ class AlunoPublico(BaseModel):
     tamanho_faixa: str | None
     faixa_grossa: bool = False
     codigo_zempo: str | None
+    peso: float | None = None
+    responsavel_nome: str | None = None
+    responsavel_cpf: str | None = None
+    responsavel_celular: str | None = None
 
 
 class AlunoAtualizar(BaseModel):
@@ -46,3 +54,7 @@ class AlunoAtualizar(BaseModel):
     tamanho_faixa: str | None = None
     faixa_grossa: bool | None = None
     codigo_zempo: str | None = None
+    peso: float | None = Field(default=None, gt=0, le=500)
+    responsavel_nome: str | None = None
+    responsavel_cpf: str | None = None
+    responsavel_celular: str | None = None

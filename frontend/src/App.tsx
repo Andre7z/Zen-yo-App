@@ -6,7 +6,6 @@ import { PerfilPage } from './pages/PerfilPage'
 import { AlunosPage } from './pages/AlunosPage'
 import { AtividadesPage } from './pages/AtividadesPage'
 import { AnexosPage } from './pages/AnexosPage'
-import { CalendarioPage } from './pages/CalendarioPage'
 import { FaixasPage } from './pages/FaixasPage'
 import { TurmasPage } from './pages/TurmasPage'
 import { LayoutProtegido } from './components/LayoutProtegido'
@@ -28,10 +27,9 @@ function App() {
             <Route element={<LayoutProtegido />}>
               <Route path={ROTAS.inicio} element={<InicioPage />} />
               <Route path={ROTAS.perfil} element={<PerfilPage />} />
-              <Route path={ROTAS.alunos} element={<Navigate to={ROTAS.turmas} replace />} />
+              <Route path={ROTAS.alunos} element={<AlunosPage />} />
               <Route path={`${ROTAS.atividades}/*`} element={<AtividadesPage />} />
               <Route path={ROTAS.anexos} element={<AnexosPage />} />
-              <Route path={ROTAS.calendario} element={<CalendarioPage />} />
               <Route path={ROTAS.faixas} element={<FaixasPage />} />
               <Route path={ROTAS.turmas} element={<TurmasPage />} />
               <Route path={ROTAS.turmaAlunos} element={<AlunosPage />} />

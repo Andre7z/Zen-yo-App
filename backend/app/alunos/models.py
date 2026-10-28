@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Date, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import expression
 
@@ -27,6 +27,10 @@ class Aluno(Base):
     tamanho_faixa = Column(String(5), nullable=True)
     faixa_grossa = Column(Boolean, nullable=False, default=False, server_default=expression.false())
     codigo_zempo = Column(String(14), nullable=True)
+    peso = Column(Float, nullable=True)
+    responsavel_nome = Column(String(120), nullable=True)
+    responsavel_cpf = Column(String(14), nullable=True)
+    responsavel_celular = Column(String(20), nullable=True)
     dono_id = Column(Integer, ForeignKey("usuarios.id", name="fk_alunos_dono"), nullable=True)
 
     faixa_obj = relationship("Faixa", back_populates="alunos")

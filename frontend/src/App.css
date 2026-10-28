@@ -352,3 +352,14 @@
 .home-header .home-brand { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
 .home-header .logout-button { margin-left: auto; }
 
+
+/* Combos: largura confortável no celular, sem ocupar a tela toda nem ficar minúscula */
+.module-field > select { width: 100%; max-width: 320px; }
+@media (max-width: 700px) {
+  .module-field > select { width: min(100%, 260px); min-width: 180px; max-width: 260px; }
+  .activity-participant-fields .module-field { flex: 0 1 auto; }
+}
+.activity-participant-info { min-height: 38px; display: inline-flex; align-items: center; color: #344c3d; font-size: 12px; font-weight: 650; }
+.home-calendar { margin-top: 36px; }
+.home-calendar-title { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 16px; }
+.calendar-day > h3 { margin: 0 0 9px; color: #5e6b60; font-size: 11px; font-weight: 650; letter-spacing: 0; text-transform: capitalize; }

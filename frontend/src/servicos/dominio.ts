@@ -17,9 +17,15 @@ export type Aluno = Identificado & {
   tamanho_faixa: string | null
   faixa_grossa: boolean
   codigo_zempo: string | null
+  peso: number | null
+  responsavel_nome: string | null
+  responsavel_cpf: string | null
+  responsavel_celular: string | null
 }
+export const TAMANHOS_KIMONO = ['M00', 'M0', 'M1', 'M2', 'M3', 'A0', 'A1', 'A2', 'A4', 'A5']
+export const TAMANHOS_FAIXA = ['PP', 'P', 'N2', 'M', 'G', 'N4', 'GG']
 export type Atividade = Identificado & {
-  tipo: 'frequencia' | 'entrega_de_kimono' | 'troca_de_faixa'
+  tipo: 'frequencia' | 'entrega_de_kimono' | 'troca_de_faixa' | 'campeonato'
   nome: string
   data: string
   local: string | null
@@ -83,6 +89,7 @@ const RELATORIOS_XLSX_POR_TIPO: Record<string, string> = {
   troca_de_faixa: 'controle-de-faixas',
   entrega_de_kimono: 'controle-de-kimonos',
   frequencia: 'controle-de-frequencia',
+  campeonato: 'controle-de-campeonato',
 }
 
 export function caminhoRelatorioXlsx(tipo: string, id: number) {

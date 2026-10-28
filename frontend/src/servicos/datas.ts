@@ -17,6 +17,15 @@ export function converterDataParaIso(value: string) {
   return `${partes[3]}-${partes[2]}-${partes[1]}`
 }
 
+export function calcularIdade(dataNascimento: string | null) {
+  const partes = dataNascimento ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(dataNascimento) : null
+  if (!partes) return null
+  const hoje = new Date()
+  let idade = hoje.getFullYear() - Number(partes[1])
+  if (hoje.getMonth() + 1 < Number(partes[2]) || (hoje.getMonth() + 1 === Number(partes[2]) && hoje.getDate() < Number(partes[3]))) idade -= 1
+  return idade
+}
+
 export function dataAtualIso() {
   const hoje = new Date()
   const ano = hoje.getFullYear()
