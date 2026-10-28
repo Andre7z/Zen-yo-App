@@ -11,7 +11,6 @@ export const ROTAS = {
   novaAtividade: '/atividades/nova',
   detalheAtividade: '/atividades/:id',
   anexos: '/anexos',
-  calendario: '/calendario',
   faixas: '/faixas',
   turmas: '/turmas',
   turmaAlunos: '/turmas/:turmaId/alunos',

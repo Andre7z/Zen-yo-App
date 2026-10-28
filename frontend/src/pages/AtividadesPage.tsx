@@ -3,13 +3,14 @@ import { ArrowLeft, Award, FileText, Pencil, Plus, Trash2, X } from 'lucide-reac
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
 import { EntradaData } from '../components/EntradaData'
-import { converterDataParaIso, dataAtualIso, formatarDataParaEntrada } from '../servicos/datas'
+import { calcularIdade, converterDataParaIso, dataAtualIso, formatarDataParaEntrada } from '../servicos/datas'
 import { useRecurso } from '../hooks/use-recurso'
 import { baixarArquivo } from '../api'
-import { atividadesApi, alunosApi, caminhoRelatorioXlsx, faixasApi, rotuloFaixa, nomeArquivoRelatorioXlsx, turmasApi, type Aluno, type Atividade, type Faixa, type Turma } from '../servicos/dominio'
+import { atividadesApi, alunosApi, caminhoRelatorioXlsx, faixasApi, rotuloFaixa, nomeArquivoRelatorioXlsx, turmasApi, TAMANHOS_FAIXA, TAMANHOS_KIMONO, type Aluno, type Atividade, type Faixa, type Turma } from '../servicos/dominio'
 
 const vazio = { tipo: 'frequencia' as Atividade['tipo'], nome: '', data: formatarDataParaEntrada(dataAtualIso()), local: '', descricao: '', nova_faixa: '' }
 type DadosAtividade = typeof vazio
+type Rascunho = { proxima_faixa: string; tamanho_faixa: string; tamanho_kimono: string; faixa_grossa: boolean; peso: string }
 
 export function AtividadesPage() {
   const recurso = useRecurso(atividadesApi)
@@ -26,7 +27,7 @@ export function AtividadesPage() {
   const [graduando, setGraduando] = useState<number | null>(null)
   const [erroGraduacao, setErroGraduacao] = useState('')
   const [erroData, setErroData] = useState('')
-  const [rascunhos, setRascunhos] = useState<Record<number, { proxima_faixa: string; tamanho_faixa: string; tamanho_kimono: string; faixa_grossa: boolean }>>({})
+  const [rascunhos, setRascunhos] = useState<Record<number, Rascunho>>({})
   const [visualizando, setVisualizando] = useState<number | null>(null)
   const [editando, setEditando] = useState<number | null>(null)
   const [formAberto, setFormAberto] = useState(false)
@@ -59,12 +60,32 @@ export function AtividadesPage() {
     setFormAberto(true)
   }
 
-  function rascunhoDe(aluno: Aluno) {
-    return rascunhos[aluno.id] ?? { proxima_faixa: aluno.proxima_faixa ?? '', tamanho_faixa: aluno.tamanho_faixa ?? '', tamanho_kimono: aluno.tamanho_kimono ?? '', faixa_grossa: aluno.faixa_grossa ?? false }
+  function rascunhoDe(aluno: Aluno): Rascunho {
+    return rascunhos[aluno.id] ?? { proxima_faixa: aluno.proxima_faixa ?? '', tamanho_faixa: aluno.tamanho_faixa ?? '', tamanho_kimono: aluno.tamanho_kimono ?? '', faixa_grossa: aluno.faixa_grossa ?? false, peso: aluno.peso !== null && aluno.peso !== undefined ? String(aluno.peso).replace('.', ',') : '' }
   }
 
-  function alterarRascunho(aluno: Aluno, parcial: Partial<{ proxima_faixa: string; tamanho_faixa: string; tamanho_kimono: string; faixa_grossa: boolean }>) {
+  function alterarRascunho(aluno: Aluno, parcial: Partial<Rascunho>) {
     setRascunhos((atuais) => ({ ...atuais, [aluno.id]: { ...rascunhoDe(aluno), ...parcial } }))
+  }
+
+  async function salvarPeso(aluno: Aluno) {
+    const texto = rascunhoDe(aluno).peso.trim().replace(',', '.')
+    const peso = texto ? Number(texto) : null
+    if (peso !== null && (!Number.isFinite(peso) || peso <= 0 || peso > 500)) {
+      setErroGraduacao(`Informe um peso válido para ${aluno.nome}.`)
+      return
+    }
+    setErroGraduacao('')
+    setGraduando(aluno.id)
+    try {
+      const atualizado = await alunosApi.atualizar(aluno.id, { peso })
+      setAlunos((atuais) => atuais.map((item) => item.id === atualizado.id ? { ...item, ...atualizado } : item))
+      setRascunhos((atuais) => { const { [aluno.id]: _descartado, ...restantes } = atuais; return restantes })
+    } catch (falha) {
+      setErroGraduacao(falha instanceof Error ? falha.message : 'Não foi possível salvar o peso.')
+    } finally {
+      setGraduando(null)
+    }
   }
 
   async function salvarFaixaAluno(aluno: Aluno) {
@@ -72,7 +93,7 @@ export function AtividadesPage() {
     setErroGraduacao('')
     setGraduando(aluno.id)
     try {
-      const atualizado = await alunosApi.atualizar(aluno.id, { proxima_faixa: rascunho.proxima_faixa || null, tamanho_faixa: rascunho.tamanho_faixa.trim() || null, faixa_grossa: rascunho.faixa_grossa })
+      const atualizado = await alunosApi.atualizar(aluno.id, { proxima_faixa: rascunho.proxima_faixa || null,       tamanho_faixa: rascunho.tamanho_faixa || null, faixa_grossa: rascunho.faixa_grossa })
       setAlunos((atuais) => atuais.map((item) => item.id === atualizado.id ? { ...item, ...atualizado } : item))
       setRascunhos((atuais) => { const { [aluno.id]: _descartado, ...restantes } = atuais; return restantes })
     } catch (falha) {
@@ -86,7 +107,7 @@ export function AtividadesPage() {
     setErroGraduacao('')
     setGraduando(aluno.id)
     try {
-      const atualizado = await alunosApi.atualizar(aluno.id, { tamanho_kimono: rascunhoDe(aluno).tamanho_kimono.trim() || null })
+      const atualizado = await alunosApi.atualizar(aluno.id, { tamanho_kimono: rascunhoDe(aluno).tamanho_kimono || null })
       setAlunos((atuais) => atuais.map((item) => item.id === atualizado.id ? { ...item, ...atualizado } : item))
       setRascunhos((atuais) => { const { [aluno.id]: _descartado, ...restantes } = atuais; return restantes })
     } catch (falha) {
@@ -109,22 +130,31 @@ export function AtividadesPage() {
     if (sucesso) setSelecionandoAlunos(false)
   }
 
-  async function graduar(aluno: Aluno) {
-    const rascunho = rascunhoDe(aluno)
-    const faixa = faixas.find((item) => rotuloFaixa(item) === rascunho.proxima_faixa)
-    if (!faixa) {
-      setErroGraduacao(`Defina a próxima faixa de ${aluno.nome} antes de graduar.`)
+  async function graduarSelecionados(item: Atividade, participantes: Aluno[]) {
+    const selecionados = participantes.filter((aluno) => item.aluno_ids_pagos.includes(aluno.id))
+    if (!selecionados.length) {
+      setErroGraduacao('Selecione ao menos um aluno para graduar.')
       return
     }
-    if (!window.confirm(`Graduar ${aluno.nome} para a faixa ${rotuloFaixa(faixa)}?`)) return
+    const sem = selecionados.filter((aluno) => !faixas.some((faixa) => rotuloFaixa(faixa) === rascunhoDe(aluno).proxima_faixa))
+    if (sem.length) {
+      setErroGraduacao(`Defina a próxima faixa de ${sem.map((aluno) => aluno.nome).join(', ')} antes de graduar.`)
+      return
+    }
+    if (!window.confirm(`Graduar ${selecionados.length} ${selecionados.length === 1 ? 'aluno selecionado' : 'alunos selecionados'}?`)) return
     setErroGraduacao('')
-    setGraduando(aluno.id)
+    setGraduando(-1)
     try {
-      const atualizado = await alunosApi.atualizar(aluno.id, { faixa_id: faixa.id, proxima_faixa: null, tamanho_faixa: rascunho.tamanho_faixa.trim() || null, faixa_grossa: rascunho.faixa_grossa })
-      setAlunos((atuais) => atuais.map((item) => item.id === atualizado.id ? { ...item, ...atualizado } : item))
-      setRascunhos((atuais) => { const { [aluno.id]: _descartado, ...restantes } = atuais; return restantes })
+      for (const aluno of selecionados) {
+        const rascunho = rascunhoDe(aluno)
+        const faixa = faixas.find((f) => rotuloFaixa(f) === rascunho.proxima_faixa)
+        if (!faixa) continue
+        const atualizado = await alunosApi.atualizar(aluno.id, { faixa_id: faixa.id, proxima_faixa: null, tamanho_faixa: rascunho.tamanho_faixa || null, faixa_grossa: rascunho.faixa_grossa })
+        setAlunos((atuais) => atuais.map((outro) => outro.id === atualizado.id ? { ...outro, ...atualizado } : outro))
+        setRascunhos((atuais) => { const { [aluno.id]: _descartado, ...restantes } = atuais; return restantes })
+      }
     } catch (falha) {
-      setErroGraduacao(falha instanceof Error ? falha.message : 'Não foi possível graduar o aluno.')
+      setErroGraduacao(falha instanceof Error ? falha.message : 'Não foi possível graduar os alunos.')
     } finally {
       setGraduando(null)
     }
@@ -186,7 +216,7 @@ export function AtividadesPage() {
         <form className="module-form" onSubmit={salvar}>
           <div className="module-form-heading"><h2>{editando ? 'Editar atividade' : 'Nova atividade'}</h2></div>
           <div className="module-form-grid">
-            <CampoModulo rotulo="Tipo"><select value={dados.tipo} onChange={(event) => setDados({ ...dados, tipo: event.target.value as Atividade['tipo'] })}><option value="frequencia">Frequência</option><option value="entrega_de_kimono">Entrega de kimono</option><option value="troca_de_faixa">Troca de faixa</option></select></CampoModulo>
+            <CampoModulo rotulo="Tipo"><select value={dados.tipo} onChange={(event) => setDados({ ...dados, tipo: event.target.value as Atividade['tipo'] })}><option value="frequencia">Frequência</option><option value="entrega_de_kimono">Entrega de kimono</option><option value="troca_de_faixa">Troca de faixa</option><option value="campeonato">Campeonato</option></select></CampoModulo>
             <CampoModulo rotulo="Nome"><input required maxLength={120} value={dados.nome} onChange={(event) => setDados({ ...dados, nome: event.target.value })} /></CampoModulo>
             <CampoModulo rotulo="Data"><EntradaData required invalid={Boolean(erroData)} value={dados.data} onChange={(data) => { setErroData(''); setDados({ ...dados, data }) }} />{erroData && <small className="module-field-error" role="alert">{erroData}</small>}</CampoModulo>
             <CampoModulo rotulo="Local"><input value={dados.local} onChange={(event) => setDados({ ...dados, local: event.target.value })} /></CampoModulo>
@@ -249,22 +279,27 @@ export function AtividadesPage() {
                   const rascunho = rascunhoDe(aluno)
                   return <div className="activity-participant-row" key={aluno.id}>
                     <span className="activity-participant-name"><span>{aluno.nome} · {faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Faixa não informada'}</span></span>
-                    <label className="activity-payment"><input aria-label={item.tipo === 'frequencia' ? `Presença de ${aluno.nome}` : `Marcação de ${aluno.nome}`} title={item.tipo === 'frequencia' ? 'Presença do aluno' : 'Marcação do aluno'} type="checkbox" disabled={recurso.salvando} checked={item.aluno_ids_pagos.includes(aluno.id)} onChange={(event) => void alternarMarcacao(item, aluno.id, event.target.checked)} />{item.tipo === 'frequencia' ? 'Presente' : 'Marcado'}</label>
+                    <label className="activity-payment"><input aria-label={item.tipo === 'frequencia' ? `Presença de ${aluno.nome}` : `Marcação de ${aluno.nome}`} title={item.tipo === 'frequencia' ? 'Presença do aluno' : 'Marcação do aluno'} type="checkbox" disabled={recurso.salvando} checked={item.aluno_ids_pagos.includes(aluno.id)} onChange={(event) => void alternarMarcacao(item, aluno.id, event.target.checked)} />                    {item.tipo === 'frequencia' ? 'Presente' : item.tipo === 'troca_de_faixa' ? 'Selecionado' : 'Marcado'}</label>
                     {item.tipo === 'entrega_de_kimono' && <div className="activity-participant-fields">
-                      <CampoModulo rotulo="Tamanho do kimono"><input aria-label={`Tamanho do kimono de ${aluno.nome}`} value={rascunho.tamanho_kimono} onChange={(event) => alterarRascunho(aluno, { tamanho_kimono: event.target.value })} /></CampoModulo>
+                                          <CampoModulo rotulo="Tamanho do kimono"><select aria-label={`Tamanho do kimono de ${aluno.nome}`} value={rascunho.tamanho_kimono} onChange={(event) => alterarRascunho(aluno, { tamanho_kimono: event.target.value })}><option value="">Não definido</option>{TAMANHOS_KIMONO.map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
                       <button className="module-secondary" type="button" aria-label={`Salvar kimono de ${aluno.nome}`} disabled={graduando === aluno.id} onClick={() => void salvarKimono(aluno)}>Salvar</button>
                     </div>}
-                    {item.tipo === 'troca_de_faixa' && <div className="activity-participant-fields">
-                      <CampoModulo rotulo="Próxima faixa"><select aria-label={`Próxima faixa de ${aluno.nome}`} value={rascunho.proxima_faixa} onChange={(event) => alterarRascunho(aluno, { proxima_faixa: event.target.value })}><option value="">Não definida</option>{faixas.map((faixa) => <option key={faixa.id} value={rotuloFaixa(faixa)}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
-                      <CampoModulo rotulo="Tamanho da faixa"><input aria-label={`Tamanho da faixa de ${aluno.nome}`} value={rascunho.tamanho_faixa} onChange={(event) => alterarRascunho(aluno, { tamanho_faixa: event.target.value })} /></CampoModulo>
-                      <label className="activity-payment"><input aria-label={`Faixa grossa de ${aluno.nome}`} type="checkbox" checked={rascunho.faixa_grossa} onChange={(event) => alterarRascunho(aluno, { faixa_grossa: event.target.checked })} />Grossa</label>
-                      <button className="module-secondary" type="button" aria-label={`Salvar faixa de ${aluno.nome}`} disabled={graduando === aluno.id} onClick={() => void salvarFaixaAluno(aluno)}>Salvar</button>
-                      <button className="module-secondary" type="button" aria-label={`Graduar ${aluno.nome}`} disabled={!rascunho.proxima_faixa || graduando === aluno.id} onClick={() => void graduar(aluno)}><Award size={15} />Graduar</button>
-                                          </div>}
-                  </div>
-                })}
-                {!participantes.length && <small>Nenhum aluno associado à atividade.</small>}
-              </div>
+                                        {item.tipo === 'campeonato' && <div className="activity-participant-fields">
+                                          <span className="activity-participant-info">Idade: {calcularIdade(aluno.data_nascimento) ?? 'não informada'}</span>
+                                          <CampoModulo rotulo="Peso (kg)"><input aria-label={`Peso de ${aluno.nome}`} inputMode="decimal" value={rascunho.peso} onChange={(event) => alterarRascunho(aluno, { peso: event.target.value })} /></CampoModulo>
+                                          <button className="module-secondary" type="button" aria-label={`Salvar peso de ${aluno.nome}`} disabled={graduando === aluno.id} onClick={() => void salvarPeso(aluno)}>Salvar</button>
+                                        </div>}
+                                        {item.tipo === 'troca_de_faixa' && <div className="activity-participant-fields">
+                                          <CampoModulo rotulo="Próxima faixa"><select aria-label={`Próxima faixa de ${aluno.nome}`} value={rascunho.proxima_faixa} onChange={(event) => alterarRascunho(aluno, { proxima_faixa: event.target.value })}><option value="">Não definida</option>{faixas.map((faixa) => <option key={faixa.id} value={rotuloFaixa(faixa)}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
+                                          <CampoModulo rotulo="Tamanho da faixa"><select aria-label={`Tamanho da faixa de ${aluno.nome}`} value={rascunho.tamanho_faixa} onChange={(event) => alterarRascunho(aluno, { tamanho_faixa: event.target.value })}><option value="">Não definido</option>{TAMANHOS_FAIXA.map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
+                                          <label className="activity-payment"><input aria-label={`Faixa grossa de ${aluno.nome}`} type="checkbox" checked={rascunho.faixa_grossa} onChange={(event) => alterarRascunho(aluno, { faixa_grossa: event.target.checked })} />Grossa</label>
+                                          <button className="module-secondary" type="button" aria-label={`Salvar faixa de ${aluno.nome}`} disabled={graduando === aluno.id} onClick={() => void salvarFaixaAluno(aluno)}>Salvar</button>
+                                        </div>}
+                                      </div>
+                                    })}
+                                    {!participantes.length && <small>Nenhum aluno associado à atividade.</small>}
+                                  </div>
+                                  {item.tipo === 'troca_de_faixa' && <button className="module-primary" type="button" disabled={graduando !== null || !item.aluno_ids_pagos.some((id) => item.aluno_ids.includes(id))} onClick={() => void graduarSelecionados(item, participantes)}><Award size={15} />Graduar selecionados ({participantes.filter((aluno) => item.aluno_ids_pagos.includes(aluno.id)).length})</button>}
               {erroGraduacao && <small role="alert">{erroGraduacao}</small>}
             </fieldset>
             </>}

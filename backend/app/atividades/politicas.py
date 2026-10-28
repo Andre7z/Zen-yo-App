@@ -68,6 +68,19 @@ class RelatorioFrequencia(EstrategiaRelatorio):
         ]
 
 
+class RelatorioCampeonato(EstrategiaRelatorio):
+    def gerar(self, atividade):
+        return [
+            {
+                "aluno": aluno.nome,
+                "idade": getattr(aluno, "idade", None),
+                "peso": getattr(aluno, "peso", None),
+                "codigo_zempo": getattr(aluno, "codigo_zempo", None),
+            }
+            for aluno in _alunos_da_atividade(atividade)
+        ]
+
+
 class RelatorioFactory:
     """Cria a estrategia correta conforme o tipo de atividade."""
 
@@ -77,6 +90,7 @@ class RelatorioFactory:
             "troca_de_faixa": RelatorioTrocaDeFaixa(),
             "entrega_de_kimono": RelatorioEntregaKimono(),
             "frequencia": RelatorioFrequencia(),
+            "campeonato": RelatorioCampeonato(),
         }
 
         if tipo_atividade not in estrategias:

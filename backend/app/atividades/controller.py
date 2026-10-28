@@ -155,6 +155,29 @@ def controle_de_kimonos_xlsx(
     )
 
 
+@router.get("/{atividade_id}/relatorio/controle-de-campeonato")
+def controle_de_campeonato(
+    atividade_id: int,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return service.controle_de_campeonato(db, usuario, atividade_id)
+
+
+@router.get("/{atividade_id}/relatorio/controle-de-campeonato.xlsx")
+def controle_de_campeonato_xlsx(
+    atividade_id: int,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    conteudo = service.controle_de_campeonato_xlsx(db, usuario, atividade_id)
+    return Response(
+        content=conteudo,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="controle-de-campeonato.xlsx"'},
+    )
+
+
 @router.get("/{atividade_id}/relatorio/controle-de-frequencia")
 def controle_de_frequencia(
     atividade_id: int,

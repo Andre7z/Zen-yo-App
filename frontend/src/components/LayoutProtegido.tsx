@@ -1,4 +1,4 @@
-import { Activity, Award, CalendarDays, House, Layers, LogOut, Menu, Paperclip, UserRound, X } from 'lucide-react'
+import { Activity, Award, House, Layers, LogOut, Menu, Paperclip, UserRound, Users, X } from 'lucide-react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAutenticacao } from '../autenticacao-context'
@@ -35,10 +35,10 @@ export function LayoutProtegido() {
           <NavLink to={ROTAS.turmas} className={({ isActive }) => `sidebar-link${isActive ? ' is-active' : ''}`}><Layers size={17} />Turmas</NavLink>
           <NavLink to={ROTAS.atividades} className={({ isActive }) => `sidebar-link${isActive ? ' is-active' : ''}`}><Activity size={17} />Atividades</NavLink>
           <NavLink to={ROTAS.anexos} className={({ isActive }) => `sidebar-link${isActive ? ' is-active' : ''}`}><Paperclip size={17} />Anexos</NavLink>
-          <NavLink to={ROTAS.calendario} className={({ isActive }) => `sidebar-link${isActive ? ' is-active' : ''}`}><CalendarDays size={17} />Calendário</NavLink>
         </nav>
         <span className="sidebar-label sidebar-label-spaced">CADASTROS</span>
         <nav className="sidebar-nav" aria-label="Cadastros" onClick={() => setMenuAberto(false)}>
+          <NavLink to={ROTAS.alunos} className={({ isActive }) => `sidebar-link${isActive ? ' is-active' : ''}`}><Users size={17} />Alunos</NavLink>
           <NavLink to={ROTAS.faixas} className={({ isActive }) => `sidebar-link${isActive ? ' is-active' : ''}`}><Award size={17} />Faixas</NavLink>
         </nav>
         <button className="sidebar-logout" onClick={encerrarSessao} type="button"><LogOut size={16} />Sair da conta</button>
@@ -47,9 +47,9 @@ export function LayoutProtegido() {
       <nav className="mobile-primary-nav" aria-label="Acesso rápido">
         <NavLink end to={ROTAS.inicio} className={({ isActive }) => `mobile-primary-link${isActive ? ' is-active' : ''}`}><House size={18} /><span>Início</span></NavLink>
         <NavLink to={ROTAS.atividades} className={({ isActive }) => `mobile-primary-link${isActive ? ' is-active' : ''}`}><Activity size={18} /><span>Atividades</span></NavLink>
+        <NavLink to={ROTAS.alunos} className={({ isActive }) => `mobile-primary-link${isActive ? ' is-active' : ''}`}><Users size={18} /><span>Alunos</span></NavLink>
         <NavLink to={ROTAS.turmas} className={({ isActive }) => `mobile-primary-link${isActive ? ' is-active' : ''}`}><Layers size={18} /><span>Turmas</span></NavLink>
-        <NavLink to={ROTAS.anexos} className={({ isActive }) => `mobile-primary-link${isActive ? ' is-active' : ''}`}><Paperclip size={18} /><span>Anexos</span></NavLink>
-        <NavLink to={ROTAS.calendario} className={({ isActive }) => `mobile-primary-link${isActive ? ' is-active' : ''}`}><CalendarDays size={18} /><span>Calendário</span></NavLink>
+        <NavLink to={ROTAS.anexos} className={({ isActive }) => `mobile-primary-link${isActive ? ' is-active' : ''}`}><Paperclip size={18} /><span>Anexos</span></NavLink>
       </nav>
     </div>
   )
