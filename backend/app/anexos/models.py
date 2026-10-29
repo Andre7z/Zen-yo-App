@@ -1,7 +1,7 @@
 from datetime import date
 
-from sqlalchemy import Column, Date, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Date, ForeignKey, Integer, LargeBinary, String
+from sqlalchemy.orm import deferred, relationship
 
 from ..database import Base
 
@@ -17,6 +17,9 @@ class Anexo(Base):
     descricao = Column(String(500), nullable=True)
     nome_arquivo = Column(String(160), nullable=True)
     arquivo_url = Column(String(500), nullable=True)
+    # O conteudo fica no banco para nao se perder com discos efemeros.
+    conteudo = deferred(Column(LargeBinary, nullable=True))
+    tipo_conteudo = Column(String(120), nullable=True)
     link = Column(String(500), nullable=True)
     criado_em = Column(Date, default=date.today, nullable=False)
 

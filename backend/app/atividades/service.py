@@ -11,6 +11,7 @@ Cada usuario enxerga e altera somente as suas proprias atividades.
 """
 
 from . import controle_campeonato, controle_faixas, controle_frequencia, controle_kimonos, repository
+from ..tamanhos import service as tamanhos_service
 from .erros import AtividadeNaoEncontrada, TipoDeAtividadeDesconhecido
 from .politicas import RelatorioFactory
 
@@ -95,12 +96,12 @@ def _atividade_de_troca(db, usuario, atividade_id):
 
 def controle_de_faixas(db, usuario, atividade_id):
     atividade, alunos = _atividade_de_troca(db, usuario, atividade_id)
-    return controle_faixas.gerar_relatorio(atividade, alunos)
+    return controle_faixas.gerar_relatorio(atividade, alunos, tamanhos_service.nomes(db, usuario, "faixa"))
 
 
 def controle_de_faixas_xlsx(db, usuario, atividade_id):
     atividade, alunos = _atividade_de_troca(db, usuario, atividade_id)
-    return controle_faixas.gerar_xlsx(atividade, alunos)
+    return controle_faixas.gerar_xlsx(atividade, alunos, tamanhos_service.nomes(db, usuario, "faixa"))
 
 
 def _atividade_de_entrega_kimono(db, usuario, atividade_id):
@@ -114,12 +115,12 @@ def _atividade_de_entrega_kimono(db, usuario, atividade_id):
 
 def controle_de_kimonos(db, usuario, atividade_id):
     _, alunos = _atividade_de_entrega_kimono(db, usuario, atividade_id)
-    return controle_kimonos.gerar_relatorio(alunos)
+    return controle_kimonos.gerar_relatorio(alunos, tamanhos_service.nomes(db, usuario, "kimono"))
 
 
 def controle_de_kimonos_xlsx(db, usuario, atividade_id):
     _, alunos = _atividade_de_entrega_kimono(db, usuario, atividade_id)
-    return controle_kimonos.gerar_xlsx(alunos)
+    return controle_kimonos.gerar_xlsx(alunos, tamanhos_service.nomes(db, usuario, "kimono"))
 
 
 def _atividade_de_campeonato(db, usuario, atividade_id):

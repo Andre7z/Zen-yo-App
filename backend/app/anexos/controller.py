@@ -1,9 +1,10 @@
+import mimetypes
 import re
 from pathlib import Path
+from urllib.parse import quote
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
@@ -14,7 +15,7 @@ from . import service
 from .schemas import AnexoAtualizar, AnexoEntrada, AnexoPublico
 
 _DIRETORIO_ARQUIVOS = Path(__file__).resolve().parents[2] / "uploads" / "anexos"
-_TAMANHO_MAXIMO_ARQUIVO = 10 * 1024 * 1024
+_TAMANHO_MAXIMO_ARQUIVO = 50 * 1024 * 1024
 
 router = APIRouter(
     prefix="/anexos",
@@ -39,13 +40,11 @@ async def _salvar_arquivo(arquivo: UploadFile):
     conteudo = await arquivo.read(_TAMANHO_MAXIMO_ARQUIVO + 1)
     await arquivo.close()
     if len(conteudo) > _TAMANHO_MAXIMO_ARQUIVO:
-        raise HTTPException(status_code=413, detail="O arquivo deve ter no máximo 10 MB.")
+        raise HTTPException(status_code=413, detail="O arquivo deve ter no máximo 50 MB.")
 
     chave = uuid4().hex
-    caminho = _DIRETORIO_ARQUIVOS / chave
-    caminho.parent.mkdir(parents=True, exist_ok=True)
-    caminho.write_bytes(conteudo)
-    return caminho, nome[:160], f"/anexos/arquivos/{chave}"
+    tipo = arquivo.content_type or mimetypes.guess_type(nome)[0] or "application/octet-stream"
+    return {"conteudo": conteudo, "tipo_conteudo": tipo[:120]}, nome[:160], f"/anexos/arquivos/{chave}"
 
 
 def _remover_arquivo(arquivo_url: str | None):
@@ -70,13 +69,9 @@ async def criar_com_arquivo(
         dados = AnexoEntrada(titulo=titulo, categoria=categoria, descricao=descricao, link=link).model_dump()
     except ValidationError as falha:
         raise HTTPException(status_code=422, detail=falha.errors()) from falha
-    caminho, nome, url = await _salvar_arquivo(arquivo)
-    dados.update(nome_arquivo=nome, arquivo_url=url)
-    try:
-        return service.criar(db, usuario, dados)
-    except Exception:
-        caminho.unlink(missing_ok=True)
-        raise
+    extra, nome, url = await _salvar_arquivo(arquivo)
+    dados.update(nome_arquivo=nome, arquivo_url=url, **extra)
+    return service.criar(db, usuario, dados)
 
 
 @router.post("/{anexo_id}/upload", response_model=AnexoPublico)
@@ -105,18 +100,9 @@ async def substituir_arquivo(
         mudancas = AnexoAtualizar(**mudancas).model_dump(exclude_unset=True)
     except ValidationError as falha:
         raise HTTPException(status_code=422, detail=falha.errors()) from falha
-    caminho, nome, url = await _salvar_arquivo(arquivo)
-    mudancas.update(nome_arquivo=nome, arquivo_url=url)
-    try:
-        atualizado = service.atualizar(
-            db,
-            usuario,
-            anexo_id,
-            mudancas,
-        )
-    except Exception:
-        caminho.unlink(missing_ok=True)
-        raise
+    extra, nome, url = await _salvar_arquivo(arquivo)
+    mudancas.update(nome_arquivo=nome, arquivo_url=url, **extra)
+    atualizado = service.atualizar(db, usuario, anexo_id, mudancas)
     _remover_arquivo(anexo.arquivo_url)
     return atualizado
 
@@ -124,6 +110,7 @@ async def substituir_arquivo(
 @router.get("/arquivos/{chave}")
 def baixar_arquivo(
     chave: str,
+    inline: bool = False,
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -131,10 +118,18 @@ def baixar_arquivo(
         raise HTTPException(status_code=404, detail="Arquivo nao encontrado")
     url = f"/anexos/arquivos/{chave}"
     anexo = service.buscar_por_url(db, usuario, url)
+    nome = anexo.nome_arquivo or "arquivo"
+    disposicao = "inline" if inline else "attachment"
+    cabecalhos = {"Content-Disposition": f"{disposicao}; filename*=UTF-8''{quote(nome)}"}
+    if anexo.conteudo is not None:
+        tipo = anexo.tipo_conteudo or mimetypes.guess_type(nome)[0] or "application/octet-stream"
+        return Response(content=anexo.conteudo, media_type=tipo, headers=cabecalhos)
+    # Arquivos antigos, salvos em disco antes de irem para o banco.
     caminho = _DIRETORIO_ARQUIVOS / chave
     if not caminho.is_file():
-        raise HTTPException(status_code=404, detail="Arquivo nao encontrado")
-    return FileResponse(caminho, filename=anexo.nome_arquivo or "arquivo")
+        raise HTTPException(status_code=404, detail="Arquivo nao encontrado. Envie-o novamente.")
+    tipo = mimetypes.guess_type(nome)[0] or "application/octet-stream"
+    return Response(content=caminho.read_bytes(), media_type=tipo, headers=cabecalhos)
 
 
 @router.post("/", response_model=AnexoPublico, status_code=201)

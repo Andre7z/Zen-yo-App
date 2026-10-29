@@ -11,7 +11,7 @@ from openpyxl.utils import get_column_letter
 from ._estilo_xlsx import AMARELO, AZUL, BORDA, CENTRO, ESQUERDA, NEGRITO, NORMAL
 
 TITULO = "CONTROLE DE ENTREGA DE KIMONOS"
-TAMANHOS = ["M00", "M0", "M1", "M2", "M3", "A0", "A1", "A2", "A4","A5"]
+TAMANHOS_PADRAO = ["M00", "M0", "M1", "M2", "M3", "A0", "A1", "A2", "A4", "A5"]
 SEM_TURMA = "SEM TURMA"
 LINHAS_MINIMAS = 14
 
@@ -35,7 +35,8 @@ def montar_linhas(alunos):
     ]
 
 
-def calcular_quantidades(linhas):
+def calcular_quantidades(linhas, tamanhos=None):
+    TAMANHOS = tamanhos or TAMANHOS_PADRAO
     turmas = sorted({linha["turma"] for linha in linhas}) or [SEM_TURMA]
     matriz = {turma: {tamanho: 0 for tamanho in TAMANHOS} for turma in turmas}
     for linha in linhas:
@@ -58,14 +59,15 @@ def calcular_quantidades(linhas):
     }
 
 
-def gerar_relatorio(alunos):
+def gerar_relatorio(alunos, tamanhos=None):
     linhas = montar_linhas(alunos)
-    return {"titulo": TITULO, "linhas": linhas, "quantidades": calcular_quantidades(linhas)}
+    return {"titulo": TITULO, "linhas": linhas, "quantidades": calcular_quantidades(linhas, tamanhos)}
 
 
-def gerar_xlsx(alunos):
+def gerar_xlsx(alunos, tamanhos=None):
+    TAMANHOS = tamanhos or TAMANHOS_PADRAO
     linhas = montar_linhas(alunos)
-    quantidades = calcular_quantidades(linhas)
+    quantidades = calcular_quantidades(linhas, TAMANHOS)
     turmas = quantidades["turmas"]
     ultima_lista = 2 + max(len(linhas), LINHAS_MINIMAS)
     total_linha = 3 + len(turmas)

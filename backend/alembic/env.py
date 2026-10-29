@@ -16,6 +16,7 @@ import app.atividades.models  # noqa: F401
 import app.anexos.models      # noqa: F401
 import app.faixas.models      # noqa: F401
 import app.turmas.models      # noqa: F401
+import app.tamanhos.models    # noqa: F401
 
 config = context.config
 

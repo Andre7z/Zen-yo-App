@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, MapPin, UserRound } from 'lucide-react'
+import { CalendarDays, MapPin } from 'lucide-react'
 import { useAutenticacao } from '../autenticacao-context'
 import { ModalDetalhes } from '../components/ModalDetalhes'
 import { useRecurso } from '../hooks/use-recurso'
@@ -26,11 +26,7 @@ export function InicioPage() {
 
   return (
     <section className="home-main">
-      <h1>Bem-vindo, <em>{primeiroNome}.</em></h1>
-      <p className="home-intro">Sua sessão está conectada. Aqui estão os dados da sua conta.</p>
-      <div className="welcome-grid">
-        <article className="welcome-card"><div className="card-top"><span className="card-icon"><UserRound size={19} /></span></div><span className="card-label">PERFIL DO PROFESSOR</span><h2>{usuario.nome}</h2></article>
-      </div>
+      <h1>Bem-vindo, Sensei <em>{primeiroNome}.</em></h1>
 
       <section className="home-calendar" aria-label="Calendário">
         <h2 className="home-calendar-title"><CalendarDays size={18} />Calendário</h2>

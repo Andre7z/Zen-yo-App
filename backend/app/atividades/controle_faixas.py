@@ -24,7 +24,7 @@ FAIXAS = [
     "ROXA",
     "MARROM",
 ]
-TAMANHOS = ["PP", "P", "N2", "M", "G", "N4", "GG"]
+TAMANHOS_PADRAO = ["PP", "P", "N2", "M", "G", "N4", "GG"]
 LINHAS_MINIMAS = len(FAIXAS) + 3
 
 
@@ -55,7 +55,8 @@ def montar_linhas(atividade, alunos):
     return linhas
 
 
-def calcular_quantidades(linhas):
+def calcular_quantidades(linhas, tamanhos=None):
+    TAMANHOS = tamanhos or TAMANHOS_PADRAO
     matriz = {faixa: {tamanho: 0 for tamanho in TAMANHOS} for faixa in FAIXAS}
     for linha in linhas:
         if linha["faixa"] in matriz and linha["tamanho"] in TAMANHOS:
@@ -77,12 +78,13 @@ def calcular_quantidades(linhas):
     }
 
 
-def gerar_relatorio(atividade, alunos):
+def gerar_relatorio(atividade, alunos, tamanhos=None):
     linhas = montar_linhas(atividade, alunos)
-    return {"titulo": TITULO, "linhas": linhas, "quantidades": calcular_quantidades(linhas)}
+    return {"titulo": TITULO, "linhas": linhas, "quantidades": calcular_quantidades(linhas, tamanhos)}
 
 
-def gerar_xlsx(atividade, alunos):
+def gerar_xlsx(atividade, alunos, tamanhos=None):
+    TAMANHOS = tamanhos or TAMANHOS_PADRAO
     linhas = montar_linhas(atividade, alunos)
     ultima_lista = 2 + max(len(linhas), LINHAS_MINIMAS)
     total_linha = 3 + len(FAIXAS)

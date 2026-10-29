@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Pencil, Plus, Trash2, UserMinus, X } from 'lucide-react'
-import { alunosApi, faixasApi, rotuloFaixa, turmasApi, TAMANHOS_FAIXA, TAMANHOS_KIMONO, type Aluno, type Faixa, type Turma } from '../servicos/dominio'
+import { alunosApi, faixasApi, rotuloFaixa, turmasApi, type Aluno, type Faixa, type Turma } from '../servicos/dominio'
+import { opcoesDeTamanho, useTamanhos } from '../hooks/use-tamanhos'
 import { useRecurso } from '../hooks/use-recurso'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
@@ -24,6 +25,7 @@ export function AlunosPage() {
   const [buscaAluno, setBuscaAluno] = useState('')
   const modoTurma = Boolean(turmaId)
   const recurso = useRecurso(alunosApi)
+  const tamanhos = useTamanhos()
   const [faixas, setFaixas] = useState<Faixa[]>([])
   const [turmas, setTurmas] = useState<Turma[]>([])
   const [erroFaixas, setErroFaixas] = useState('')
@@ -145,8 +147,8 @@ export function AlunosPage() {
             <CampoModulo rotulo="Faixa"><select required value={dados.faixa_id} onChange={(event) => setDados({ ...dados, faixa_id: event.target.value })}><option value="">Selecione</option>{faixas.map((faixa) => <option key={faixa.id} value={faixa.id}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
             <CampoModulo rotulo="Próxima faixa"><select value={dados.proxima_faixa} onChange={(event) => setDados({ ...dados, proxima_faixa: event.target.value })}><option value="">Não definida</option>{faixas.map((faixa) => <option key={faixa.id} value={rotuloFaixa(faixa)}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
             <CampoModulo rotulo="Turma"><select value={dados.turma_id} onChange={(event) => setDados({ ...dados, turma_id: event.target.value })}><option value="">Sem turma</option>{turmas.map((turma) => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}</select></CampoModulo>
-            <CampoModulo rotulo="Tamanho do kimono"><select value={dados.tamanho_kimono} onChange={(event) => setDados({ ...dados, tamanho_kimono: event.target.value })}><option value="">Não definido</option>{TAMANHOS_KIMONO.map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
-            <CampoModulo rotulo="Tamanho da faixa"><select value={dados.tamanho_faixa} onChange={(event) => setDados({ ...dados, tamanho_faixa: event.target.value })}><option value="">Não definido</option>{TAMANHOS_FAIXA.map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
+            <CampoModulo rotulo="Tamanho do kimono"><select value={dados.tamanho_kimono} onChange={(event) => setDados({ ...dados, tamanho_kimono: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.kimono, dados.tamanho_kimono).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
+            <CampoModulo rotulo="Tamanho da faixa"><select value={dados.tamanho_faixa} onChange={(event) => setDados({ ...dados, tamanho_faixa: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.faixa, dados.tamanho_faixa).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
             <CampoModulo rotulo="Código Zempo"><input value={dados.codigo_zempo} onChange={(event) => setDados({ ...dados, codigo_zempo: event.target.value })} /></CampoModulo>
             <CampoModulo rotulo="Nome do responsável"><input value={dados.responsavel_nome} onChange={(event) => setDados({ ...dados, responsavel_nome: event.target.value })} /></CampoModulo>
             <CampoModulo rotulo="CPF do responsável"><input inputMode="numeric" value={dados.responsavel_cpf} onChange={(event) => setDados({ ...dados, responsavel_cpf: event.target.value })} /></CampoModulo>

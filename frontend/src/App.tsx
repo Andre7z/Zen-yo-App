@@ -8,6 +8,7 @@ import { AtividadesPage } from './pages/AtividadesPage'
 import { AnexosPage } from './pages/AnexosPage'
 import { FaixasPage } from './pages/FaixasPage'
 import { TurmasPage } from './pages/TurmasPage'
+import { TamanhosPage } from './pages/TamanhosPage'
 import { LayoutProtegido } from './components/LayoutProtegido'
 import { AutenticacaoProvider } from './autenticacao-contexto'
 import { useAutenticacao } from './autenticacao-context'
@@ -32,6 +33,7 @@ function App() {
               <Route path={ROTAS.anexos} element={<AnexosPage />} />
               <Route path={ROTAS.faixas} element={<FaixasPage />} />
               <Route path={ROTAS.turmas} element={<TurmasPage />} />
+              <Route path={ROTAS.tamanhos} element={<TamanhosPage />} />
               <Route path={ROTAS.turmaAlunos} element={<AlunosPage />} />
             </Route>
           </Route>
