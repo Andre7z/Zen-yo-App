@@ -66,12 +66,16 @@ def test_upload_salva_arquivo_com_nome_seguro_e_metadados(tmp_path, monkeypatch)
 
     chave = dados_salvos["arquivo_url"].rsplit("/", 1)[-1]
     assert anexo["nome_arquivo"] == "ficha.pdf"
-    assert (tmp_path / chave).read_bytes() == b"conteudo do arquivo"
+    assert dados_salvos["conteudo"] == b"conteudo do arquivo"
 
     monkeypatch.setattr(
         controller.service,
         "buscar_por_url",
-        lambda db, usuario_atual, url: SimpleNamespace(nome_arquivo="ficha.pdf"),
+        lambda db, usuario_atual, url: SimpleNamespace(
+            nome_arquivo="ficha.pdf", conteudo=dados_salvos["conteudo"], tipo_conteudo="application/pdf"
+        ),
     )
-    download = controller.baixar_arquivo(chave, usuario, object())
-    assert Path(download.path).read_bytes() == b"conteudo do arquivo"
+    download = controller.baixar_arquivo(chave, True, usuario, object())
+    assert download.body == b"conteudo do arquivo"
+    assert download.media_type == "application/pdf"
+    assert download.headers["content-disposition"].startswith("inline")

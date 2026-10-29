@@ -6,9 +6,10 @@ type Props = {
   titulo: string
   aoFechar: () => void
   children: ReactNode
+  grande?: boolean
 }
 
-export function ModalDetalhes({ titulo, aoFechar, children }: Props) {
+export function ModalDetalhes({ titulo, aoFechar, children, grande = false }: Props) {
   const idTitulo = useId()
   const dialogRef = useRef<HTMLElement>(null)
   const aoFecharRef = useRef(aoFechar)
@@ -44,7 +45,7 @@ export function ModalDetalhes({ titulo, aoFechar, children }: Props) {
     >
       <section
         ref={dialogRef}
-        className="detail-dialog"
+        className={grande ? 'detail-dialog detail-dialog-wide' : 'detail-dialog'}
         role="dialog"
         aria-modal="true"
         aria-labelledby={idTitulo}

@@ -19,6 +19,9 @@ from .faixas.erros import ErroFaixa, FaixaNaoEncontrada
 from .turmas import controller as turmas_controller
 from .turmas.erros import ErroTurma, TurmaNaoEncontrada
 
+from .tamanhos import controller as tamanhos_controller
+from .tamanhos.erros import ErroTamanho, TamanhoNaoEncontrado
+
 from .usuarios import controller as usuarios_controller
 from .usuarios.erros import CredenciaisInvalidas, ErroDeUsuario
 
@@ -45,6 +48,7 @@ app.include_router(atividades_controller.router)
 app.include_router(anexos_controller.router)
 app.include_router(faixas_controller.router)
 app.include_router(turmas_controller.router)
+app.include_router(tamanhos_controller.router)
 
 
 def _resposta_erro_de_dominio(erro: Exception, tipo_nao_encontrado: type[Exception]):
@@ -76,6 +80,11 @@ def traduzir_recusa_de_faixa(request: Request, erro: ErroFaixa):
 @app.exception_handler(ErroTurma)
 def traduzir_recusa_de_turma(request: Request, erro: ErroTurma):
     return _resposta_erro_de_dominio(erro, TurmaNaoEncontrada)
+
+
+@app.exception_handler(ErroTamanho)
+def traduzir_recusa_de_tamanho(request: Request, erro: ErroTamanho):
+    return _resposta_erro_de_dominio(erro, TamanhoNaoEncontrado)
 
 
 @app.exception_handler(ErroDeUsuario)

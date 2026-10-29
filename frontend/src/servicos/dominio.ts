@@ -24,6 +24,7 @@ export type Aluno = Identificado & {
 }
 export const TAMANHOS_KIMONO = ['M00', 'M0', 'M1', 'M2', 'M3', 'A0', 'A1', 'A2', 'A4', 'A5']
 export const TAMANHOS_FAIXA = ['PP', 'P', 'N2', 'M', 'G', 'N4', 'GG']
+export type Tamanho = Identificado & { tipo: 'kimono' | 'faixa'; nome: string; ordem: number }
 export type Atividade = Identificado & {
   tipo: 'frequencia' | 'entrega_de_kimono' | 'troca_de_faixa' | 'campeonato'
   nome: string
@@ -84,6 +85,7 @@ export const anexosApi = {
 }
 export const faixasApi = recurso<Faixa>('/faixas/')
 export const turmasApi = recurso<Turma>('/turmas/')
+export const tamanhosApi = recurso<Tamanho>('/tamanhos/')
 
 const RELATORIOS_XLSX_POR_TIPO: Record<string, string> = {
   troca_de_faixa: 'controle-de-faixas',

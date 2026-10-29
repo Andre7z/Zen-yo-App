@@ -6,7 +6,8 @@ import { EntradaData } from '../components/EntradaData'
 import { calcularIdade, converterDataParaIso, dataAtualIso, formatarDataParaEntrada } from '../servicos/datas'
 import { useRecurso } from '../hooks/use-recurso'
 import { baixarArquivo } from '../api'
-import { atividadesApi, alunosApi, caminhoRelatorioXlsx, faixasApi, rotuloFaixa, nomeArquivoRelatorioXlsx, turmasApi, TAMANHOS_FAIXA, TAMANHOS_KIMONO, type Aluno, type Atividade, type Faixa, type Turma } from '../servicos/dominio'
+import { atividadesApi, alunosApi, caminhoRelatorioXlsx, faixasApi, rotuloFaixa, nomeArquivoRelatorioXlsx, turmasApi, type Aluno, type Atividade, type Faixa, type Turma } from '../servicos/dominio'
+import { opcoesDeTamanho, useTamanhos } from '../hooks/use-tamanhos'
 
 const vazio = { tipo: 'frequencia' as Atividade['tipo'], nome: '', data: formatarDataParaEntrada(dataAtualIso()), local: '', descricao: '', nova_faixa: '' }
 type DadosAtividade = typeof vazio
@@ -14,6 +15,7 @@ type Rascunho = { proxima_faixa: string; tamanho_faixa: string; tamanho_kimono: 
 
 export function AtividadesPage() {
   const recurso = useRecurso(atividadesApi)
+  const tamanhos = useTamanhos()
   const [alunos, setAlunos] = useState<Aluno[]>([])
   const [turmas, setTurmas] = useState<Turma[]>([])
   const [faixas, setFaixas] = useState<Faixa[]>([])
@@ -281,7 +283,7 @@ export function AtividadesPage() {
                     <span className="activity-participant-name"><span>{aluno.nome} · {faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Faixa não informada'}</span></span>
                     <label className="activity-payment"><input aria-label={item.tipo === 'frequencia' ? `Presença de ${aluno.nome}` : `Marcação de ${aluno.nome}`} title={item.tipo === 'frequencia' ? 'Presença do aluno' : 'Marcação do aluno'} type="checkbox" disabled={recurso.salvando} checked={item.aluno_ids_pagos.includes(aluno.id)} onChange={(event) => void alternarMarcacao(item, aluno.id, event.target.checked)} />                    {item.tipo === 'frequencia' ? 'Presente' : item.tipo === 'troca_de_faixa' ? 'Selecionado' : 'Marcado'}</label>
                     {item.tipo === 'entrega_de_kimono' && <div className="activity-participant-fields">
-                                          <CampoModulo rotulo="Tamanho do kimono"><select aria-label={`Tamanho do kimono de ${aluno.nome}`} value={rascunho.tamanho_kimono} onChange={(event) => alterarRascunho(aluno, { tamanho_kimono: event.target.value })}><option value="">Não definido</option>{TAMANHOS_KIMONO.map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
+                                          <CampoModulo rotulo="Tamanho do kimono"><select aria-label={`Tamanho do kimono de ${aluno.nome}`} value={rascunho.tamanho_kimono} onChange={(event) => alterarRascunho(aluno, { tamanho_kimono: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.kimono, rascunho.tamanho_kimono).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
                       <button className="module-secondary" type="button" aria-label={`Salvar kimono de ${aluno.nome}`} disabled={graduando === aluno.id} onClick={() => void salvarKimono(aluno)}>Salvar</button>
                     </div>}
                                         {item.tipo === 'campeonato' && <div className="activity-participant-fields">
@@ -291,7 +293,7 @@ export function AtividadesPage() {
                                         </div>}
                                         {item.tipo === 'troca_de_faixa' && <div className="activity-participant-fields">
                                           <CampoModulo rotulo="Próxima faixa"><select aria-label={`Próxima faixa de ${aluno.nome}`} value={rascunho.proxima_faixa} onChange={(event) => alterarRascunho(aluno, { proxima_faixa: event.target.value })}><option value="">Não definida</option>{faixas.map((faixa) => <option key={faixa.id} value={rotuloFaixa(faixa)}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
-                                          <CampoModulo rotulo="Tamanho da faixa"><select aria-label={`Tamanho da faixa de ${aluno.nome}`} value={rascunho.tamanho_faixa} onChange={(event) => alterarRascunho(aluno, { tamanho_faixa: event.target.value })}><option value="">Não definido</option>{TAMANHOS_FAIXA.map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
+                                          <CampoModulo rotulo="Tamanho da faixa"><select aria-label={`Tamanho da faixa de ${aluno.nome}`} value={rascunho.tamanho_faixa} onChange={(event) => alterarRascunho(aluno, { tamanho_faixa: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.faixa, rascunho.tamanho_faixa).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
                                           <label className="activity-payment"><input aria-label={`Faixa grossa de ${aluno.nome}`} type="checkbox" checked={rascunho.faixa_grossa} onChange={(event) => alterarRascunho(aluno, { faixa_grossa: event.target.checked })} />Grossa</label>
                                           <button className="module-secondary" type="button" aria-label={`Salvar faixa de ${aluno.nome}`} disabled={graduando === aluno.id} onClick={() => void salvarFaixaAluno(aluno)}>Salvar</button>
                                         </div>}

@@ -14,4 +14,5 @@ export const ROTAS = {
   faixas: '/faixas',
   turmas: '/turmas',
   turmaAlunos: '/turmas/:turmaId/alunos',
+  tamanhos: '/tamanhos',
 } as const
