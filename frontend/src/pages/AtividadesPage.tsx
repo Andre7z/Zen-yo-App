@@ -1,12 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { ArrowLeft, Award, FileText, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Award, FileText, Pencil, Plus, Trash2 } from 'lucide-react'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
 import { EntradaData } from '../components/EntradaData'
 import { calcularIdade, converterDataParaIso, dataAtualIso, formatarDataParaEntrada } from '../servicos/datas'
 import { useRecurso } from '../hooks/use-recurso'
 import { baixarArquivo } from '../api'
-import { atividadesApi, alunosApi, caminhoRelatorioXlsx, faixasApi, rotuloFaixa, nomeArquivoRelatorioXlsx, turmasApi, type Aluno, type Atividade, type Faixa, type Turma } from '../servicos/dominio'
+import { atividadesApi, alunosApi, caminhoRelatorioXlsx, faixasApi, rotuloFaixa, rotuloTipoAtividade, nomeArquivoRelatorioXlsx, turmasApi, type Aluno, type Atividade, type Faixa, type Turma } from '../servicos/dominio'
 import { opcoesDeTamanho, useTamanhos } from '../hooks/use-tamanhos'
 
 const vazio = { tipo: 'frequencia' as Atividade['tipo'], nome: '', data: formatarDataParaEntrada(dataAtualIso()), local: '', descricao: '', nova_faixa: '' }
@@ -34,6 +34,16 @@ export function AtividadesPage() {
   const [editando, setEditando] = useState<number | null>(null)
   const [formAberto, setFormAberto] = useState(false)
   const [erroRelatorio, setErroRelatorio] = useState('')
+  const [buscaAtividade, setBuscaAtividade] = useState('')
+  const [tipoFiltro, setTipoFiltro] = useState('')
+  const [situacaoFiltro, setSituacaoFiltro] = useState('')
+
+  const hoje = dataAtualIso()
+  const termoAtividade = buscaAtividade.trim().toLowerCase()
+  const atividadesFiltradas = recurso.itens.filter((item) =>
+    (!tipoFiltro || item.tipo === tipoFiltro)
+    && (!situacaoFiltro || (situacaoFiltro === 'proximas' ? item.data >= hoje : item.data < hoje))
+    && (!termoAtividade || `${item.nome} ${item.local ?? ''}`.toLowerCase().includes(termoAtividade)))
 
   useEffect(() => {
     void alunosApi.listar().then(setAlunos).catch((falha: unknown) => {
@@ -70,50 +80,36 @@ export function AtividadesPage() {
     setRascunhos((atuais) => ({ ...atuais, [aluno.id]: { ...rascunhoDe(aluno), ...parcial } }))
   }
 
-  async function salvarPeso(aluno: Aluno) {
-    const texto = rascunhoDe(aluno).peso.trim().replace(',', '.')
-    const peso = texto ? Number(texto) : null
-    if (peso !== null && (!Number.isFinite(peso) || peso <= 0 || peso > 500)) {
-      setErroGraduacao(`Informe um peso válido para ${aluno.nome}.`)
-      return
+  async function salvarAlteracoes(item: Atividade, participantes: Aluno[]) {
+    const alterados = participantes.filter((aluno) => rascunhos[aluno.id])
+    if (!alterados.length) return
+    const envios: Array<{ aluno: Aluno; dados: Partial<Aluno> }> = []
+    for (const aluno of alterados) {
+      const rascunho = rascunhoDe(aluno)
+      if (item.tipo === 'campeonato') {
+        const texto = rascunho.peso.trim().replace(',', '.')
+        const peso = texto ? Number(texto) : null
+        if (peso !== null && (!Number.isFinite(peso) || peso <= 0 || peso > 500)) {
+          setErroGraduacao(`Informe um peso válido para ${aluno.nome}.`)
+          return
+        }
+        envios.push({ aluno, dados: { peso } })
+      } else if (item.tipo === 'entrega_de_kimono') {
+        envios.push({ aluno, dados: { tamanho_kimono: rascunho.tamanho_kimono || null } })
+      } else if (item.tipo === 'troca_de_faixa') {
+        envios.push({ aluno, dados: { proxima_faixa: rascunho.proxima_faixa || null, tamanho_faixa: rascunho.tamanho_faixa || null, faixa_grossa: rascunho.faixa_grossa } })
+      }
     }
     setErroGraduacao('')
-    setGraduando(aluno.id)
+    setGraduando(-1)
     try {
-      const atualizado = await alunosApi.atualizar(aluno.id, { peso })
-      setAlunos((atuais) => atuais.map((item) => item.id === atualizado.id ? { ...item, ...atualizado } : item))
-      setRascunhos((atuais) => { const { [aluno.id]: _descartado, ...restantes } = atuais; return restantes })
+      for (const { aluno, dados } of envios) {
+        const atualizado = await alunosApi.atualizar(aluno.id, dados)
+        setAlunos((atuais) => atuais.map((outro) => outro.id === atualizado.id ? { ...outro, ...atualizado } : outro))
+        setRascunhos((atuais) => { const { [aluno.id]: _descartado, ...restantes } = atuais; return restantes })
+      }
     } catch (falha) {
-      setErroGraduacao(falha instanceof Error ? falha.message : 'Não foi possível salvar o peso.')
-    } finally {
-      setGraduando(null)
-    }
-  }
-
-  async function salvarFaixaAluno(aluno: Aluno) {
-    const rascunho = rascunhoDe(aluno)
-    setErroGraduacao('')
-    setGraduando(aluno.id)
-    try {
-      const atualizado = await alunosApi.atualizar(aluno.id, { proxima_faixa: rascunho.proxima_faixa || null,       tamanho_faixa: rascunho.tamanho_faixa || null, faixa_grossa: rascunho.faixa_grossa })
-      setAlunos((atuais) => atuais.map((item) => item.id === atualizado.id ? { ...item, ...atualizado } : item))
-      setRascunhos((atuais) => { const { [aluno.id]: _descartado, ...restantes } = atuais; return restantes })
-    } catch (falha) {
-      setErroGraduacao(falha instanceof Error ? falha.message : 'Não foi possível salvar os dados da faixa.')
-    } finally {
-      setGraduando(null)
-    }
-  }
-
-  async function salvarKimono(aluno: Aluno) {
-    setErroGraduacao('')
-    setGraduando(aluno.id)
-    try {
-      const atualizado = await alunosApi.atualizar(aluno.id, { tamanho_kimono: rascunhoDe(aluno).tamanho_kimono || null })
-      setAlunos((atuais) => atuais.map((item) => item.id === atualizado.id ? { ...item, ...atualizado } : item))
-      setRascunhos((atuais) => { const { [aluno.id]: _descartado, ...restantes } = atuais; return restantes })
-    } catch (falha) {
-      setErroGraduacao(falha instanceof Error ? falha.message : 'Não foi possível salvar o tamanho do kimono.')
+      setErroGraduacao(falha instanceof Error ? falha.message : 'Não foi possível salvar os dados dos alunos.')
     } finally {
       setGraduando(null)
     }
@@ -211,14 +207,20 @@ export function AtividadesPage() {
   }
 
   return (
-    <PaginaModulo kicker="ROTINA" titulo="Atividades" descricao="Registre frequência, entrega de kimonos e graduações." carregando={recurso.carregando} erro={recurso.erro || erroAlunos} recarregar={() => { void recurso.carregar() }}>
-      <div className="module-toolbar"><p>{recurso.itens.length} {recurso.itens.length === 1 ? 'atividade' : 'atividades'}</p><button className="module-primary" type="button" onClick={() => { setDados(vazio); setEditando(null); setVisualizando(null); setSelecionandoAlunos(false); setFormAberto((aberto) => !aberto) }}>{formAberto ? <X size={16} /> : <Plus size={16} />}{formAberto ? 'Fechar formulário' : 'Nova atividade'}</button></div>
+    <PaginaModulo kicker="ROTINA" titulo="Atividades" descricao="Registre frequência, entrega de judogis e graduações." carregando={recurso.carregando} erro={recurso.erro || erroAlunos} recarregar={() => { void recurso.carregar() }}>
+      <div className="module-toolbar"><p>{recurso.itens.length} {recurso.itens.length === 1 ? 'atividade' : 'atividades'}</p><button className="module-primary" type="button" onClick={() => { setDados(vazio); setEditando(null); setVisualizando(null); setSelecionandoAlunos(false); setFormAberto(true) }}><Plus size={16} />Nova atividade</button></div>
+
+      <div className="module-filters" aria-label="Filtros de atividades">
+        <CampoModulo rotulo="Buscar atividade"><input value={buscaAtividade} onChange={(event) => setBuscaAtividade(event.target.value)} placeholder="Nome ou local" /></CampoModulo>
+        <CampoModulo rotulo="Tipo de atividade"><select value={tipoFiltro} onChange={(event) => setTipoFiltro(event.target.value)}><option value="">Todos</option><option value="frequencia">Frequência</option><option value="entrega_de_kimono">Entrega de judogi</option><option value="troca_de_faixa">Troca de faixa</option><option value="campeonato">Campeonato</option></select></CampoModulo>
+        <CampoModulo rotulo="Situação"><select value={situacaoFiltro} onChange={(event) => setSituacaoFiltro(event.target.value)}><option value="">Todas</option><option value="proximas">Próximas</option><option value="realizadas">Realizadas</option></select></CampoModulo>
+      </div>
 
       {formAberto && (
+        <ModalDetalhes contexto="CADASTRO" titulo={editando ? 'Editar atividade' : 'Nova atividade'} aoFechar={() => setFormAberto(false)}>
         <form className="module-form" onSubmit={salvar}>
-          <div className="module-form-heading"><h2>{editando ? 'Editar atividade' : 'Nova atividade'}</h2></div>
           <div className="module-form-grid">
-            <CampoModulo rotulo="Tipo"><select value={dados.tipo} onChange={(event) => setDados({ ...dados, tipo: event.target.value as Atividade['tipo'] })}><option value="frequencia">Frequência</option><option value="entrega_de_kimono">Entrega de kimono</option><option value="troca_de_faixa">Troca de faixa</option><option value="campeonato">Campeonato</option></select></CampoModulo>
+            <CampoModulo rotulo="Tipo"><select value={dados.tipo} onChange={(event) => setDados({ ...dados, tipo: event.target.value as Atividade['tipo'] })}><option value="frequencia">Frequência</option><option value="entrega_de_kimono">Entrega de judogi</option><option value="troca_de_faixa">Troca de faixa</option><option value="campeonato">Campeonato</option></select></CampoModulo>
             <CampoModulo rotulo="Nome"><input required maxLength={120} value={dados.nome} onChange={(event) => setDados({ ...dados, nome: event.target.value })} /></CampoModulo>
             <CampoModulo rotulo="Data"><EntradaData required invalid={Boolean(erroData)} value={dados.data} onChange={(data) => { setErroData(''); setDados({ ...dados, data }) }} />{erroData && <small className="module-field-error" role="alert">{erroData}</small>}</CampoModulo>
             <CampoModulo rotulo="Local"><input value={dados.local} onChange={(event) => setDados({ ...dados, local: event.target.value })} /></CampoModulo>
@@ -226,6 +228,7 @@ export function AtividadesPage() {
           </div>
           <div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando}>{recurso.salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Criar atividade'}</button><button className="module-secondary" type="button" onClick={() => setFormAberto(false)}>Cancelar</button></div>
         </form>
+        </ModalDetalhes>
       )}
 
       {erroRelatorio && <p className="module-error" role="alert">{erroRelatorio}</p>}
@@ -269,7 +272,7 @@ export function AtividadesPage() {
               </div>
             </> : <>
             <dl className="module-details activity-info-details">
-              <div><dt>Tipo</dt><dd>{item.tipo.replaceAll('_', ' ')}</dd></div>
+              <div><dt>Tipo</dt><dd>{rotuloTipoAtividade(item.tipo)}</dd></div>
               <div><dt>Data</dt><dd>{formatarDataParaEntrada(item.data)}</dd></div>
               <div><dt>Local</dt><dd>{item.local ?? 'Não informado'}</dd></div>
               <div><dt>Descrição</dt><dd>{item.descricao ?? 'Sem descrição'}</dd></div>
@@ -281,26 +284,24 @@ export function AtividadesPage() {
                   const rascunho = rascunhoDe(aluno)
                   return <div className="activity-participant-row" key={aluno.id}>
                     <span className="activity-participant-name"><span>{aluno.nome} · {faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Faixa não informada'}</span></span>
-                    <label className="activity-payment"><input aria-label={item.tipo === 'frequencia' ? `Presença de ${aluno.nome}` : `Marcação de ${aluno.nome}`} title={item.tipo === 'frequencia' ? 'Presença do aluno' : 'Marcação do aluno'} type="checkbox" disabled={recurso.salvando} checked={item.aluno_ids_pagos.includes(aluno.id)} onChange={(event) => void alternarMarcacao(item, aluno.id, event.target.checked)} />                    {item.tipo === 'frequencia' ? 'Presente' : item.tipo === 'troca_de_faixa' ? 'Selecionado' : 'Marcado'}</label>
+                    <label className="activity-payment"><input aria-label={item.tipo === 'frequencia' ? `Presença de ${aluno.nome}` : `Confirmação de ${aluno.nome}`} title={item.tipo === 'frequencia' ? 'Presença do aluno' : 'Confirmação do aluno'} type="checkbox" disabled={recurso.salvando} checked={item.aluno_ids_pagos.includes(aluno.id)} onChange={(event) => void alternarMarcacao(item, aluno.id, event.target.checked)} />                    {item.tipo === 'frequencia' ? 'Presente' : 'Confirmado'}</label>
                     {item.tipo === 'entrega_de_kimono' && <div className="activity-participant-fields">
-                                          <CampoModulo rotulo="Tamanho do kimono"><select aria-label={`Tamanho do kimono de ${aluno.nome}`} value={rascunho.tamanho_kimono} onChange={(event) => alterarRascunho(aluno, { tamanho_kimono: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.kimono, rascunho.tamanho_kimono).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
-                      <button className="module-secondary" type="button" aria-label={`Salvar kimono de ${aluno.nome}`} disabled={graduando === aluno.id} onClick={() => void salvarKimono(aluno)}>Salvar</button>
+                                          <CampoModulo rotulo="Tamanho do judogi"><select aria-label={`Tamanho do judogi de ${aluno.nome}`} value={rascunho.tamanho_kimono} onChange={(event) => alterarRascunho(aluno, { tamanho_kimono: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.kimono, rascunho.tamanho_kimono).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
                     </div>}
                                         {item.tipo === 'campeonato' && <div className="activity-participant-fields">
                                           <span className="activity-participant-info">Idade: {calcularIdade(aluno.data_nascimento) ?? 'não informada'}</span>
+                                          <span className="activity-participant-info">Gênero: {aluno.genero ?? 'não informado'}</span>
                                           <CampoModulo rotulo="Peso (kg)"><input aria-label={`Peso de ${aluno.nome}`} inputMode="decimal" value={rascunho.peso} onChange={(event) => alterarRascunho(aluno, { peso: event.target.value })} /></CampoModulo>
-                                          <button className="module-secondary" type="button" aria-label={`Salvar peso de ${aluno.nome}`} disabled={graduando === aluno.id} onClick={() => void salvarPeso(aluno)}>Salvar</button>
                                         </div>}
                                         {item.tipo === 'troca_de_faixa' && <div className="activity-participant-fields">
                                           <CampoModulo rotulo="Próxima faixa"><select aria-label={`Próxima faixa de ${aluno.nome}`} value={rascunho.proxima_faixa} onChange={(event) => alterarRascunho(aluno, { proxima_faixa: event.target.value })}><option value="">Não definida</option>{faixas.map((faixa) => <option key={faixa.id} value={rotuloFaixa(faixa)}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
                                           <CampoModulo rotulo="Tamanho da faixa"><select aria-label={`Tamanho da faixa de ${aluno.nome}`} value={rascunho.tamanho_faixa} onChange={(event) => alterarRascunho(aluno, { tamanho_faixa: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.faixa, rascunho.tamanho_faixa).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
-                                          <label className="activity-payment"><input aria-label={`Faixa grossa de ${aluno.nome}`} type="checkbox" checked={rascunho.faixa_grossa} onChange={(event) => alterarRascunho(aluno, { faixa_grossa: event.target.checked })} />Grossa</label>
-                                          <button className="module-secondary" type="button" aria-label={`Salvar faixa de ${aluno.nome}`} disabled={graduando === aluno.id} onClick={() => void salvarFaixaAluno(aluno)}>Salvar</button>
-                                        </div>}
+                                          <label className="activity-payment"><input aria-label={`Faixa grossa de ${aluno.nome}`} type="checkbox" checked={rascunho.faixa_grossa} onChange={(event) => alterarRascunho(aluno, { faixa_grossa: event.target.checked })} />                                          Grossa</label>                                        </div>}
                                       </div>
                                     })}
                                     {!participantes.length && <small>Nenhum aluno associado à atividade.</small>}
                                   </div>
+                                  {item.tipo !== 'frequencia' && participantes.length > 0 && <button className="module-primary" type="button" disabled={graduando !== null || !participantes.some((aluno) => rascunhos[aluno.id])} onClick={() => void salvarAlteracoes(item, participantes)}>Salvar alterações dos alunos</button>}
                                   {item.tipo === 'troca_de_faixa' && <button className="module-primary" type="button" disabled={graduando !== null || !item.aluno_ids_pagos.some((id) => item.aluno_ids.includes(id))} onClick={() => void graduarSelecionados(item, participantes)}><Award size={15} />Graduar selecionados ({participantes.filter((aluno) => item.aluno_ids_pagos.includes(aluno.id)).length})</button>}
               {erroGraduacao && <small role="alert">{erroGraduacao}</small>}
             </fieldset>
@@ -310,10 +311,10 @@ export function AtividadesPage() {
       })()}
 
       <div className="module-list" aria-label="Lista de atividades">
-        {recurso.itens.map((item) => (
-          <article className="module-record" key={item.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${item.nome}`} onClick={() => { setFormAberto(false); setEditando(null); setErroGraduacao(''); setVisualizando(item.id) }}><strong>{item.nome}</strong><span>{item.data} · {item.tipo.replaceAll('_', ' ')} · {item.aluno_ids.length} alunos · {item.aluno_ids_pagos?.length ?? 0} {item.tipo === 'frequencia' ? 'presentes' : 'pagos'}{item.local ? ` · ${item.local}` : ''}</span></button><div className="record-actions"><BotaoIcone label={`Relatório de ${item.nome}`} onClick={() => void exportarRelatorio(item)}><FileText size={16} /></BotaoIcone><BotaoIcone label={`Editar ${item.nome}`} onClick={() => iniciarEdicao(item)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${item.nome}`} onClick={() => void apagar(item)}><Trash2 size={16} /></BotaoIcone></div></article>
+        {atividadesFiltradas.map((item) => (
+          <article className="module-record" key={item.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${item.nome}`} onClick={() => { setFormAberto(false); setEditando(null); setErroGraduacao(''); setVisualizando(item.id) }}><strong>{item.nome}</strong><span>{item.data} · {rotuloTipoAtividade(item.tipo)} · {item.aluno_ids.length} alunos · {item.aluno_ids_pagos?.length ?? 0} {item.tipo === 'frequencia' ? 'presentes' : 'confirmados'}{item.local ? ` · ${item.local}` : ''}</span></button><div className="record-actions"><BotaoIcone label={`Relatório de ${item.nome}`} onClick={() => void exportarRelatorio(item)}><FileText size={16} /></BotaoIcone><BotaoIcone label={`Editar ${item.nome}`} onClick={() => iniciarEdicao(item)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${item.nome}`} onClick={() => void apagar(item)}><Trash2 size={16} /></BotaoIcone></div></article>
         ))}
-        {!recurso.itens.length && <p className="module-empty">Nenhuma atividade cadastrada.</p>}
+        {!atividadesFiltradas.length && <p className="module-empty">{recurso.itens.length ? 'Nenhuma atividade encontrada com esses filtros.' : 'Nenhuma atividade cadastrada.'}</p>}
       </div>
     </PaginaModulo>
   )

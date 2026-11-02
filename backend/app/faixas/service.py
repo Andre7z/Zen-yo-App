@@ -23,7 +23,7 @@ def _normalizar(tipo, grau):
     if normalizar_tipo(tipo) == "Iniciante":
         return None
     if grau is None or grau < 1:
-        raise ErroFaixa(f"Informe o numero do {tipo} (1 ou mais)")
+        raise ErroFaixa(f"Informe o numero do {tipo} (1 ou mais, aceita decimais como 5.5)")
     return grau
 
 

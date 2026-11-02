@@ -10,7 +10,7 @@ const faixaSeguinte = { id: 3, nome: 'Laranja', tipo: 'Kyu', grau: 5, ordem: 995
 const aluno = {
   id: 7,
   nome: 'Caio Silva',
-  cpf: '12345678901',
+  cpf: '52998224725',
   data_nascimento: null,
   faixa_id: 2,
   proxima_faixa: null,
@@ -52,7 +52,7 @@ function configurarApi() {
   requisicao.mockImplementation(async (input, init) => {
     const caminho = new URL(String(input)).pathname
     const metodo = init?.method ?? 'GET'
-    if (caminho === '/usuarios/eu') return Response.json(usuario)
+    if (caminho === '/usuarios/eu' && metodo === 'GET') return Response.json(usuario)
     if (metodo === 'POST' || metodo === 'PATCH') {
       const corpo = init?.body
       const dados = corpo instanceof FormData
@@ -67,6 +67,7 @@ function configurarApi() {
     if (caminho === '/turmas/') return Response.json([turma, turmaOutra])
     if (caminho === '/atividades/') return Response.json([atividade, atividadeFaixa])
     if (caminho === '/anexos/') return Response.json([anexo])
+    if (caminho === '/tamanhos/') return Response.json([])
     if (/^\/atividades\/\d+\/relatorio\/controle-de-(faixas|kimonos|frequencia)\.xlsx$/.test(caminho)) {
       return new Response(new Blob(['conteudo']), { status: 200 })
     }
@@ -117,13 +118,33 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Bruna Costa', data_nascimento: '2010-05-15', faixa_id: 2, turma_id: 5, cpf: null, tamanho_kimono: null, tamanho_faixa: null, codigo_zempo: null })
   })
 
+  it('bloqueia CPF inválido ao cadastrar aluno e aceita CPF válido com máscara', async () => {
+    abrir(ROTAS.alunos)
+    await screen.findByText('Caio Silva')
+    fireEvent.click(screen.getByRole('button', { name: 'Novo aluno' }))
+    fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'Bruna Costa' } })
+    fireEvent.change(screen.getByLabelText('Faixa'), { target: { value: '2' } })
+    fireEvent.change(screen.getByLabelText('CPF'), { target: { value: '12345678901' } })
+    expect((screen.getByLabelText('CPF') as HTMLInputElement).value).toBe('123.456.789-01')
+    fireEvent.click(screen.getByRole('button', { name: 'Cadastrar aluno' }))
+    expect((await screen.findAllByText('CPF inválido. Confira os números digitados.')).length).toBe(1)
+    expect(requisicao.mock.calls.some(([url, init]) => String(url).endsWith('/aluno/') && init?.method === 'POST')).toBe(false)
+
+    fireEvent.change(screen.getByLabelText('CPF'), { target: { value: '52998224725' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cadastrar aluno' }))
+    await waitFor(() => {
+      const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/') && init?.method === 'POST')
+      expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ cpf: '529.982.247-25' })
+    })
+  })
+
   it('abre os detalhes do aluno em um popup e fecha com Escape', async () => {
     abrir('/turmas/5/alunos')
     await screen.findByText('Caio Silva')
 
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes de Caio Silva' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Caio Silva' })
-    expect(within(dialogo).getByText('12345678901')).toBeTruthy()
+    expect(within(dialogo).getByText('52998224725')).toBeTruthy()
 
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).toBeNull()
@@ -138,6 +159,8 @@ describe('telas conectadas aos recursos FastAPI', () => {
     abrir(ROTAS.atividades)
     expect(await screen.findByText('Treino infantil')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Nova atividade' }))
+    expect(await screen.findByRole('dialog', { name: 'Nova atividade' })).toBeTruthy()
+    expect(screen.getByText('CADASTRO')).toBeTruthy()
     fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Treino de sábado' } })
     fireEvent.change(screen.getByLabelText('Data'), { target: { value: '13102026' } })
     fireEvent.click(screen.getByRole('button', { name: 'Criar atividade' }))
@@ -222,7 +245,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
       return padrao(input, init)
     })
     expect((screen.getByRole('button', { name: /Graduar selecionados/ }) as HTMLButtonElement).disabled).toBe(true)
-    fireEvent.click(screen.getByLabelText('Marcação de Caio Silva'))
+    fireEvent.click(screen.getByLabelText('Confirmação de Caio Silva'))
     const botao = await waitFor(() => {
       const atual = screen.getByRole('button', { name: /Graduar selecionados \(1\)/ }) as HTMLButtonElement
       expect(atual.disabled).toBe(false)
@@ -267,7 +290,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
     const dialogo = await screen.findByRole('dialog', { name: 'Copa Zen' })
     expect(within(dialogo).getByText(/Idade: não informada/)).toBeTruthy()
     fireEvent.change(within(dialogo).getByLabelText('Peso de Caio Silva'), { target: { value: '38,5' } })
-    fireEvent.click(within(dialogo).getByRole('button', { name: 'Salvar peso de Caio Silva' }))
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Salvar alterações dos alunos' }))
 
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/7'), expect.objectContaining({ method: 'PATCH' })))
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/7') && init?.method === 'PATCH')
@@ -353,6 +376,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
     abrir(ROTAS.anexos)
     expect(await screen.findByText('Calendário anual')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Novo anexo' }))
+    expect(await screen.findByRole('dialog', { name: 'Novo anexo' })).toBeTruthy()
     fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Regulamento 2027' } })
     fireEvent.change(screen.getByLabelText('Categoria'), { target: { value: 'Regulamentos' } })
     fireEvent.change(screen.getByLabelText('Link externo'), { target: { value: 'https://example.com/regulamento' } })
@@ -371,6 +395,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
     abrir(ROTAS.faixas)
     expect(await screen.findByText('Amarela')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Nova faixa' }))
+    expect(await screen.findByRole('dialog', { name: 'Nova faixa' })).toBeTruthy()
     fireEvent.change(screen.getByLabelText('Nome da faixa'), { target: { value: 'Laranja' } })
     fireEvent.change(screen.getByLabelText('Classificação'), { target: { value: 'Kyu' } })
     fireEvent.change(screen.getByLabelText('Número do Kyu/Dan'), { target: { value: '5' } })
@@ -385,6 +410,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
     abrir(ROTAS.turmas)
     expect(await screen.findByText('Infantil A')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Nova turma' }))
+    expect(await screen.findByRole('dialog', { name: 'Nova turma' })).toBeTruthy()
     fireEvent.change(screen.getByLabelText('Nome da turma'), { target: { value: 'Juvenil' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salvar turma' }))
 
@@ -393,9 +419,56 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(JSON.parse(String(envio?.[1]?.body))).toEqual({ nome: 'Juvenil' })
   })
 
-  it('mostra a agenda das atividades na tela inicial', async () => {
+  it('cadastra tamanho em popup', async () => {
+    abrir(ROTAS.tamanhos)
+    await screen.findByRole('heading', { name: 'Tamanhos' })
+    await waitFor(() => expect(screen.getAllByText('Nenhum tamanho cadastrado.')).toHaveLength(2))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Adicionar' })[0])
+    const dialogo = await screen.findByRole('dialog', { name:     'Novo tamanho de judogi' })
+        fireEvent.change(screen.getByLabelText('Tamanho de judogi'), { target: { value: 'M3' } })
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Adicionar' }))
+
+    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/tamanhos/'), expect.objectContaining({ method: 'POST' })))
+    const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/tamanhos/') && init?.method === 'POST')
+    expect(JSON.parse(String(envio?.[1]?.body))).toEqual({ tipo: 'kimono', nome: 'M3' })
+  })
+
+  it('mostra no calendário apenas as atividades futuras', async () => {
+    const base = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/atividades/' && (init?.method ?? 'GET') === 'GET') {
+        return Response.json([atividade, { ...atividade, id: 20, nome: 'Treino futuro', data: '2999-01-05' }])
+      }
+      return base(input, init)
+    })
     abrir(ROTAS.inicio)
+    expect(await screen.findByText('Treino futuro')).toBeTruthy()
+    expect(screen.getByText(/5 de janeiro de 2999/i)).toBeTruthy()
+    expect(screen.queryByText('Treino infantil')).toBeNull()
+  })
+
+  it('filtra atividades por tipo e por texto', async () => {
+    abrir(ROTAS.atividades)
     expect(await screen.findByText('Treino infantil')).toBeTruthy()
-    expect(screen.getByText(/13 de outubro de 2026/i)).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Tipo de atividade'), { target: { value: 'troca_de_faixa' } })
+    expect(screen.queryByText('Treino infantil')).toBeNull()
+    expect(screen.getByText('Exame de graduação')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Tipo de atividade'), { target: { value: '' } })
+    fireEvent.change(screen.getByLabelText('Buscar atividade'), { target: { value: 'inexistente' } })
+    expect(screen.getByText('Nenhuma atividade encontrada com esses filtros.')).toBeTruthy()
+  })
+
+  it('edita o perfil em popup', async () => {
+    abrir(ROTAS.perfil)
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar perfil' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Editar perfil' })
+    fireEvent.change(within(dialogo).getByLabelText('Nome'), { target: { value: 'Ana Sensei' } })
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Salvar perfil' }))
+
+    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/usuarios/eu'), expect.objectContaining({ method: 'PATCH' })))
+    const envio = requisicao.mock.calls.find(([, init]) => init?.method === 'PATCH')
+    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Ana Sensei', email: 'ana@example.com' })
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Editar perfil' })).toBeNull())
+    expect(await screen.findByRole('heading', { name: 'Ana Sensei' })).toBeTruthy()
   })
 })

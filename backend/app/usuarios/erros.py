@@ -6,6 +6,10 @@ class EmailJaCadastrado(ErroDeUsuario):
     """Ja' existe uma conta com esse e-mail."""
 
 
+class SenhaAtualIncorreta(ErroDeUsuario):
+    """A senha atual nao confere ao tentar trocar e-mail ou senha."""
+
+
 class CredenciaisInvalidas(ErroDeUsuario):
     """E-mail ou senha errados, ou token invalido.
 

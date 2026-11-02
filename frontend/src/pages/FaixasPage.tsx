@@ -1,5 +1,5 @@
 import { CrudCatalogo } from '../components/CrudCatalogo'
-import { faixasApi, type Faixa } from '../servicos/dominio'
+import { faixasApi, formatarGrau, type Faixa } from '../servicos/dominio'
 
 export function FaixasPage() {
   return <CrudCatalogo<Faixa>
@@ -12,11 +12,11 @@ export function FaixasPage() {
     campos={[
       { nome: 'nome', rotulo: 'Nome da faixa' },
       { nome: 'tipo', rotulo: 'Classificação', tipo: 'selecao', opcoes: [{ valor: 'Iniciante', rotulo: 'Iniciante' }, { valor: 'Kyu', rotulo: 'Kyu' }, { valor: 'Dan', rotulo: 'Dan' }] },
-      { nome: 'grau', rotulo: 'Número do Kyu/Dan', tipo: 'numero', obrigatorio: false },
+      { nome: 'grau', rotulo: 'Número do Kyu/Dan', tipo: 'decimal', obrigatorio: false },
     ]}
     colunas={[
       { rotulo: 'Nome', valor: (faixa) => faixa.nome },
-      { rotulo: 'Graduação', valor: (faixa) => faixa.grau ? `${faixa.grau}º ${faixa.tipo}` : faixa.tipo },
+      { rotulo: 'Graduação', valor: (faixa) => faixa.grau ? `${formatarGrau(faixa.grau)}º ${faixa.tipo}` : faixa.tipo },
     ]}
   />
 }

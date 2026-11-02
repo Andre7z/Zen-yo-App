@@ -23,7 +23,7 @@ from .tamanhos import controller as tamanhos_controller
 from .tamanhos.erros import ErroTamanho, TamanhoNaoEncontrado
 
 from .usuarios import controller as usuarios_controller
-from .usuarios.erros import CredenciaisInvalidas, ErroDeUsuario
+from .usuarios.erros import CredenciaisInvalidas, ErroDeUsuario, SenhaAtualIncorreta
 
 
 # Nao ha' mais create_all aqui. Quem cria -- e MUDA -- tabelas agora e'
@@ -96,4 +96,6 @@ def traduzir_recusa_de_usuario(request: Request, erro: ErroDeUsuario):
             content={"detail": str(erro)},
             headers={"WWW-Authenticate": "Bearer"},
         )
+    if isinstance(erro, SenhaAtualIncorreta):
+        return JSONResponse(status_code=400, content={"detail": str(erro)})
     return JSONResponse(status_code=409, content={"detail": str(erro)})

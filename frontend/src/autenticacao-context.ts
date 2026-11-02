@@ -1,11 +1,13 @@
 import { createContext, useContext } from 'react'
 import type { Usuario } from './api'
+import type { DadosPerfil } from './autenticacao-service'
 
 export type ContextoAutenticacao = {
   usuario: Usuario | null
   carregando: boolean
   entrar(email: string, senha: string): Promise<void>
   cadastrar(nome: string, email: string, senha: string): Promise<void>
+  atualizarPerfil(dados: DadosPerfil): Promise<void>
   sair(): void
 }
 

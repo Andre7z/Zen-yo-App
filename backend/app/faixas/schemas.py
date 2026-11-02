@@ -14,7 +14,7 @@ def _validar_tipo(v):
 class FaixaEntrada(BaseModel):
     nome: str
     tipo: str
-    grau: int | None = Field(default=None, ge=1)
+    grau: float | None = Field(default=None, ge=1)
 
     @field_validator("nome")
     @classmethod
@@ -33,14 +33,14 @@ class FaixaPublico(BaseModel):
     id: int
     nome: str
     tipo: str
-    grau: int | None = None
-    ordem: int
+    grau: float | None = None
+    ordem: float
 
 
 class FaixaAtualizar(BaseModel):
     nome: str | None = None
     tipo: str | None = None
-    grau: int | None = Field(default=None, ge=1)
+    grau: float | None = Field(default=None, ge=1)
 
     @field_validator("nome")
     @classmethod

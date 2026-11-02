@@ -1,10 +1,12 @@
 import type { Usuario } from './api'
+import type { DadosPerfil } from './autenticacao-service'
 import type { EventoAutenticacao } from './historico-autenticacao'
 
 type AutenticacaoService = {
   cadastrar(nome: string, email: string, senha: string): Promise<Usuario>
   entrar(email: string, senha: string): Promise<{ access_token: string }>
   obterPerfil(): Promise<Usuario>
+  atualizarPerfil(dados: DadosPerfil): Promise<Usuario>
 }
 
 type Sessao = {
@@ -60,6 +62,10 @@ export class AutenticacaoFacade {
     const usuario = await this.entrar(email, senha)
     this.historico.registrar('cadastro')
     return usuario
+  }
+
+  atualizarPerfil(dados: DadosPerfil): Promise<Usuario> {
+    return this.autenticacaoService.atualizarPerfil(dados)
   }
 
   sair() {

@@ -6,7 +6,7 @@ app/seguranca.py; a consulta vem do repository. O service so' decide.
 from .. import seguranca
 from ..faixas import service as faixas_service
 from . import repository
-from .erros import CredenciaisInvalidas, EmailJaCadastrado
+from .erros import CredenciaisInvalidas, EmailJaCadastrado, SenhaAtualIncorreta
 
 
 def buscar(db, usuario_id):
@@ -24,6 +24,32 @@ def cadastrar(db, dados):
     usuario = repository.criar(db, {**dados, "senha_hash": seguranca.gerar_hash(senha)})
     faixas_service.semear_padrao(db, usuario)
     return usuario
+
+
+def atualizar_perfil(db, usuario, dados):
+    mudancas = {}
+    if dados.get("nome") is not None:
+        mudancas["nome"] = dados["nome"].strip()
+
+    novo_email = dados.get("email")
+    troca_email = novo_email is not None and novo_email != usuario.email
+    nova_senha = dados.get("nova_senha")
+
+    if troca_email or nova_senha:
+        senha_atual = dados.get("senha_atual")
+        if not senha_atual or not seguranca.conferir_senha(senha_atual, usuario.senha_hash):
+            raise SenhaAtualIncorreta("Informe corretamente a senha atual para alterar e-mail ou senha")
+
+    if troca_email:
+        # RN04: um e-mail, uma conta.
+        existente = repository.buscar_por_email(db, novo_email)
+        if existente and existente.id != usuario.id:
+            raise EmailJaCadastrado(f"Ja existe uma conta com o e-mail {novo_email}")
+        mudancas["email"] = novo_email
+    if nova_senha:
+        mudancas["senha_hash"] = seguranca.gerar_hash(nova_senha)
+
+    return repository.atualizar(db, usuario, mudancas) if mudancas else usuario
 
 
 def autenticar(db, email, senha):

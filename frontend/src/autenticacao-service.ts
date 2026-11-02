@@ -1,5 +1,7 @@
 import { apiRequest, type Usuario } from './api'
 
+export type DadosPerfil = { nome?: string; email?: string; nova_senha?: string; senha_atual?: string }
+
 export const autenticacaoService = {
   cadastrar(nome: string, email: string, senha: string) {
     return apiRequest<Usuario>('/usuarios/', {
@@ -19,5 +21,13 @@ export const autenticacaoService = {
 
   obterPerfil() {
     return apiRequest<Usuario>('/usuarios/eu')
+  },
+
+  atualizarPerfil(dados: DadosPerfil) {
+    return apiRequest<Usuario>('/usuarios/eu', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados),
+    })
   },
 }
