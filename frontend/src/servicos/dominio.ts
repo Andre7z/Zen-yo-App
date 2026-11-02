@@ -3,12 +3,14 @@ import { apiRequest } from '../api'
 export type Identificado = { id: number }
 
 export type Faixa = Identificado & { nome: string; tipo: 'Iniciante' | 'Kyu' | 'Dan'; grau: number | null; ordem: number }
-export const rotuloFaixa = (faixa: Faixa) => faixa.grau ? `${faixa.nome} - ${faixa.grau}º ${faixa.tipo}` : faixa.nome
+export const formatarGrau = (grau: number) => String(grau).replace('.', ',')
+export const rotuloFaixa = (faixa: Faixa) => faixa.grau ? `${faixa.nome} - ${formatarGrau(faixa.grau)}º ${faixa.tipo}` : faixa.nome
 export type Turma = Identificado & { nome: string }
 export type Aluno = Identificado & {
   nome: string
   cpf: string | null
   data_nascimento: string | null
+  genero?: 'Masculino' | 'Feminino' | null
   faixa_id: number
   proxima_faixa: string | null
   turma_id: number | null
@@ -37,7 +39,7 @@ export type Atividade = Identificado & {
 }
 export type Anexo = Identificado & {
   titulo: string
-  categoria: 'Calendarios' | 'Panilhas' | 'Fichas' | 'Regulamento' | 'Regulamentos' | 'Outro'
+  categoria: 'Calendarios' | 'Panilhas' | 'Fichas' | 'Apostila' | 'Regulamento' | 'Regulamentos' | 'Outro'
   descricao: string | null
   nome_arquivo: string | null
   arquivo_url: string | null
@@ -100,5 +102,8 @@ export function caminhoRelatorioXlsx(tipo: string, id: number) {
 }
 
 export function nomeArquivoRelatorioXlsx(tipo: string) {
-  return `${RELATORIOS_XLSX_POR_TIPO[tipo] ?? 'relatorio'}.xlsx`
+  const nome = tipo === 'entrega_de_kimono' ? 'controle-de-judogis' : RELATORIOS_XLSX_POR_TIPO[tipo] ?? 'relatorio'
+  return `${nome}.xlsx`
 }
+
+export const rotuloTipoAtividade = (tipo: string) => tipo === 'entrega_de_kimono' ? 'entrega de judogi' : tipo.replaceAll('_', ' ')

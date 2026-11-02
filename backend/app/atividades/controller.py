@@ -151,7 +151,7 @@ def controle_de_kimonos_xlsx(
     return Response(
         content=conteudo,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": 'attachment; filename="controle-de-kimonos.xlsx"'},
+        headers={"Content-Disposition": 'attachment; filename="controle-de-judogis.xlsx"'},
     )
 
 

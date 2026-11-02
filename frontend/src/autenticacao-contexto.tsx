@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import type { Usuario } from './api'
 import { autenticacaoFacade } from './autenticacao-dependencias'
 import { AutenticacaoContext } from './autenticacao-context'
+import type { DadosPerfil } from './autenticacao-service'
 
 export function AutenticacaoProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null)
@@ -25,13 +26,17 @@ export function AutenticacaoProvider({ children }: { children: ReactNode }) {
     setUsuario(await autenticacaoFacade.cadastrar(nome, email, senha))
   }
 
+  async function atualizarPerfil(dados: DadosPerfil) {
+    setUsuario(await autenticacaoFacade.atualizarPerfil(dados))
+  }
+
   function sair() {
     autenticacaoFacade.sair()
     setUsuario(null)
   }
 
   return (
-    <AutenticacaoContext.Provider value={{ usuario, carregando, entrar, cadastrar, sair }}>
+    <AutenticacaoContext.Provider value={{ usuario, carregando, entrar, cadastrar, atualizarPerfil, sair }}>
       {children}
     </AutenticacaoContext.Provider>
   )

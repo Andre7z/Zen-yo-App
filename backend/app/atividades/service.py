@@ -108,19 +108,23 @@ def _atividade_de_entrega_kimono(db, usuario, atividade_id):
     atividade = buscar(db, usuario, atividade_id)
     if atividade.tipo != "entrega_de_kimono":
         raise TipoDeAtividadeDesconhecido(
-            "O controle de kimonos so existe para atividades de entrega de kimono"
+            "O controle de judogis so existe para atividades de entrega de judogi"
         )
     return atividade, list(atividade.alunos)
 
 
+def _confirmados(atividade):
+    return set(getattr(atividade, "aluno_ids_pagos", []) or [])
+
+
 def controle_de_kimonos(db, usuario, atividade_id):
-    _, alunos = _atividade_de_entrega_kimono(db, usuario, atividade_id)
-    return controle_kimonos.gerar_relatorio(alunos, tamanhos_service.nomes(db, usuario, "kimono"))
+    atividade, alunos = _atividade_de_entrega_kimono(db, usuario, atividade_id)
+    return controle_kimonos.gerar_relatorio(alunos, tamanhos_service.nomes(db, usuario, "kimono"), _confirmados(atividade))
 
 
 def controle_de_kimonos_xlsx(db, usuario, atividade_id):
-    _, alunos = _atividade_de_entrega_kimono(db, usuario, atividade_id)
-    return controle_kimonos.gerar_xlsx(alunos, tamanhos_service.nomes(db, usuario, "kimono"))
+    atividade, alunos = _atividade_de_entrega_kimono(db, usuario, atividade_id)
+    return controle_kimonos.gerar_xlsx(alunos, tamanhos_service.nomes(db, usuario, "kimono"), _confirmados(atividade))
 
 
 def _atividade_de_campeonato(db, usuario, atividade_id):
@@ -133,13 +137,13 @@ def _atividade_de_campeonato(db, usuario, atividade_id):
 
 
 def controle_de_campeonato(db, usuario, atividade_id):
-    _, alunos = _atividade_de_campeonato(db, usuario, atividade_id)
-    return controle_campeonato.gerar_relatorio(alunos)
+    atividade, alunos = _atividade_de_campeonato(db, usuario, atividade_id)
+    return controle_campeonato.gerar_relatorio(alunos, _confirmados(atividade))
 
 
 def controle_de_campeonato_xlsx(db, usuario, atividade_id):
-    _, alunos = _atividade_de_campeonato(db, usuario, atividade_id)
-    return controle_campeonato.gerar_xlsx(alunos)
+    atividade, alunos = _atividade_de_campeonato(db, usuario, atividade_id)
+    return controle_campeonato.gerar_xlsx(alunos, _confirmados(atividade))
 
 
 def _atividade_de_frequencia(db, usuario, atividade_id):

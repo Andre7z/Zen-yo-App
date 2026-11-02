@@ -1,28 +1,49 @@
 import { useState, type FormEvent } from 'react'
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
+import { ModalDetalhes } from '../components/ModalDetalhes'
 import { useRecurso } from '../hooks/use-recurso'
 import { tamanhosApi, type Tamanho } from '../servicos/dominio'
 
 const SECOES: { tipo: Tamanho['tipo']; titulo: string }[] = [
-  { tipo: 'kimono', titulo: 'Tamanhos de kimono' },
+  { tipo: 'kimono', titulo: 'Tamanhos de judogi' },
   { tipo: 'faixa', titulo: 'Tamanhos de faixa' },
 ]
 
+const nomeTipo = (tipo: Tamanho['tipo']) => tipo === 'kimono' ? 'judogi' : tipo
+
 export function TamanhosPage() {
   const recurso = useRecurso(tamanhosApi)
-  const [novo, setNovo] = useState({ kimono: '', faixa: '' })
+  const [nome, setNome] = useState('')
+  const [tipoSelecionado, setTipoSelecionado] = useState<Tamanho['tipo']>('kimono')
+  const [editando, setEditando] = useState<Tamanho | null>(null)
+  const [formAberto, setFormAberto] = useState(false)
 
-  async function adicionar(event: FormEvent<HTMLFormElement>, tipo: Tamanho['tipo']) {
-    event.preventDefault()
-    const nome = novo[tipo].trim()
-    if (!nome) return
-    if (await recurso.executar(() => tamanhosApi.criar({ tipo, nome }))) setNovo((atual) => ({ ...atual, [tipo]: '' }))
+  function abrirCadastro(tipo: Tamanho['tipo']) {
+    setNome('')
+    setTipoSelecionado(tipo)
+    setEditando(null)
+    setFormAberto(true)
   }
 
-  async function renomear(tamanho: Tamanho) {
-    const nome = window.prompt(`Novo nome para o tamanho ${tamanho.nome}`, tamanho.nome)?.trim()
-    if (nome && nome !== tamanho.nome) await recurso.executar(() => tamanhosApi.atualizar(tamanho.id, { nome }))
+  function abrirEdicao(tamanho: Tamanho) {
+    setNome(tamanho.nome)
+    setTipoSelecionado(tamanho.tipo)
+    setEditando(tamanho)
+    setFormAberto(true)
+  }
+
+  async function salvar(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const nomeNormalizado = nome.trim()
+    if (!nomeNormalizado) return
+    const sucesso = await recurso.executar(() => editando
+      ? tamanhosApi.atualizar(editando.id, { nome: nomeNormalizado })
+      : tamanhosApi.criar({ tipo: tipoSelecionado, nome: nomeNormalizado }))
+    if (sucesso) {
+      setEditando(null)
+      setFormAberto(false)
+    }
   }
 
   async function mover(lista: Tamanho[], posicao: number, deslocamento: -1 | 1) {
@@ -40,18 +61,12 @@ export function TamanhosPage() {
   }
 
   return (
-    <PaginaModulo kicker="CADASTROS" titulo="Tamanhos" descricao="Defina os tamanhos de kimono e de faixa usados nos cadastros e planilhas." carregando={recurso.carregando} erro={recurso.erro} recarregar={() => { void recurso.carregar() }}>
+    <PaginaModulo kicker="CADASTROS" titulo="Tamanhos" descricao="Defina os tamanhos de judogi e de faixa usados nos cadastros e planilhas." carregando={recurso.carregando} erro={recurso.erro} recarregar={() => { void recurso.carregar() }}>
       {SECOES.map(({ tipo, titulo }) => {
         const lista = recurso.itens.filter((tamanho) => tamanho.tipo === tipo).sort((a, b) => a.ordem - b.ordem)
         return (
           <section key={tipo} aria-label={titulo}>
-            <div className="module-toolbar"><h2>{titulo}</h2><p>{lista.length} {lista.length === 1 ? 'tamanho' : 'tamanhos'}</p></div>
-            <form className="module-form" onSubmit={(event) => void adicionar(event, tipo)}>
-              <div className="module-form-grid">
-                <CampoModulo rotulo={`Novo tamanho de ${tipo}`}><input maxLength={5} value={novo[tipo]} onChange={(event) => setNovo({ ...novo, [tipo]: event.target.value })} /></CampoModulo>
-              </div>
-              <div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando || !novo[tipo].trim()}><Plus size={16} />Adicionar</button></div>
-            </form>
+            <div className="module-toolbar"><h2>{titulo}</h2><p>{lista.length} {lista.length === 1 ? 'tamanho' : 'tamanhos'}</p><button className="module-primary" type="button" onClick={() => abrirCadastro(tipo)}><Plus size={16} />Adicionar</button></div>
             <div className="module-list" aria-label={`Lista de ${titulo.toLowerCase()}`}>
               {lista.map((tamanho, posicao) => (
                 <article className="module-record" key={tamanho.id}>
@@ -59,7 +74,7 @@ export function TamanhosPage() {
                   <div className="record-actions">
                     <BotaoIcone label={`Subir ${tamanho.nome}`} disabled={posicao === 0 || recurso.salvando} onClick={() => void mover(lista, posicao, -1)}><ArrowUp size={16} /></BotaoIcone>
                     <BotaoIcone label={`Descer ${tamanho.nome}`} disabled={posicao === lista.length - 1 || recurso.salvando} onClick={() => void mover(lista, posicao, 1)}><ArrowDown size={16} /></BotaoIcone>
-                    <BotaoIcone label={`Renomear ${tamanho.nome}`} onClick={() => void renomear(tamanho)}><Pencil size={16} /></BotaoIcone>
+                    <BotaoIcone label={`Renomear ${tamanho.nome}`} onClick={() => abrirEdicao(tamanho)}><Pencil size={16} /></BotaoIcone>
                     <BotaoIcone label={`Remover ${tamanho.nome}`} onClick={() => void apagar(tamanho)}><Trash2 size={16} /></BotaoIcone>
                   </div>
                 </article>
@@ -69,6 +84,14 @@ export function TamanhosPage() {
           </section>
         )
       })}
+      {formAberto && <ModalDetalhes contexto="CADASTRO" titulo={editando ? `Editar tamanho de ${nomeTipo(editando.tipo)}` : `Novo tamanho de ${nomeTipo(tipoSelecionado)}`} aoFechar={() => setFormAberto(false)}>
+        <form className="module-form" onSubmit={(event) => void salvar(event)}>
+          <div className="module-form-grid">
+            <CampoModulo rotulo={`Tamanho de ${nomeTipo(tipoSelecionado)}`}><input required maxLength={5} value={nome} onChange={(event) => setNome(event.target.value)} /></CampoModulo>
+          </div>
+          <div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando || !nome.trim()}>{recurso.salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Adicionar'}</button><button className="module-secondary" type="button" onClick={() => setFormAberto(false)}>Cancelar</button></div>
+        </form>
+      </ModalDetalhes>}
     </PaginaModulo>
   )
 }

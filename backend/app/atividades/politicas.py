@@ -74,6 +74,7 @@ class RelatorioCampeonato(EstrategiaRelatorio):
             {
                 "aluno": aluno.nome,
                 "idade": getattr(aluno, "idade", None),
+                "genero": getattr(aluno, "genero", None),
                 "peso": getattr(aluno, "peso", None),
                 "codigo_zempo": getattr(aluno, "codigo_zempo", None),
             }

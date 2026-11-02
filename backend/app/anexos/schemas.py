@@ -7,6 +7,7 @@ CATEGORIAS_ANEXO = {
     "Calendarios",
     "Panilhas",
     "Fichas",
+    "Apostila",
     "Regulamento",
     "Regulamentos",
     "Outro",

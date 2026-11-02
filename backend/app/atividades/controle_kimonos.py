@@ -1,6 +1,6 @@
-"""Relatorio "CONTROLE DE ENTREGA DE KIMONOS" da atividade de entrega de kimono.
+"""Relatorio "CONTROLE DE ENTREGA DE JUDOGIS" da atividade de entrega de judogi.
 
-Monta as linhas (nome, turma, tamanho), a tabela de quantidades por turma e
+Monta as linhas (nome, turma, tamanho, confirmado), a tabela de quantidades por turma e
 tamanho e a planilha .xlsx no mesmo layout do controle de faixas.
 """
 from io import BytesIO
@@ -10,7 +10,7 @@ from openpyxl.utils import get_column_letter
 
 from ._estilo_xlsx import AMARELO, AZUL, BORDA, CENTRO, ESQUERDA, NEGRITO, NORMAL
 
-TITULO = "CONTROLE DE ENTREGA DE KIMONOS"
+TITULO = "CONTROLE DE ENTREGA DE JUDOGIS"
 TAMANHOS_PADRAO = ["M00", "M0", "M1", "M2", "M3", "A0", "A1", "A2", "A4", "A5"]
 SEM_TURMA = "SEM TURMA"
 LINHAS_MINIMAS = 14
@@ -24,12 +24,13 @@ def normalizar_tamanho(texto):
     return str(texto).strip().upper() if texto else ""
 
 
-def montar_linhas(alunos):
+def montar_linhas(alunos, confirmados=()):
     return [
         {
             "nome": aluno.nome,
             "turma": normalizar_turma(getattr(aluno, "turma", None)),
             "tamanho": normalizar_tamanho(getattr(aluno, "tamanho_kimono", None)),
+            "confirmado": getattr(aluno, "id", None) in confirmados,
         }
         for aluno in alunos
     ]
@@ -59,14 +60,14 @@ def calcular_quantidades(linhas, tamanhos=None):
     }
 
 
-def gerar_relatorio(alunos, tamanhos=None):
-    linhas = montar_linhas(alunos)
+def gerar_relatorio(alunos, tamanhos=None, confirmados=()):
+    linhas = montar_linhas(alunos, confirmados)
     return {"titulo": TITULO, "linhas": linhas, "quantidades": calcular_quantidades(linhas, tamanhos)}
 
 
-def gerar_xlsx(alunos, tamanhos=None):
+def gerar_xlsx(alunos, tamanhos=None, confirmados=()):
     TAMANHOS = tamanhos or TAMANHOS_PADRAO
-    linhas = montar_linhas(alunos)
+    linhas = montar_linhas(alunos, confirmados)
     quantidades = calcular_quantidades(linhas, TAMANHOS)
     turmas = quantidades["turmas"]
     ultima_lista = 2 + max(len(linhas), LINHAS_MINIMAS)
@@ -74,9 +75,9 @@ def gerar_xlsx(alunos, tamanhos=None):
 
     planilha = Workbook()
     folha = planilha.active
-    folha.title = "Controle de kimonos"
+    folha.title = "Controle de judogis"
 
-    colunas_totais = 4 + len(TAMANHOS) + 1
+    colunas_totais = 5 + len(TAMANHOS) + 1
     ultima_coluna = get_column_letter(colunas_totais)
     folha.merge_cells(f"A1:{ultima_coluna}1")
     folha["A1"] = TITULO
@@ -85,7 +86,7 @@ def gerar_xlsx(alunos, tamanhos=None):
     for coluna in range(1, colunas_totais + 1):
         folha.cell(row=1, column=coluna).border = BORDA
 
-    cabecalhos = ["NOME", "TURMA", "TAMANHO", "QUANTIDADES", *TAMANHOS, "Total"]
+    cabecalhos = ["NOME", "TURMA", "TAMANHO", "CONFIRMADO", "QUANTIDADES", *TAMANHOS, "Total"]
     for indice, texto in enumerate(cabecalhos, start=1):
         celula = folha.cell(row=2, column=indice, value=texto)
         celula.font = NEGRITO
@@ -93,7 +94,7 @@ def gerar_xlsx(alunos, tamanhos=None):
         celula.border = BORDA
 
     for numero in range(3, ultima_lista + 1):
-        for coluna in range(1, 4):
+        for coluna in range(1, 5):
             celula = folha.cell(row=numero, column=coluna)
             celula.border = BORDA
             celula.font = NORMAL
@@ -105,36 +106,37 @@ def gerar_xlsx(alunos, tamanhos=None):
         folha.cell(row=numero, column=1, value=linha["nome"])
         folha.cell(row=numero, column=2, value=linha["turma"] or None)
         folha.cell(row=numero, column=3, value=linha["tamanho"] or None)
+        folha.cell(row=numero, column=4, value="SIM" if linha["confirmado"] else "NÃO")
 
     intervalo_turma = f"$B$3:$B${ultima_lista}"
     intervalo_tamanho = f"$C$3:$C${ultima_lista}"
     for indice, resumo in enumerate(turmas):
         numero = 3 + indice
-        folha.cell(row=numero, column=4, value=resumo["turma"])
+        folha.cell(row=numero, column=5, value=resumo["turma"])
         for posicao, tamanho in enumerate(TAMANHOS):
-            coluna = 5 + posicao
+            coluna = 6 + posicao
             folha.cell(
                 row=numero,
                 column=coluna,
-                value=f'=COUNTIFS({intervalo_turma},$D{numero},{intervalo_tamanho},{get_column_letter(coluna)}$2)',
+                value=f'=COUNTIFS({intervalo_turma},$E{numero},{intervalo_tamanho},{get_column_letter(coluna)}$2)',
             )
-        primeira, ultima = get_column_letter(5), get_column_letter(4 + len(TAMANHOS))
+        primeira, ultima = get_column_letter(6), get_column_letter(5 + len(TAMANHOS))
         folha.cell(row=numero, column=colunas_totais, value=f"=SUM({primeira}{numero}:{ultima}{numero})")
 
-    folha.cell(row=total_linha, column=4, value="TOTAL:")
-    for coluna in range(5, colunas_totais + 1):
+    folha.cell(row=total_linha, column=5, value="TOTAL:")
+    for coluna in range(6, colunas_totais + 1):
         letra = get_column_letter(coluna)
         folha.cell(row=total_linha, column=coluna, value=f"=SUM({letra}3:{letra}{total_linha - 1})")
 
     for numero in range(3, total_linha + 1):
-        for coluna in range(4, colunas_totais + 1):
+        for coluna in range(5, colunas_totais + 1):
             celula = folha.cell(row=numero, column=coluna)
             celula.fill = AMARELO
             celula.border = BORDA
             celula.font = NEGRITO if numero == total_linha else NORMAL
-            celula.alignment = ESQUERDA if coluna == 4 else CENTRO
+            celula.alignment = ESQUERDA if coluna == 5 else CENTRO
 
-    larguras = {1: 42, 2: 28, 3: 14, 4: 32}
+    larguras = {1: 42, 2: 28, 3: 14, 4: 14, 5: 32}
     for coluna in range(1, colunas_totais + 1):
         folha.column_dimensions[get_column_letter(coluna)].width = larguras.get(coluna, 9)
 

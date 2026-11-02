@@ -7,9 +7,10 @@ type Props = {
   aoFechar: () => void
   children: ReactNode
   grande?: boolean
+  contexto?: string
 }
 
-export function ModalDetalhes({ titulo, aoFechar, children, grande = false }: Props) {
+export function ModalDetalhes({ titulo, aoFechar, children, grande = false, contexto = 'VISUALIZAÇÃO' }: Props) {
   const idTitulo = useId()
   const dialogRef = useRef<HTMLElement>(null)
   const aoFecharRef = useRef(aoFechar)
@@ -53,10 +54,10 @@ export function ModalDetalhes({ titulo, aoFechar, children, grande = false }: Pr
       >
         <header className="detail-dialog-heading">
           <div className="detail-dialog-title">
-            <span>VISUALIZAÇÃO</span>
+            <span>{contexto}</span>
             <h2 id={idTitulo}>{titulo}</h2>
           </div>
-          <button className="detail-dialog-close" type="button" aria-label="Fechar detalhes" onClick={aoFechar}>
+          <button className="detail-dialog-close" type="button" aria-label={contexto === 'VISUALIZAÇÃO' ? 'Fechar detalhes' : 'Fechar formulário'} onClick={aoFechar}>
             <X size={18} />
           </button>
         </header>

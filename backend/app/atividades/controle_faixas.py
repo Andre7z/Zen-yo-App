@@ -41,6 +41,7 @@ def normalizar_tamanho(texto):
 
 
 def montar_linhas(atividade, alunos):
+    confirmados = set(getattr(atividade, "aluno_ids_pagos", []) or [])
     linhas = []
     for aluno in alunos:
         faixa = aluno.proxima_faixa or atividade.nova_faixa or aluno.faixa_obj.nome
@@ -50,6 +51,7 @@ def montar_linhas(atividade, alunos):
                 "faixa": normalizar_faixa(faixa),
                 "tamanho": normalizar_tamanho(aluno.tamanho_faixa),
                 "grossa": bool(getattr(aluno, "faixa_grossa", False)),
+                "confirmado": getattr(aluno, "id", None) in confirmados,
             }
         )
     return linhas
@@ -102,7 +104,7 @@ def gerar_xlsx(atividade, alunos, tamanhos=None):
     centro = Alignment(horizontal="center", vertical="center")
     esquerda = Alignment(horizontal="left", vertical="center")
 
-    colunas_totais = 5 + len(TAMANHOS) + 1
+    colunas_totais = 6 + len(TAMANHOS) + 1
     ultima_coluna = get_column_letter(colunas_totais)
     folha.merge_cells(f"A1:{ultima_coluna}1")
     folha["A1"] = TITULO
@@ -111,7 +113,7 @@ def gerar_xlsx(atividade, alunos, tamanhos=None):
     for coluna in range(1, colunas_totais + 1):
         folha.cell(row=1, column=coluna).border = borda
 
-    cabecalhos = ["NOME", "FAIXA", "TAMANHO", "GROSSA", "QUANTIDADES", *TAMANHOS, "Total"]
+    cabecalhos = ["NOME", "FAIXA", "TAMANHO", "GROSSA", "CONFIRMADO", "QUANTIDADES", *TAMANHOS, "Total"]
     for indice, texto in enumerate(cabecalhos, start=1):
         celula = folha.cell(row=2, column=indice, value=texto)
         celula.font = negrito
@@ -119,7 +121,7 @@ def gerar_xlsx(atividade, alunos, tamanhos=None):
         celula.border = borda
 
     for numero in range(3, ultima_lista + 1):
-        for coluna in range(1, 5):
+        for coluna in range(1, 6):
             celula = folha.cell(row=numero, column=coluna)
             celula.border = borda
             celula.font = normal
@@ -132,36 +134,37 @@ def gerar_xlsx(atividade, alunos, tamanhos=None):
         folha.cell(row=numero, column=2, value=linha["faixa"] or None)
         folha.cell(row=numero, column=3, value=linha["tamanho"] or None)
         folha.cell(row=numero, column=4, value="SIM" if linha["grossa"] else "NÃO")
+        folha.cell(row=numero, column=5, value="SIM" if linha["confirmado"] else "NÃO")
 
     intervalo_faixa = f"$B$3:$B${ultima_lista}"
     intervalo_tamanho = f"$C$3:$C${ultima_lista}"
     for indice, faixa in enumerate(FAIXAS):
         numero = 3 + indice
-        folha.cell(row=numero, column=5, value=faixa)
+        folha.cell(row=numero, column=6, value=faixa)
         for posicao, tamanho in enumerate(TAMANHOS):
-            coluna = 6 + posicao
+            coluna = 7 + posicao
             folha.cell(
                 row=numero,
                 column=coluna,
-                value=f'=COUNTIFS({intervalo_faixa},$E{numero},{intervalo_tamanho},{get_column_letter(coluna)}$2)',
+                value=f'=COUNTIFS({intervalo_faixa},$F{numero},{intervalo_tamanho},{get_column_letter(coluna)}$2)',
             )
-        primeira, ultima = get_column_letter(6), get_column_letter(5 + len(TAMANHOS))
+        primeira, ultima = get_column_letter(7), get_column_letter(6 + len(TAMANHOS))
         folha.cell(row=numero, column=colunas_totais, value=f"=SUM({primeira}{numero}:{ultima}{numero})")
 
-    folha.cell(row=total_linha, column=5, value="TOTAL:")
-    for coluna in range(6, colunas_totais + 1):
+    folha.cell(row=total_linha, column=6, value="TOTAL:")
+    for coluna in range(7, colunas_totais + 1):
         letra = get_column_letter(coluna)
         folha.cell(row=total_linha, column=coluna, value=f"=SUM({letra}3:{letra}{total_linha - 1})")
 
     for numero in range(3, total_linha + 1):
-        for coluna in range(5, colunas_totais + 1):
+        for coluna in range(6, colunas_totais + 1):
             celula = folha.cell(row=numero, column=coluna)
             celula.fill = amarelo
             celula.border = borda
             celula.font = negrito if numero == total_linha else normal
-            celula.alignment = esquerda if coluna == 5 else centro
+            celula.alignment = esquerda if coluna == 6 else centro
 
-    larguras = {1: 42, 2: 30, 3: 14, 4: 12, 5: 32}
+    larguras = {1: 42, 2: 30, 3: 14, 4: 12, 5: 14, 6: 32}
     for coluna in range(1, colunas_totais + 1):
         folha.column_dimensions[get_column_letter(coluna)].width = larguras.get(coluna, 9)
 

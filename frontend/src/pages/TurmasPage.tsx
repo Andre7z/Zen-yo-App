@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
 import { useRecurso } from '../hooks/use-recurso'
@@ -51,10 +51,10 @@ export function TurmasPage() {
 
   return (
     <PaginaModulo kicker="ORGANIZAÇÃO" titulo="Turmas" descricao="Organize os alunos por turma." carregando={recurso.carregando} erro={recurso.erro || erroAlunos} recarregar={() => { void recurso.carregar() }}>
-      <div className="module-toolbar"><p>{recurso.itens.length} turmas</p><button className="module-primary" type="button" onClick={() => { setDados(vazio); setEditando(null); setFormAberto((atual) => !atual) }}>{formAberto ? <X size={16} /> : <Plus size={16} />}{formAberto ? 'Fechar formulário' : 'Nova turma'}</button></div>
-      {formAberto && <form className="module-form" onSubmit={salvar}><div className="module-form-heading"><h2>{editando ? 'Editar turma' : 'Nova turma'}</h2></div><div className="module-form-grid">
+      <div className="module-toolbar"><p>{recurso.itens.length} turmas</p><button className="module-primary" type="button" onClick={() => { setDados(vazio); setEditando(null); setFormAberto(true) }}><Plus size={16} />Nova turma</button></div>
+      {formAberto && <ModalDetalhes contexto="CADASTRO" titulo={editando ? 'Editar turma' : 'Nova turma'} aoFechar={() => setFormAberto(false)}><form className="module-form" onSubmit={salvar}><div className="module-form-grid">
         <CampoModulo rotulo="Nome da turma"><input required minLength={2} value={dados.nome} onChange={(event) => setDados({ ...dados, nome: event.target.value })} /></CampoModulo>
-      </div><div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando}>{recurso.salvando ? 'Salvando...' : 'Salvar turma'}</button><button className="module-secondary" type="button" onClick={() => setFormAberto(false)}>Cancelar</button></div></form>}
+      </div><div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando}>{recurso.salvando ? 'Salvando...' : 'Salvar turma'}</button><button className="module-secondary" type="button" onClick={() => setFormAberto(false)}>Cancelar</button></div></form></ModalDetalhes>}
       {visualizando && <ModalDetalhes titulo={visualizando.nome} aoFechar={() => setVisualizando(null)}>
         <dl className="module-details"><div><dt>Alunos</dt><dd>{alunos.filter((aluno) => aluno.turma_id === visualizando.id || (aluno.turma_id === null && aluno.turma === visualizando.nome)).length}</dd></div></dl>
         <div className="module-form-actions"><Link className="module-primary" to={ROTAS.turmaAlunos.replace(':turmaId', String(visualizando.id))}>Gerenciar alunos</Link></div>

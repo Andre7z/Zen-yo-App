@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Pencil, Plus, Trash2, UserMinus, X } from 'lucide-react'
+import { Pencil, Plus, Trash2, UserMinus } from 'lucide-react'
 import { alunosApi, faixasApi, rotuloFaixa, turmasApi, type Aluno, type Faixa, type Turma } from '../servicos/dominio'
 import { opcoesDeTamanho, useTamanhos } from '../hooks/use-tamanhos'
 import { useRecurso } from '../hooks/use-recurso'
@@ -8,11 +8,12 @@ import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModul
 import { ModalDetalhes } from '../components/ModalDetalhes'
 import { EntradaData } from '../components/EntradaData'
 import { converterDataParaIso, formatarDataParaEntrada } from '../servicos/datas'
+import { cpfValido, formatarCpf } from '../servicos/cpf'
 import { ROTAS } from '../routes'
 
 const vazio = {
-  nome: '', cpf: '', data_nascimento: '', faixa_id: '', proxima_faixa: '', turma_id: '',
-  tamanho_kimono: '', tamanho_faixa: '', codigo_zempo: '',
+  nome: '', cpf: '', data_nascimento: '', genero: '', faixa_id: '', proxima_faixa: '', turma_id: '',
+  tamanho_kimono: '', tamanho_faixa: '', codigo_zempo: '', peso: '',
   responsavel_nome: '', responsavel_cpf: '', responsavel_celular: '',
 }
 type DadosAluno = typeof vazio
@@ -35,6 +36,9 @@ export function AlunosPage() {
   const [visualizando, setVisualizando] = useState<number | null>(null)
   const [formAberto, setFormAberto] = useState(false)
   const [erroData, setErroData] = useState('')
+  const [erroPeso, setErroPeso] = useState('')
+  const [erroCpf, setErroCpf] = useState('')
+  const [erroCpfResponsavel, setErroCpfResponsavel] = useState('')
 
   useEffect(() => {
     void faixasApi.listar().then(setFaixas).catch((falha: unknown) => {
@@ -56,10 +60,12 @@ export function AlunosPage() {
       nome: aluno.nome,
       cpf: aluno.cpf ?? '',
       data_nascimento: aluno.data_nascimento ? formatarDataParaEntrada(aluno.data_nascimento) : '',
+      genero: aluno.genero ?? '',
       faixa_id: String(aluno.faixa_id),
       proxima_faixa: aluno.proxima_faixa ?? '',
       turma_id: aluno.turma_id ? String(aluno.turma_id) : '',
       tamanho_kimono: aluno.tamanho_kimono ?? '',
+      peso: aluno.peso !== null && aluno.peso !== undefined ? String(aluno.peso).replace('.', ',') : '',
       tamanho_faixa: aluno.tamanho_faixa ?? '',
       codigo_zempo: aluno.codigo_zempo ?? '',
       responsavel_nome: aluno.responsavel_nome ?? '',
@@ -79,15 +85,29 @@ export function AlunosPage() {
       return
     }
     setErroData('')
+    const textoPeso = dados.peso.trim().replace(',', '.')
+    const peso = textoPeso ? Number(textoPeso) : null
+    if (peso !== null && (!Number.isFinite(peso) || peso <= 0 || peso > 500)) {
+      setErroPeso('Informe um peso válido entre 0 e 500 kg.')
+      return
+    }
+    setErroPeso('')
+    const cpfInvalido = dados.cpf.trim() !== '' && !cpfValido(dados.cpf)
+    const cpfResponsavelInvalido = dados.responsavel_cpf.trim() !== '' && !cpfValido(dados.responsavel_cpf)
+    setErroCpf(cpfInvalido ? 'CPF inválido. Confira os números digitados.' : '')
+    setErroCpfResponsavel(cpfResponsavelInvalido ? 'CPF inválido. Confira os números digitados.' : '')
+    if (cpfInvalido || cpfResponsavelInvalido) return
     const payload = {
       nome: dados.nome.trim(),
       cpf: dados.cpf.trim() || null,
       data_nascimento: dataNascimento,
+      genero: dados.genero || null,
       faixa_id: Number(dados.faixa_id),
       proxima_faixa: dados.proxima_faixa || null,
       turma_id: dados.turma_id ? Number(dados.turma_id) : null,
       turma: turmas.find((turma) => turma.id === Number(dados.turma_id))?.nome ?? null,
       tamanho_kimono: dados.tamanho_kimono || null,
+      peso,
       tamanho_faixa: dados.tamanho_faixa || null,
       codigo_zempo: dados.codigo_zempo.trim() || null,
       responsavel_nome: dados.responsavel_nome.trim() || null,
@@ -128,8 +148,8 @@ export function AlunosPage() {
       <div className="module-toolbar">
         <p>{alunosListados.length} {alunosListados.length === 1 ? 'aluno' : 'alunos'}</p>
                 <Link className="module-secondary" to={ROTAS.turmas}>Turmas</Link>
-                <button className="module-primary" type="button" onClick={() => { if (modoTurma) { setIdsSelecionados([]); setBuscaAluno(''); setFormAberto(false); setSelecionando(true); return } setDados({ ...vazio, turma_id: turmaFiltro });  setEditando(null); setVisualizando(null); setFormAberto((aberto) => !aberto) }}>
-          {modoTurma ? <Plus size={16} /> : formAberto ? <X size={16} /> : <Plus size={16} />}{modoTurma ? 'Adicionar alunos' : formAberto ? 'Fechar formulário' : 'Novo aluno'}
+                <button className="module-primary" type="button" onClick={() => { if (modoTurma) { setIdsSelecionados([]); setBuscaAluno(''); setFormAberto(false); setSelecionando(true); return } setDados({ ...vazio, turma_id: turmaFiltro });  setEditando(null); setVisualizando(null); setFormAberto(true) }}>
+          <Plus size={16} />{modoTurma ? 'Adicionar alunos' : 'Novo aluno'}
         </button>
       </div>
 
@@ -138,24 +158,27 @@ export function AlunosPage() {
             )}
 
             {formAberto && (
+              <ModalDetalhes contexto="CADASTRO" titulo={editando ? 'Editar aluno' : 'Novo aluno'} aoFechar={() => setFormAberto(false)}>
         <form className="module-form" onSubmit={salvar}>
-          <div className="module-form-heading"><h2>{editando ? 'Editar aluno' : 'Novo aluno'}</h2></div>
           <div className="module-form-grid">
             <CampoModulo rotulo="Nome completo"><input required minLength={2} value={dados.nome} onChange={(event) => setDados({ ...dados, nome: event.target.value })} /></CampoModulo>
-            <CampoModulo rotulo="CPF"><input value={dados.cpf} onChange={(event) => setDados({ ...dados, cpf: event.target.value })} /></CampoModulo>
+            <CampoModulo rotulo="CPF"><input aria-label="CPF" inputMode="numeric" aria-invalid={Boolean(erroCpf)} placeholder="000.000.000-00" value={dados.cpf} onChange={(event) => { setErroCpf(''); setDados({ ...dados, cpf: formatarCpf(event.target.value) }) }} />{erroCpf && <small className="module-field-error" role="alert">{erroCpf}</small>}</CampoModulo>
             <CampoModulo rotulo="Data de nascimento"><EntradaData invalid={Boolean(erroData)} value={dados.data_nascimento} onChange={(data_nascimento) => { setErroData(''); setDados({ ...dados, data_nascimento }) }} />{erroData && <small className="module-field-error" role="alert">{erroData}</small>}</CampoModulo>
+            <CampoModulo rotulo="Gênero"><select value={dados.genero} onChange={(event) => setDados({ ...dados, genero: event.target.value })}><option value="">Não informado</option><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option></select></CampoModulo>
             <CampoModulo rotulo="Faixa"><select required value={dados.faixa_id} onChange={(event) => setDados({ ...dados, faixa_id: event.target.value })}><option value="">Selecione</option>{faixas.map((faixa) => <option key={faixa.id} value={faixa.id}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
             <CampoModulo rotulo="Próxima faixa"><select value={dados.proxima_faixa} onChange={(event) => setDados({ ...dados, proxima_faixa: event.target.value })}><option value="">Não definida</option>{faixas.map((faixa) => <option key={faixa.id} value={rotuloFaixa(faixa)}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
             <CampoModulo rotulo="Turma"><select value={dados.turma_id} onChange={(event) => setDados({ ...dados, turma_id: event.target.value })}><option value="">Sem turma</option>{turmas.map((turma) => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}</select></CampoModulo>
-            <CampoModulo rotulo="Tamanho do kimono"><select value={dados.tamanho_kimono} onChange={(event) => setDados({ ...dados, tamanho_kimono: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.kimono, dados.tamanho_kimono).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
+            <CampoModulo rotulo="Peso (kg)"><input inputMode="decimal" value={dados.peso} onChange={(event) => { setErroPeso(''); setDados({ ...dados, peso: event.target.value }) }} />{erroPeso && <small className="module-field-error" role="alert">{erroPeso}</small>}</CampoModulo>
+            <CampoModulo rotulo="Tamanho do judogi"><select value={dados.tamanho_kimono} onChange={(event) => setDados({ ...dados, tamanho_kimono: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.kimono, dados.tamanho_kimono).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
             <CampoModulo rotulo="Tamanho da faixa"><select value={dados.tamanho_faixa} onChange={(event) => setDados({ ...dados, tamanho_faixa: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.faixa, dados.tamanho_faixa).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
             <CampoModulo rotulo="Código Zempo"><input value={dados.codigo_zempo} onChange={(event) => setDados({ ...dados, codigo_zempo: event.target.value })} /></CampoModulo>
             <CampoModulo rotulo="Nome do responsável"><input value={dados.responsavel_nome} onChange={(event) => setDados({ ...dados, responsavel_nome: event.target.value })} /></CampoModulo>
-            <CampoModulo rotulo="CPF do responsável"><input inputMode="numeric" value={dados.responsavel_cpf} onChange={(event) => setDados({ ...dados, responsavel_cpf: event.target.value })} /></CampoModulo>
+            <CampoModulo rotulo="CPF do responsável"><input aria-label="CPF do responsável" inputMode="numeric" aria-invalid={Boolean(erroCpfResponsavel)} placeholder="000.000.000-00" value={dados.responsavel_cpf} onChange={(event) => { setErroCpfResponsavel(''); setDados({ ...dados, responsavel_cpf: formatarCpf(event.target.value) }) }} />{erroCpfResponsavel && <small className="module-field-error" role="alert">{erroCpfResponsavel}</small>}</CampoModulo>
             <CampoModulo rotulo="Celular do responsável"><input type="tel" inputMode="tel" value={dados.responsavel_celular} onChange={(event) => setDados({ ...dados, responsavel_celular: event.target.value })} /></CampoModulo>
           </div>
           <div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando || Boolean(erroFaixas || erroTurmas)}>{recurso.salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Cadastrar aluno'}</button><button className="module-secondary" type="button" onClick={() => setFormAberto(false)}>Cancelar</button></div>
         </form>
+              </ModalDetalhes>
       )}
 
       {selecionando && turmaAtual && (() => {
@@ -194,10 +217,12 @@ export function AlunosPage() {
             <dl className="module-details">
               <div><dt>CPF</dt><dd>{aluno.cpf ?? 'Não informado'}</dd></div>
               <div><dt>Data de nascimento</dt><dd>{aluno.data_nascimento ? formatarDataParaEntrada(aluno.data_nascimento) : 'Não informada'}</dd></div>
-              <div><dt>Faixa</dt><dd>{faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Não informada'}</dd></div>
+                            <div><dt>Gênero</dt><dd>{aluno.genero ?? 'Não informado'}</dd></div>
+                            <div><dt>Faixa</dt><dd>{faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Não informada'}</dd></div>
               <div><dt>Próxima faixa</dt><dd>{aluno.proxima_faixa ?? 'Não definida'}</dd></div>
               <div><dt>Turma</dt><dd>{nomeTurma(aluno) ?? 'Sem turma'}</dd></div>
-              <div><dt>Tamanho do kimono</dt><dd>{aluno.tamanho_kimono ?? 'Não informado'}</dd></div>
+              <div><dt>Peso</dt><dd>{aluno.peso ? `${String(aluno.peso).replace('.', ',')} kg` : 'Não informado'}</dd></div>
+              <div><dt>Tamanho do judogi</dt><dd>{aluno.tamanho_kimono ?? 'Não informado'}</dd></div>
               <div><dt>Tamanho da faixa</dt><dd>{aluno.tamanho_faixa ?? 'Não informado'}</dd></div>
               <div><dt>Código Zempo</dt><dd>{aluno.codigo_zempo ?? 'Não informado'}</dd></div>
               <div><dt>Responsável</dt><dd>{aluno.responsavel_nome ?? 'Não informado'}</dd></div>

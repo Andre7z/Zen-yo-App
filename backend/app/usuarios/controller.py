@@ -6,7 +6,7 @@ from ..database import get_db
 from ..seguranca import criar_token, get_current_user
 from . import service
 from .models import Usuario
-from .schemas import Token, UsuarioCriar, UsuarioPublico
+from .schemas import Token, UsuarioAtualizar, UsuarioCriar, UsuarioPublico
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
@@ -28,4 +28,14 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
 def eu(usuario: Usuario = Depends(get_current_user)):
     """Quem sou eu? So' responde com um token valido -- e' o teste da porta."""
     return usuario
+
+
+@router.patch("/eu", response_model=UsuarioPublico)
+def atualizar_perfil(
+    dados: UsuarioAtualizar,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Edita nome, e-mail e senha de quem esta' logado."""
+    return service.atualizar_perfil(db, usuario, dados.model_dump(exclude_unset=True))
 

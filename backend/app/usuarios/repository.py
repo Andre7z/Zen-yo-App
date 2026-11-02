@@ -19,3 +19,11 @@ def criar(db: Session, dados: dict):
     db.commit()
     db.refresh(usuario)
     return usuario
+
+
+def atualizar(db: Session, usuario: Usuario, mudancas: dict):
+    for campo, valor in mudancas.items():
+        setattr(usuario, campo, valor)
+    db.commit()
+    db.refresh(usuario)
+    return usuario
