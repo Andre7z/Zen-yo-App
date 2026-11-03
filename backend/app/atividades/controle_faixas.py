@@ -10,6 +10,8 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
+from ..ordenacao import ordenar_alunos_por_nome
+
 TITULO = "CONTROLE DE FAIXAS"
 FAIXAS = [
     "BRANCA PONTA CINZA",
@@ -43,7 +45,7 @@ def normalizar_tamanho(texto):
 def montar_linhas(atividade, alunos):
     confirmados = set(getattr(atividade, "aluno_ids_pagos", []) or [])
     linhas = []
-    for aluno in alunos:
+    for aluno in ordenar_alunos_por_nome(alunos):
         faixa = aluno.proxima_faixa or atividade.nova_faixa or aluno.faixa_obj.nome
         linhas.append(
             {

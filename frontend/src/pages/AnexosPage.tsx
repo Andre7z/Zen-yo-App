@@ -4,6 +4,7 @@ import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModul
 import { ModalDetalhes } from '../components/ModalDetalhes'
 import { useRecurso } from '../hooks/use-recurso'
 import { anexosApi, type Anexo } from '../servicos/dominio'
+import { formatarDataParaEntrada } from '../servicos/datas'
 import { baixarArquivo } from '../api'
 
 const vazio = { titulo: '', categoria: 'Calendarios' as Anexo['categoria'], descricao: '', nome_arquivo: '', arquivo_url: '', link: '' }
@@ -19,7 +20,9 @@ export function AnexosPage() {
   const [erroArquivo, setErroArquivo] = useState('')
   const [categoriaFiltro, setCategoriaFiltro] = useState('')
   const [previa, setPrevia] = useState<{ anexo: Anexo; url: string; tipo: string } | null>(null)
-  const anexosFiltrados = categoriaFiltro ? recurso.itens.filter((anexo) => anexo.categoria === categoriaFiltro) : recurso.itens
+  const anexosFiltrados = categoriaFiltro
+    ? recurso.itens.filter((anexo) => anexo.categoria === categoriaFiltro || (categoriaFiltro === 'Apostilas' && anexo.categoria === 'Apostila'))
+    : recurso.itens
 
   function iniciarEdicao(anexo: Anexo) {
     setDados({ titulo: anexo.titulo, categoria: anexo.categoria, descricao: anexo.descricao ?? '', nome_arquivo: anexo.nome_arquivo ?? '', arquivo_url: anexo.arquivo_url ?? '', link: anexo.link ?? '' })
@@ -102,10 +105,10 @@ export function AnexosPage() {
   return (
     <PaginaModulo kicker="ARQUIVOS" titulo="Anexos" descricao="Organize documentos e links de referência da equipe." carregando={recurso.carregando} erro={recurso.erro || erroArquivo} recarregar={() => { void recurso.carregar() }}>
       <div className="module-toolbar"><p>{recurso.itens.length} {recurso.itens.length === 1 ? 'anexo' : 'anexos'}</p><button className="module-primary" type="button" onClick={() => { setDados(vazio); setArquivo(null); setErroArquivo(''); setEditando(null); setFormAberto(true) }}><Plus size={16} />Novo anexo</button></div>
-      <CampoModulo rotulo="Filtrar por categoria"><select value={categoriaFiltro} onChange={(event) => setCategoriaFiltro(event.target.value)}><option value="">Todos</option><option value="Calendarios">Calendários</option><option value="Panilhas">Planilhas</option><option value="Fichas">Fichas</option><option value="Apostila">Apostila</option><option value="Regulamentos">Regulamentos</option><option value="Outro">Outro</option></select></CampoModulo>
+      <CampoModulo rotulo="Filtrar por categoria"><select value={categoriaFiltro} onChange={(event) => setCategoriaFiltro(event.target.value)}><option value="">Todos</option><option value="Calendarios">Calendários</option><option value="Panilhas">Planilhas</option><option value="Fichas">Fichas</option><option value="Apostilas">Apostilas</option><option value="Regulamentos">Regulamentos</option><option value="Outro">Outro</option></select></CampoModulo>
       {formAberto && <ModalDetalhes contexto="CADASTRO" titulo={editando ? 'Editar anexo' : 'Novo anexo'} aoFechar={() => setFormAberto(false)}><form className="module-form" onSubmit={salvar}><div className="module-form-grid">
         <CampoModulo rotulo="Título"><input required maxLength={160} value={dados.titulo} onChange={(event) => setDados({ ...dados, titulo: event.target.value })} /></CampoModulo>
-        <CampoModulo rotulo="Categoria"><select value={dados.categoria} onChange={(event) => setDados({ ...dados, categoria: event.target.value as Anexo['categoria'] })}><option value="Calendarios">Calendários</option><option value="Panilhas">Planilhas</option><option value="Fichas">Fichas</option><option value="Apostila">Apostila</option><option value="Regulamentos">Regulamentos</option><option value="Outro">Outro</option></select></CampoModulo>
+        <CampoModulo rotulo="Categoria"><select value={dados.categoria === 'Apostila' ? 'Apostilas' : dados.categoria} onChange={(event) => setDados({ ...dados, categoria: event.target.value as Anexo['categoria'] })}><option value="Calendarios">Calendários</option><option value="Panilhas">Planilhas</option><option value="Fichas">Fichas</option><option value="Apostilas">Apostilas</option><option value="Regulamentos">Regulamentos</option><option value="Outro">Outro</option></select></CampoModulo>
         <CampoModulo rotulo="Arquivo"><input type="file" onChange={(event) => setArquivo(event.target.files?.[0] ?? null)} />{arquivo && <small>{arquivo.name}</small>}</CampoModulo>
         <CampoModulo rotulo="Link externo"><input type="url" maxLength={500} value={dados.link} onChange={(event) => setDados({ ...dados, link: event.target.value })} /></CampoModulo>
         <CampoModulo rotulo="Descrição"><textarea rows={3} value={dados.descricao} onChange={(event) => setDados({ ...dados, descricao: event.target.value })} /></CampoModulo>
@@ -124,9 +127,9 @@ export function AnexosPage() {
       </ModalDetalhes>}
       {visualizando && <ModalDetalhes titulo={visualizando.titulo} aoFechar={() => setVisualizando(null)}>
         <dl className="module-details">
-          <div><dt>Categoria</dt><dd>{visualizando.categoria}</dd></div>
+          <div><dt>Categoria</dt><dd>{visualizando.categoria === 'Apostila' ? 'Apostilas' : visualizando.categoria}</dd></div>
           <div><dt>Arquivo</dt><dd>{visualizando.nome_arquivo ?? 'Não informado'}</dd></div>
-          <div><dt>Data de cadastro</dt><dd>{visualizando.criado_em || 'Não informada'}</dd></div>
+          <div><dt>Data de cadastro</dt><dd>{visualizando.criado_em ? formatarDataParaEntrada(visualizando.criado_em) : 'Não informada'}</dd></div>
           <div><dt>Descrição</dt><dd>{visualizando.descricao ?? 'Sem descrição'}</dd></div>
           <div><dt>Link</dt><dd>{visualizando.link ? <a href={visualizando.link} target="_blank" rel="noreferrer">{visualizando.link}</a> : 'Não informado'}</dd></div>
         </dl>
@@ -136,7 +139,7 @@ export function AnexosPage() {
           <button className="module-primary" type="button" onClick={() => { setVisualizando(null); iniciarEdicao(visualizando) }}><Pencil size={16} />Editar</button>
         </div>
       </ModalDetalhes>}
-      <div className="module-list" aria-label="Lista de anexos">{anexosFiltrados.map((anexo) => <article className="module-record" key={anexo.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${anexo.titulo}`} onClick={() => abrir(anexo)}><strong>{anexo.titulo}</strong><span>{anexo.categoria} · {anexo.nome_arquivo ?? 'Link de referência'}{anexo.criado_em ? ` · ${anexo.criado_em}` : ''}</span>{anexo.descricao && <p>{anexo.descricao}</p>}</button><div className="record-actions">{anexo.arquivo_url?.startsWith('/anexos/arquivos/') && <BotaoIcone label={`Visualizar ${anexo.titulo}`} onClick={() => abrir(anexo)}><Eye size={16} /></BotaoIcone>}{anexo.arquivo_url?.startsWith('/anexos/arquivos/') && <BotaoIcone label={`Baixar ${anexo.titulo}`} onClick={() => void baixar(anexo)}><Download size={16} /></BotaoIcone>}{anexo.link && <a className="icon-action" href={anexo.link} target="_blank" rel="noreferrer" aria-label={`Abrir ${anexo.titulo}`} title={`Abrir ${anexo.titulo}`}><ExternalLink size={16} /></a>}{anexo.arquivo_url && !anexo.arquivo_url.startsWith('/anexos/arquivos/') && <a className="icon-action" href={anexo.arquivo_url} target="_blank" rel="noreferrer" aria-label={`Abrir arquivo ${anexo.titulo}`} title={`Abrir arquivo ${anexo.titulo}`}><ExternalLink size={16} /></a>}<BotaoIcone label={`Editar ${anexo.titulo}`} onClick={() => iniciarEdicao(anexo)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${anexo.titulo}`} onClick={() => void apagar(anexo)}><Trash2 size={16} /></BotaoIcone></div></article>)}{!anexosFiltrados.length && <p className="module-empty">Nenhum anexo encontrado.</p>}</div>
+      <div className="module-list" aria-label="Lista de anexos">{anexosFiltrados.map((anexo) => <article className="module-record" key={anexo.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${anexo.titulo}`} onClick={() => abrir(anexo)}><strong>{anexo.titulo}</strong><span>{anexo.categoria === 'Apostila' ? 'Apostilas' : anexo.categoria} · {anexo.nome_arquivo ?? 'Link de referência'}{anexo.criado_em ? ` · ${formatarDataParaEntrada(anexo.criado_em)}` : ''}</span>{anexo.descricao && <p>{anexo.descricao}</p>}</button><div className="record-actions">{anexo.arquivo_url?.startsWith('/anexos/arquivos/') && <BotaoIcone label={`Visualizar ${anexo.titulo}`} onClick={() => abrir(anexo)}><Eye size={16} /></BotaoIcone>}{anexo.arquivo_url?.startsWith('/anexos/arquivos/') && <BotaoIcone label={`Baixar ${anexo.titulo}`} onClick={() => void baixar(anexo)}><Download size={16} /></BotaoIcone>}{anexo.link && <a className="icon-action" href={anexo.link} target="_blank" rel="noreferrer" aria-label={`Abrir ${anexo.titulo}`} title={`Abrir ${anexo.titulo}`}><ExternalLink size={16} /></a>}{anexo.arquivo_url && !anexo.arquivo_url.startsWith('/anexos/arquivos/') && <a className="icon-action" href={anexo.arquivo_url} target="_blank" rel="noreferrer" aria-label={`Abrir arquivo ${anexo.titulo}`} title={`Abrir arquivo ${anexo.titulo}`}><ExternalLink size={16} /></a>}<BotaoIcone label={`Editar ${anexo.titulo}`} onClick={() => iniciarEdicao(anexo)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${anexo.titulo}`} onClick={() => void apagar(anexo)}><Trash2 size={16} /></BotaoIcone></div></article>)}{!anexosFiltrados.length && <p className="module-empty">Nenhum anexo encontrado.</p>}</div>
     </PaginaModulo>
   )
 }

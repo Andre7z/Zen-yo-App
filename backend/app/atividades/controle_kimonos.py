@@ -8,6 +8,7 @@ from io import BytesIO
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
+from ..ordenacao import ordenar_alunos_por_nome
 from ._estilo_xlsx import AMARELO, AZUL, BORDA, CENTRO, ESQUERDA, NEGRITO, NORMAL
 
 TITULO = "CONTROLE DE ENTREGA DE JUDOGIS"
@@ -32,7 +33,7 @@ def montar_linhas(alunos, confirmados=()):
             "tamanho": normalizar_tamanho(getattr(aluno, "tamanho_kimono", None)),
             "confirmado": getattr(aluno, "id", None) in confirmados,
         }
-        for aluno in alunos
+        for aluno in ordenar_alunos_por_nome(alunos)
     ]
 
 

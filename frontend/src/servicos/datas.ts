@@ -26,6 +26,23 @@ export function calcularIdade(dataNascimento: string | null) {
   return idade
 }
 
+export function validarDataNascimento(dataNascimento: string) {
+  const hoje = dataAtualIso()
+  const [ano, mes, dia] = hoje.split('-').map(Number)
+  const anoLimite = ano - 122
+  const ultimoDiaDoMes = new Date(Date.UTC(anoLimite, mes, 0)).getUTCDate()
+  const dataLimite = `${anoLimite}-${String(mes).padStart(2, '0')}-${String(Math.min(dia, ultimoDiaDoMes)).padStart(2, '0')}`
+
+  if (dataNascimento > hoje) return 'A data de nascimento não pode ser futura.'
+  if (dataNascimento < dataLimite) return 'A data de nascimento deve estar dentro dos últimos 122 anos.'
+  return null
+}
+
+export function dataAtividadeValida(data: string) {
+  const ano = Number(data.slice(0, 4))
+  return ano >= 2000 && ano <= 2150
+}
+
 export function dataAtualIso() {
   const hoje = new Date()
   const ano = hoje.getFullYear()

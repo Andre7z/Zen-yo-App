@@ -8,6 +8,7 @@ from io import BytesIO
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
+from ..ordenacao import ordenar_alunos_por_nome
 from ._estilo_xlsx import AZUL, BORDA, CENTRO, ESQUERDA, NEGRITO, NORMAL
 
 TITULO = "CONTROLE DE CAMPEONATO"
@@ -24,7 +25,7 @@ def montar_linhas(alunos, confirmados=()):
             "codigo_zempo": getattr(aluno, "codigo_zempo", None) or "",
             "confirmado": getattr(aluno, "id", None) in confirmados,
         }
-        for aluno in alunos
+        for aluno in ordenar_alunos_por_nome(alunos)
     ]
 
 

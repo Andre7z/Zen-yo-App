@@ -97,3 +97,9 @@ def test_schemas_de_atualizacao_preservam_none_e_normalizam_texto():
     assert (anexo.titulo, anexo.categoria, anexo.descricao) == (None, None, "Documento")
     assert (faixa.nome, faixa.tipo) == (None, None)
     assert turma.nome is None
+
+
+def test_categoria_de_anexo_usa_apostilas_e_aceita_valor_antigo():
+    assert AnexoEntrada(titulo="Guia", categoria="Apostilas").categoria == "Apostilas"
+    assert AnexoEntrada(titulo="Guia", categoria="Apostila").categoria == "Apostilas"
+    assert AnexoAtualizar(categoria="Apostila").categoria == "Apostilas"
