@@ -11,6 +11,7 @@ A pergunta "que tipo de atividade e'?" existe no sistema inteiro uma vez so':
 na fabrica abaixo.
 """
 from .erros import TipoDeAtividadeDesconhecido
+from ..ordenacao import ordenar_alunos_por_nome
 
 
 class EstrategiaRelatorio:
@@ -24,7 +25,7 @@ class EstrategiaRelatorio:
 def _alunos_da_atividade(atividade):
     alunos = getattr(atividade, "alunos", None)
     if alunos is not None:
-        return list(alunos)
+        return ordenar_alunos_por_nome(alunos)
 
     aluno = getattr(atividade, "aluno", None)
     return [aluno] if aluno is not None else []

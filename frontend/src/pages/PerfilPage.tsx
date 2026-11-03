@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react'
-import { Check, Fingerprint, Mail, Pencil, UserRound } from 'lucide-react'
+import { useState, type SubmitEvent } from 'react'
+import { Mail, Pencil, UserRound } from 'lucide-react'
 import { useAutenticacao } from '../autenticacao-context'
 import { CampoModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
@@ -20,7 +20,7 @@ export function PerfilPage() {
     setEditando(true)
   }
 
-  async function salvar(event: FormEvent<HTMLFormElement>) {
+  async function salvar(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     if (dados.nova_senha && dados.nova_senha !== dados.confirmar) {
       setErro('A confirmação da nova senha não confere.')
@@ -45,15 +45,12 @@ export function PerfilPage() {
 
   return (
     <section className="home-main profile-main">
-      <div className="home-kicker"><i />CONTA DO DOJÔ</div>
-      <h1>Seu <em>perfil.</em></h1>
+      <h1>Perfil</h1>
       <p className="home-intro">Dados associados à sua conta de gestão.</p>
       <article className="welcome-card profile-card">
-        <div className="card-top"><span className="card-icon"><UserRound size={19} /></span><span className="card-status"><Check size={14} /> AUTENTICADO</span></div>
-        <span className="card-label">PERFIL DO PROFESSOR</span>
-        <h2>{usuario.nome}</h2>
+        <div className="card-top"><span className="card-icon"><UserRound size={19} /></span></div>
+        <h2>Sensei {usuario.nome}</h2>
         <div className="profile-line"><Mail size={16} /><span>{usuario.email}</span></div>
-        <div className="profile-line"><Fingerprint size={16} /><span>Conta #{usuario.id}</span></div>
         <button className="module-primary" type="button" onClick={abrirEdicao}><Pencil size={16} />Editar perfil</button>
       </article>
 
@@ -75,7 +72,7 @@ export function PerfilPage() {
           </form>
         </ModalDetalhes>
       )}
-      <footer className="home-footer"><span>ZEN'YO · GESTÃO DE JUDÔ</span><span>CAMINHO SUAVE, GESTÃO PRESENTE</span></footer>
+      <footer className="home-footer"><span>ZEN'YO APP</span></footer>
     </section>
   )
 }

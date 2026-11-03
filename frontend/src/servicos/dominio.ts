@@ -24,6 +24,9 @@ export type Aluno = Identificado & {
   responsavel_cpf: string | null
   responsavel_celular: string | null
 }
+export function ordenarAlunosPorNome(alunos: Aluno[]) {
+  return [...alunos].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }))
+}
 export const TAMANHOS_KIMONO = ['M00', 'M0', 'M1', 'M2', 'M3', 'A0', 'A1', 'A2', 'A4', 'A5']
 export const TAMANHOS_FAIXA = ['PP', 'P', 'N2', 'M', 'G', 'N4', 'GG']
 export type Tamanho = Identificado & { tipo: 'kimono' | 'faixa'; nome: string; ordem: number }
@@ -39,7 +42,7 @@ export type Atividade = Identificado & {
 }
 export type Anexo = Identificado & {
   titulo: string
-  categoria: 'Calendarios' | 'Panilhas' | 'Fichas' | 'Apostila' | 'Regulamento' | 'Regulamentos' | 'Outro'
+  categoria: 'Calendarios' | 'Panilhas' | 'Fichas' | 'Apostilas' | 'Apostila' | 'Regulamento' | 'Regulamentos' | 'Outro'
   descricao: string | null
   nome_arquivo: string | null
   arquivo_url: string | null

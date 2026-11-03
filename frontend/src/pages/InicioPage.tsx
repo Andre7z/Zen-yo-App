@@ -8,10 +8,6 @@ import { atividadesApi, rotuloTipoAtividade, type Atividade } from '../servicos/
 import { dataAtualIso, formatarDataParaEntrada } from '../servicos/datas'
 import { ROTAS } from '../routes'
 
-function formatarData(data: string) {
-  return new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${data}T12:00:00`))
-}
-
 export function InicioPage() {
   const { usuario } = useAutenticacao()
   const recurso = useRecurso(atividadesApi)
@@ -42,7 +38,7 @@ export function InicioPage() {
         </ModalDetalhes>}
         {!recurso.carregando && !atividades.length
           ? <div className="module-empty-state"><p>As próximas atividades aparecerão organizadas por data.</p><Link className="module-primary" to={ROTAS.atividades}>Abrir atividades</Link></div>
-          : <div className="calendar-list">{Object.entries(porData).map(([data, itens]) => <section className="calendar-day" key={data}><h3><time dateTime={data}>{formatarData(data)}</time></h3>{itens.map((atividade) => <article className="module-record" key={atividade.id}><div className="record-date">{data.slice(8, 10)}</div><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${atividade.nome}`} onClick={() => setVisualizando(atividade)}><strong>{atividade.nome}</strong><span>{rotuloTipoAtividade(atividade.tipo)} · {atividade.aluno_ids.length} alunos{atividade.local ? ` · ${atividade.local}` : ''}</span></button>{atividade.local && <MapPin className="calendar-location" size={16} aria-label={`Local: ${atividade.local}`} />}</article>)}</section>)}</div>}
+          : <div className="calendar-list">{Object.entries(porData).map(([data, itens]) => <section className="calendar-day" key={data}><h3><time dateTime={data}>{formatarDataParaEntrada(data)}</time></h3>{itens.map((atividade) => <article className="module-record" key={atividade.id}><div className="record-date">{data.slice(8, 10)}</div><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${atividade.nome}`} onClick={() => setVisualizando(atividade)}><strong>{atividade.nome}</strong><span>{rotuloTipoAtividade(atividade.tipo)} · {atividade.aluno_ids.length} alunos{atividade.local ? ` · ${atividade.local}` : ''}</span></button>{atividade.local && <MapPin className="calendar-location" size={16} aria-label={`Local: ${atividade.local}`} />}</article>)}</section>)}</div>}
       </section>
 
       <div className="home-note"><span className="note-mark">柔道</span></div>

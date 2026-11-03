@@ -7,6 +7,7 @@ CATEGORIAS_ANEXO = {
     "Calendarios",
     "Panilhas",
     "Fichas",
+    "Apostilas",
     "Apostila",
     "Regulamento",
     "Regulamentos",
@@ -34,7 +35,7 @@ class AnexoEntrada(BaseModel):
         if valor not in CATEGORIAS_ANEXO:
             aceitos = ", ".join(sorted(CATEGORIAS_ANEXO))
             raise ValueError(f"categoria invalida: {valor!r}. Aceitos: {aceitos}")
-        return valor
+        return "Apostilas" if valor == "Apostila" else valor
 
     @field_validator("descricao")
     @classmethod
@@ -87,7 +88,7 @@ class AnexoAtualizar(BaseModel):
         if valor not in CATEGORIAS_ANEXO:
             aceitos = ", ".join(sorted(CATEGORIAS_ANEXO))
             raise ValueError(f"categoria invalida: {valor!r}. Aceitos: {aceitos}")
-        return valor
+        return "Apostilas" if valor == "Apostila" else valor
 
     @field_validator("descricao")
     @classmethod

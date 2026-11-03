@@ -10,6 +10,7 @@ o repository, que e quem sabe o que fazer com ele.
 """
 from ..faixas import service as faixas_service
 from ..turmas import service as turmas_service
+from ..ordenacao import ordenar_alunos_por_nome
 from . import repository
 from .erros import (
 AlunoNaoEncontrado
@@ -25,7 +26,7 @@ def _validar_vinculos(db, usuario, dados):
 
 
 def listar(db, usuario):
-    return repository.listar(db, usuario.id)
+    return ordenar_alunos_por_nome(repository.listar(db, usuario.id))
 
 
 def buscar(db, usuario, aluno_id):

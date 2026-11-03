@@ -3,10 +3,10 @@ import { ArrowLeft, Award, FileText, Pencil, Plus, Trash2 } from 'lucide-react'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
 import { EntradaData } from '../components/EntradaData'
-import { calcularIdade, converterDataParaIso, dataAtualIso, formatarDataParaEntrada } from '../servicos/datas'
+import { calcularIdade, converterDataParaIso, dataAtividadeValida, dataAtualIso, formatarDataParaEntrada } from '../servicos/datas'
 import { useRecurso } from '../hooks/use-recurso'
 import { baixarArquivo } from '../api'
-import { atividadesApi, alunosApi, caminhoRelatorioXlsx, faixasApi, rotuloFaixa, rotuloTipoAtividade, nomeArquivoRelatorioXlsx, turmasApi, type Aluno, type Atividade, type Faixa, type Turma } from '../servicos/dominio'
+import { atividadesApi, alunosApi, caminhoRelatorioXlsx, faixasApi, ordenarAlunosPorNome, rotuloFaixa, rotuloTipoAtividade, nomeArquivoRelatorioXlsx, turmasApi, type Aluno, type Atividade, type Faixa, type Turma } from '../servicos/dominio'
 import { opcoesDeTamanho, useTamanhos } from '../hooks/use-tamanhos'
 
 const vazio = { tipo: 'frequencia' as Atividade['tipo'], nome: '', data: formatarDataParaEntrada(dataAtualIso()), local: '', descricao: '', nova_faixa: '' }
@@ -30,6 +30,7 @@ export function AtividadesPage() {
   const [erroGraduacao, setErroGraduacao] = useState('')
   const [erroData, setErroData] = useState('')
   const [rascunhos, setRascunhos] = useState<Record<number, Rascunho>>({})
+  const [marcacoes, setMarcacoes] = useState<Record<number, number[]>>({})
   const [visualizando, setVisualizando] = useState<number | null>(null)
   const [editando, setEditando] = useState<number | null>(null)
   const [formAberto, setFormAberto] = useState(false)
@@ -80,9 +81,22 @@ export function AtividadesPage() {
     setRascunhos((atuais) => ({ ...atuais, [aluno.id]: { ...rascunhoDe(aluno), ...parcial } }))
   }
 
+  function pagosDe(item: Atividade) {
+    return marcacoes[item.id] ?? item.aluno_ids_pagos
+  }
+
+  function marcacaoAlterada(item: Atividade) {
+    const staged = marcacoes[item.id]
+    return !!staged && (staged.length !== item.aluno_ids_pagos.length || staged.some((id) => !item.aluno_ids_pagos.includes(id)))
+  }
+
+  function limparMarcacao(itemId: number) {
+    setMarcacoes((atuais) => { const { [itemId]: _descartado, ...restantes } = atuais; return restantes })
+  }
+
   async function salvarAlteracoes(item: Atividade, participantes: Aluno[]) {
-    const alterados = participantes.filter((aluno) => rascunhos[aluno.id])
-    if (!alterados.length) return
+    const alterados = item.tipo === 'frequencia' ? [] : participantes.filter((aluno) => rascunhos[aluno.id])
+    if (!alterados.length && !marcacaoAlterada(item)) return
     const envios: Array<{ aluno: Aluno; dados: Partial<Aluno> }> = []
     for (const aluno of alterados) {
       const rascunho = rascunhoDe(aluno)
@@ -101,6 +115,11 @@ export function AtividadesPage() {
       }
     }
     setErroGraduacao('')
+    if (marcacaoAlterada(item)) {
+      const sucesso = await recurso.executar(() => atividadesApi.atualizar(item.id, { aluno_ids: item.aluno_ids, aluno_ids_pagos: pagosDe(item) }))
+      if (!sucesso) return
+      limparMarcacao(item.id)
+    }
     setGraduando(-1)
     try {
       for (const { aluno, dados } of envios) {
@@ -115,21 +134,24 @@ export function AtividadesPage() {
     }
   }
 
-  async function alternarMarcacao(item: Atividade, alunoId: number, marcado: boolean) {
-    const pagos = marcado ? [...item.aluno_ids_pagos, alunoId] : item.aluno_ids_pagos.filter((id) => id !== alunoId)
-    await recurso.executar(() => atividadesApi.atualizar(item.id, { aluno_ids: item.aluno_ids, aluno_ids_pagos: pagos }))
+  function alternarMarcacao(item: Atividade, alunoId: number, marcado: boolean) {
+    const atuais = pagosDe(item).filter((id) => id !== alunoId)
+    setMarcacoes((anteriores) => ({ ...anteriores, [item.id]: marcado ? [...atuais, alunoId] : atuais }))
   }
 
   async function salvarParticipantes(item: Atividade) {
     const sucesso = await recurso.executar(() => atividadesApi.atualizar(item.id, {
       aluno_ids: idsParticipantes,
-      aluno_ids_pagos: item.aluno_ids_pagos.filter((id) => idsParticipantes.includes(id)),
+      aluno_ids_pagos: pagosDe(item).filter((id) => idsParticipantes.includes(id)),
     }))
-    if (sucesso) setSelecionandoAlunos(false)
+    if (sucesso) {
+      limparMarcacao(item.id)
+      setSelecionandoAlunos(false)
+    }
   }
 
   async function graduarSelecionados(item: Atividade, participantes: Aluno[]) {
-    const selecionados = participantes.filter((aluno) => item.aluno_ids_pagos.includes(aluno.id))
+    const selecionados = participantes.filter((aluno) => pagosDe(item).includes(aluno.id))
     if (!selecionados.length) {
       setErroGraduacao('Selecione ao menos um aluno para graduar.')
       return
@@ -163,6 +185,10 @@ export function AtividadesPage() {
     const dataIso = converterDataParaIso(dados.data)
     if (!dataIso) {
       setErroData('Informe uma data válida no formato dd/mm/aaaa.')
+      return
+    }
+    if (!dataAtividadeValida(dataIso)) {
+      setErroData('A data da atividade deve estar entre 2000 e 2150.')
       return
     }
     setErroData('')
@@ -236,14 +262,14 @@ export function AtividadesPage() {
       {visualizando !== null && (() => {
         const item = recurso.itens.find((atividade) => atividade.id === visualizando)
         if (!item) return null
-        const participantes = alunos.filter((aluno) => item.aluno_ids.includes(aluno.id))
-        const alunosDisponiveis = alunos.filter((aluno) => {
+        const participantes = ordenarAlunosPorNome(alunos.filter((aluno) => item.aluno_ids.includes(aluno.id)))
+        const alunosDisponiveis = ordenarAlunosPorNome(alunos.filter((aluno) => {
           const nome = aluno.nome.toLocaleLowerCase('pt-BR')
           const turma = aluno.turma?.toLocaleLowerCase('pt-BR') ?? ''
           const correspondeBusca = `${nome} ${turma}`.includes(buscaAluno.trim().toLocaleLowerCase('pt-BR'))
           const correspondeTurma = !turmaFiltro || String(aluno.turma_id ?? turmas.find((itemTurma) => itemTurma.nome.trim().toLocaleLowerCase('pt-BR') === turma.trim())?.id ?? '') === turmaFiltro
           return correspondeBusca && correspondeTurma
-        })
+        }))
         return (
           <ModalDetalhes titulo={selecionandoAlunos ? `Alunos · ${item.nome}` : item.nome} aoFechar={() => { setVisualizando(null); setSelecionandoAlunos(false) }}>
             {selecionandoAlunos ? <>
@@ -284,7 +310,7 @@ export function AtividadesPage() {
                   const rascunho = rascunhoDe(aluno)
                   return <div className="activity-participant-row" key={aluno.id}>
                     <span className="activity-participant-name"><span>{aluno.nome} · {faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Faixa não informada'}</span></span>
-                    <label className="activity-payment"><input aria-label={item.tipo === 'frequencia' ? `Presença de ${aluno.nome}` : `Confirmação de ${aluno.nome}`} title={item.tipo === 'frequencia' ? 'Presença do aluno' : 'Confirmação do aluno'} type="checkbox" disabled={recurso.salvando} checked={item.aluno_ids_pagos.includes(aluno.id)} onChange={(event) => void alternarMarcacao(item, aluno.id, event.target.checked)} />                    {item.tipo === 'frequencia' ? 'Presente' : 'Confirmado'}</label>
+                    <label className="activity-payment"><input aria-label={item.tipo === 'frequencia' ? `Presença de ${aluno.nome}` : `Confirmação de ${aluno.nome}`} title={item.tipo === 'frequencia' ? 'Presença do aluno' : 'Confirmação do aluno'} type="checkbox" checked={pagosDe(item).includes(aluno.id)} onChange={(event) => alternarMarcacao(item, aluno.id, event.target.checked)} />                    {item.tipo === 'frequencia' ? 'Presente' : 'Confirmado'}</label>
                     {item.tipo === 'entrega_de_kimono' && <div className="activity-participant-fields">
                                           <CampoModulo rotulo="Tamanho do judogi"><select aria-label={`Tamanho do judogi de ${aluno.nome}`} value={rascunho.tamanho_kimono} onChange={(event) => alterarRascunho(aluno, { tamanho_kimono: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.kimono, rascunho.tamanho_kimono).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
                     </div>}
@@ -301,8 +327,10 @@ export function AtividadesPage() {
                                     })}
                                     {!participantes.length && <small>Nenhum aluno associado à atividade.</small>}
                                   </div>
-                                  {item.tipo !== 'frequencia' && participantes.length > 0 && <button className="module-primary" type="button" disabled={graduando !== null || !participantes.some((aluno) => rascunhos[aluno.id])} onClick={() => void salvarAlteracoes(item, participantes)}>Salvar alterações dos alunos</button>}
-                                  {item.tipo === 'troca_de_faixa' && <button className="module-primary" type="button" disabled={graduando !== null || !item.aluno_ids_pagos.some((id) => item.aluno_ids.includes(id))} onClick={() => void graduarSelecionados(item, participantes)}><Award size={15} />Graduar selecionados ({participantes.filter((aluno) => item.aluno_ids_pagos.includes(aluno.id)).length})</button>}
+                                  {(participantes.length > 0 || item.tipo === 'troca_de_faixa') && <div className="activity-participant-actions">
+                                                                      {participantes.length > 0 && <button className="module-primary" type="button" disabled={graduando !== null || recurso.salvando || !(marcacaoAlterada(item) || (item.tipo !== 'frequencia' && participantes.some((aluno) => rascunhos[aluno.id])))} onClick={() => void salvarAlteracoes(item, participantes)}>Salvar alterações dos alunos</button>}
+                                    {item.tipo === 'troca_de_faixa' && <button className="module-primary" type="button" disabled={graduando !== null || !pagosDe(item).some((id) => item.aluno_ids.includes(id))} onClick={() => void graduarSelecionados(item, participantes)}><Award size={15} />Graduar selecionados ({participantes.filter((aluno) => pagosDe(item).includes(aluno.id)).length})</button>}
+                                  </div>}
               {erroGraduacao && <small role="alert">{erroGraduacao}</small>}
             </fieldset>
             </>}
@@ -312,7 +340,7 @@ export function AtividadesPage() {
 
       <div className="module-list" aria-label="Lista de atividades">
         {atividadesFiltradas.map((item) => (
-          <article className="module-record" key={item.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${item.nome}`} onClick={() => { setFormAberto(false); setEditando(null); setErroGraduacao(''); setVisualizando(item.id) }}><strong>{item.nome}</strong><span>{item.data} · {rotuloTipoAtividade(item.tipo)} · {item.aluno_ids.length} alunos · {item.aluno_ids_pagos?.length ?? 0} {item.tipo === 'frequencia' ? 'presentes' : 'confirmados'}{item.local ? ` · ${item.local}` : ''}</span></button><div className="record-actions"><BotaoIcone label={`Relatório de ${item.nome}`} onClick={() => void exportarRelatorio(item)}><FileText size={16} /></BotaoIcone><BotaoIcone label={`Editar ${item.nome}`} onClick={() => iniciarEdicao(item)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${item.nome}`} onClick={() => void apagar(item)}><Trash2 size={16} /></BotaoIcone></div></article>
+          <article className="module-record" key={item.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${item.nome}`} onClick={() => { setFormAberto(false); setEditando(null); setErroGraduacao(''); setVisualizando(item.id) }}><strong>{item.nome}</strong><span>{formatarDataParaEntrada(item.data)} · {rotuloTipoAtividade(item.tipo)} · {item.aluno_ids.length} alunos · {item.aluno_ids_pagos?.length ?? 0} {item.tipo === 'frequencia' ? 'presentes' : 'confirmados'}{item.local ? ` · ${item.local}` : ''}</span></button><div className="record-actions"><BotaoIcone label={`Relatório de ${item.nome}`} onClick={() => void exportarRelatorio(item)}><FileText size={16} /></BotaoIcone><BotaoIcone label={`Editar ${item.nome}`} onClick={() => iniciarEdicao(item)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${item.nome}`} onClick={() => void apagar(item)}><Trash2 size={16} /></BotaoIcone></div></article>
         ))}
         {!atividadesFiltradas.length && <p className="module-empty">{recurso.itens.length ? 'Nenhuma atividade encontrada com esses filtros.' : 'Nenhuma atividade cadastrada.'}</p>}
       </div>

@@ -145,6 +145,8 @@ describe('telas conectadas aos recursos FastAPI', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes de Caio Silva' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Caio Silva' })
     expect(within(dialogo).getByText('52998224725')).toBeTruthy()
+    expect(within(dialogo).getByText('Data de nascimento', { selector: 'dt' }).nextElementSibling?.textContent).toBe('Não informada')
+    expect(within(dialogo).getByText('Idade', { selector: 'dt' }).nextElementSibling?.textContent).toBe('Não informada')
 
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).toBeNull()
@@ -155,9 +157,44 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
+  it('exibe a data de nascimento e a idade nos detalhes do aluno', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/aluno/' && !init?.method) {
+        return Response.json([{ ...aluno, data_nascimento: '2000-01-01' }, alunoOutraTurma])
+      }
+      return padrao(input, init)
+    })
+    abrir(ROTAS.alunos)
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalhes de Caio Silva' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Caio Silva' })
+
+    expect(within(dialogo).getByText('01/01/2000')).toBeTruthy()
+    expect(within(dialogo).getByText(/^\d+ anos$/)).toBeTruthy()
+  })
+
+  it('rejeita nascimento futuro ou anterior ao limite de 122 anos', async () => {
+    abrir(ROTAS.alunos)
+    await screen.findByText('Caio Silva')
+    fireEvent.click(screen.getByRole('button', { name: 'Novo aluno' }))
+    fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'Bruna Costa' } })
+    fireEvent.change(screen.getByLabelText('Faixa'), { target: { value: '2' } })
+    const nascimento = screen.getByLabelText('Data de nascimento')
+
+    fireEvent.change(nascimento, { target: { value: '31129999' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cadastrar aluno' }))
+    expect(await screen.findByText('A data de nascimento não pode ser futura.')).toBeTruthy()
+    expect(requisicao.mock.calls.some(([url, init]) => String(url).endsWith('/aluno/') && init?.method === 'POST')).toBe(false)
+
+    fireEvent.change(nascimento, { target: { value: '01011800' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cadastrar aluno' }))
+    expect(await screen.findByText('A data de nascimento deve estar dentro dos últimos 122 anos.')).toBeTruthy()
+  })
+
   it('cria atividades sem alunos e permite gerenciar participantes nos detalhes', async () => {
     abrir(ROTAS.atividades)
     expect(await screen.findByText('Treino infantil')).toBeTruthy()
+    expect(screen.getAllByText(/13\/10\/2026/).length).toBeGreaterThan(0)
     fireEvent.click(screen.getByRole('button', { name: 'Nova atividade' }))
     expect(await screen.findByRole('dialog', { name: 'Nova atividade' })).toBeTruthy()
     expect(screen.getByText('CADASTRO')).toBeTruthy()
@@ -186,12 +223,35 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(JSON.parse(String(atualizacao?.[1]?.body))).toMatchObject({ aluno_ids: [7, 8], aluno_ids_pagos: [] })
   })
 
+  it('ordena alfabeticamente os alunos ao abrir o seletor de participantes', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/aluno/' && !init?.method) {
+        return Response.json([
+          { ...aluno, nome: 'Zeca' },
+          { ...alunoOutraTurma, nome: 'Álvaro' },
+          { ...aluno, id: 9, nome: 'Ana' },
+        ])
+      }
+      return padrao(input, init)
+    })
+    abrir(ROTAS.atividades)
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalhes de Treino infantil' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Gerenciar alunos' }))
+    const lista = await screen.findByLabelText('Lista de alunos disponíveis')
+
+    expect(Array.from(lista.querySelectorAll('.participant-picker-identity strong')).map((item) => item.textContent))
+      .toEqual(['Álvaro', 'Ana', 'Zeca'])
+  })
+
   it('salva a presença individual do aluno na atividade', async () => {
     abrir(ROTAS.atividades)
     await screen.findByText('Treino infantil')
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes de Treino infantil' }))
 
     fireEvent.click(await screen.findByLabelText('Presença de Caio Silva'))
+    expect(requisicao.mock.calls.some(([url, init]) => String(url).endsWith('/atividades/9') && init?.method === 'PATCH')).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações dos alunos' }))
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/9'), expect.objectContaining({ method: 'PATCH' })))
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/atividades/9') && init?.method === 'PATCH')
     expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ aluno_ids: [7], aluno_ids_pagos: [7] })
@@ -209,6 +269,18 @@ describe('telas conectadas aos recursos FastAPI', () => {
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/atividades/') && init?.method === 'POST')
     expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Treino livre', tipo: 'frequencia' })
     expect(JSON.parse(String(envio?.[1]?.body))).not.toHaveProperty('aluno_ids')
+  })
+
+  it.each(['01011999', '31122151'])('rejeita atividade fora do período permitido (%s)', async (data) => {
+    abrir(ROTAS.atividades)
+    await screen.findByText('Treino infantil')
+    fireEvent.click(screen.getByRole('button', { name: 'Nova atividade' }))
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Treino fora do período' } })
+    fireEvent.change(screen.getByLabelText('Data'), { target: { value: data } })
+    fireEvent.click(screen.getByRole('button', { name: 'Criar atividade' }))
+
+    expect(await screen.findByText('A data da atividade deve estar entre 2000 e 2150.')).toBeTruthy()
+    expect(requisicao.mock.calls.some(([url, init]) => String(url).endsWith('/atividades/') && init?.method === 'POST')).toBe(false)
   })
 
   it('filtra a lista de alunos por turma ao gerenciar uma atividade', async () => {
@@ -321,10 +393,29 @@ describe('telas conectadas aos recursos FastAPI', () => {
   it('filtra anexos por categoria começando em Todos', async () => {
     abrir(ROTAS.anexos)
     await screen.findByText('Calendário anual')
+    expect(screen.getByText('Calendarios · calendario.pdf · 13/10/2026')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes de Calendário anual' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Calendário anual' })
+    expect(within(dialogo).getByText('13/10/2026')).toBeTruthy()
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Fechar detalhes' }))
     const filtro = screen.getByLabelText('Filtrar por categoria') as HTMLSelectElement
     expect(filtro.value).toBe('')
     fireEvent.change(filtro, { target: { value: 'Fichas' } })
     expect(screen.queryByText('Calendário anual')).toBeNull()
+  })
+
+  it('usa a categoria Apostilas ao criar anexos', async () => {
+    abrir(ROTAS.anexos)
+    await screen.findByText('Calendário anual')
+    fireEvent.click(screen.getByRole('button', { name: 'Novo anexo' }))
+    fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Guia de faixas' } })
+    fireEvent.change(screen.getByLabelText('Categoria'), { target: { value: 'Apostilas' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cadastrar anexo' }))
+
+    await waitFor(() => {
+      const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/anexos/') && init?.method === 'POST')
+      expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ titulo: 'Guia de faixas', categoria: 'Apostilas' })
+    })
   })
 
   it('mantém atalhos mobile e deixa turmas no menu principal', async () => {
@@ -443,7 +534,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
     })
     abrir(ROTAS.inicio)
     expect(await screen.findByText('Treino futuro')).toBeTruthy()
-    expect(screen.getByText(/5 de janeiro de 2999/i)).toBeTruthy()
+    expect(screen.getByText('05/01/2999')).toBeTruthy()
     expect(screen.queryByText('Treino infantil')).toBeNull()
   })
 
@@ -469,6 +560,6 @@ describe('telas conectadas aos recursos FastAPI', () => {
     const envio = requisicao.mock.calls.find(([, init]) => init?.method === 'PATCH')
     expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Ana Sensei', email: 'ana@example.com' })
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Editar perfil' })).toBeNull())
-    expect(await screen.findByRole('heading', { name: 'Ana Sensei' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Sensei Ana Sensei' })).toBeTruthy()
   })
 })

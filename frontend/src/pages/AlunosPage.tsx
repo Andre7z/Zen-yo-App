@@ -1,13 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Pencil, Plus, Trash2, UserMinus } from 'lucide-react'
-import { alunosApi, faixasApi, rotuloFaixa, turmasApi, type Aluno, type Faixa, type Turma } from '../servicos/dominio'
+import { alunosApi, faixasApi, ordenarAlunosPorNome, rotuloFaixa, turmasApi, type Aluno, type Faixa, type Turma } from '../servicos/dominio'
 import { opcoesDeTamanho, useTamanhos } from '../hooks/use-tamanhos'
 import { useRecurso } from '../hooks/use-recurso'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
 import { EntradaData } from '../components/EntradaData'
-import { converterDataParaIso, formatarDataParaEntrada } from '../servicos/datas'
+import { calcularIdade, converterDataParaIso, formatarDataParaEntrada, validarDataNascimento } from '../servicos/datas'
 import { cpfValido, formatarCpf } from '../servicos/cpf'
 import { ROTAS } from '../routes'
 
@@ -50,9 +50,9 @@ export function AlunosPage() {
   }, [])
 
   const turmaAtual = turmas.find((turma) => turma.id === Number(turmaFiltro))
-  const alunosListados = turmaFiltro
+  const alunosListados = ordenarAlunosPorNome(turmaFiltro
     ? recurso.itens.filter((aluno) => aluno.turma_id === Number(turmaFiltro) || (aluno.turma_id === null && aluno.turma === turmaAtual?.nome))
-    : recurso.itens
+    : recurso.itens)
   const nomeTurma = (aluno: Aluno) => turmas.find((turma) => turma.id === aluno.turma_id)?.nome ?? aluno.turma
 
   function iniciarEdicao(aluno: Aluno) {
@@ -83,6 +83,13 @@ export function AlunosPage() {
     if (dados.data_nascimento && !dataNascimento) {
       setErroData('Informe uma data válida no formato dd/mm/aaaa.')
       return
+    }
+    if (dataNascimento) {
+      const erroNascimento = validarDataNascimento(dataNascimento)
+      if (erroNascimento) {
+        setErroData(erroNascimento)
+        return
+      }
     }
     setErroData('')
     const textoPeso = dados.peso.trim().replace(',', '.')
@@ -183,7 +190,7 @@ export function AlunosPage() {
 
       {selecionando && turmaAtual && (() => {
         const termo = buscaAluno.trim().toLocaleLowerCase('pt-BR')
-        const disponiveis = recurso.itens.filter((aluno) => aluno.turma_id !== turmaAtual.id && aluno.nome.toLocaleLowerCase('pt-BR').includes(termo))
+        const disponiveis = ordenarAlunosPorNome(recurso.itens.filter((aluno) => aluno.turma_id !== turmaAtual.id && aluno.nome.toLocaleLowerCase('pt-BR').includes(termo)))
         return (
           <ModalDetalhes titulo={`Adicionar alunos · ${turmaAtual.nome}`} aoFechar={() => setSelecionando(false)}>
             <div className="participant-picker-toolbar"><p>{idsSelecionados.length} {idsSelecionados.length === 1 ? 'selecionado' : 'selecionados'}</p></div>
@@ -212,11 +219,13 @@ export function AlunosPage() {
       {visualizando !== null && (() => {
         const aluno = alunosListados.find((item) => item.id === visualizando)
         if (!aluno) return null
+        const idade = calcularIdade(aluno.data_nascimento)
         return (
           <ModalDetalhes titulo={aluno.nome} aoFechar={() => setVisualizando(null)}>
             <dl className="module-details">
               <div><dt>CPF</dt><dd>{aluno.cpf ?? 'Não informado'}</dd></div>
               <div><dt>Data de nascimento</dt><dd>{aluno.data_nascimento ? formatarDataParaEntrada(aluno.data_nascimento) : 'Não informada'}</dd></div>
+              <div><dt>Idade</dt><dd>{idade === null ? 'Não informada' : `${idade} anos`}</dd></div>
                             <div><dt>Gênero</dt><dd>{aluno.genero ?? 'Não informado'}</dd></div>
                             <div><dt>Faixa</dt><dd>{faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Não informada'}</dd></div>
               <div><dt>Próxima faixa</dt><dd>{aluno.proxima_faixa ?? 'Não definida'}</dd></div>

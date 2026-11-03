@@ -9,6 +9,7 @@ from io import BytesIO
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
+from ..ordenacao import ordenar_alunos_por_nome
 from ._estilo_xlsx import AMARELO, AZUL, BORDA, CENTRO, ESQUERDA, NEGRITO, NORMAL
 
 TITULO = "CONTROLE DE FREQUENCIA"
@@ -23,7 +24,7 @@ def montar_linhas(atividade, alunos):
             "presenca": aluno.id in presentes,
             "data": str(atividade.data) if atividade.data else "",
         }
-        for aluno in alunos
+        for aluno in ordenar_alunos_por_nome(alunos)
     ]
 
 
