@@ -7,7 +7,7 @@ from ..database import Base
 
 
 class Anexo(Base):
-    """Arquivo ou link associado ao dojo e ao usuario que o cadastrou."""
+    """Arquivo ou link associado ao usuario que o cadastrou."""
 
     __tablename__ = "anexos"
 

@@ -1,4 +1,4 @@
-"""Coordena o vinculo de professores e dojos nos casos de uso de turma."""
+"""Coordena o vinculo de professores nos casos de uso de turma."""
 
 class TurmaFacade:
     """Simplifica criacao e edicao de turma com validacao do professor."""

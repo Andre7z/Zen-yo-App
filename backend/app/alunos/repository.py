@@ -28,8 +28,7 @@ def buscar_por_ids(db: Session, dono_id: int, aluno_ids: list[int]):
 def criar(db: Session, dados: dict):
     aluno = Aluno(**dados)
     db.add(aluno)
-    db.commit()
-    db.refresh(aluno)
+    db.flush()
     return aluno
 
 
@@ -41,11 +40,20 @@ def atualizar(db: Session, aluno: Aluno, mudancas: dict):
     for campo, valor in mudancas.items():
         setattr(aluno, campo, valor)
 
-    db.commit()
-    db.refresh(aluno)
+    db.flush()
     return aluno
 
 
 def apagar(db: Session, aluno: Aluno):
     db.delete(aluno)
+    db.flush()
+
+
+def confirmar(db: Session):
     db.commit()
+
+
+def salvar(db: Session, aluno: Aluno):
+    confirmar(db)
+    db.refresh(aluno)
+    return aluno

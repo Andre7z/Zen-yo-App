@@ -9,12 +9,19 @@ O `db` atravessa este arquivo sem ser aberto: o Service so o repassa para
 o repository, que e quem sabe o que fazer com ele.
 """
 from ..faixas import service as faixas_service
-from ..turmas import service as turmas_service
 from ..ordenacao import ordenar_alunos_por_nome
+from ..responsaveis import service as responsaveis_service
+from ..turmas import service as turmas_service
 from . import repository
 from .erros import (
 AlunoNaoEncontrado
 )
+
+_CAMPOS_RESPONSAVEL = {
+    "responsavel_nome": "nome",
+    "responsavel_cpf": "cpf",
+    "responsavel_celular": "celular",
+}
 
 
 def _validar_vinculos(db, usuario, dados):
@@ -23,6 +30,16 @@ def _validar_vinculos(db, usuario, dados):
         faixas_service.buscar(db, usuario, dados["faixa_id"])
     if dados.get("turma_id") is not None:
         turmas_service.buscar(db, usuario, dados["turma_id"])
+
+
+def _separar_responsavel(dados):
+    dados_aluno = dict(dados)
+    dados_responsavel = {
+        campo: dados_aluno.pop(campo)
+        for campo in _CAMPOS_RESPONSAVEL
+        if campo in dados_aluno
+    }
+    return dados_aluno, dados_responsavel
 
 
 def listar(db, usuario):
@@ -45,13 +62,20 @@ def buscar_por_ids(db, usuario, aluno_ids):
 
 def criar(db, usuario, dados):
     _validar_vinculos(db, usuario, dados)
-    return repository.criar(db, {**dados, "dono_id": usuario.id})
+    dados_aluno, dados_responsavel = _separar_responsavel(dados)
+    aluno = repository.criar(db, {**dados_aluno, "dono_id": usuario.id})
+    responsaveis_service.criar(db, aluno, dados_responsavel)
+    return repository.salvar(db, aluno)
 
 def atualizar(db, usuario, aluno_id, mudancas):
     aluno = buscar(db, usuario, aluno_id)
     _validar_vinculos(db, usuario, mudancas)
-    return repository.atualizar(db, aluno, mudancas)
+    mudancas_aluno, mudancas_responsavel = _separar_responsavel(mudancas)
+    repository.atualizar(db, aluno, mudancas_aluno)
+    responsaveis_service.atualizar(db, aluno, mudancas_responsavel)
+    return repository.salvar(db, aluno)
 
 def apagar(db, usuario, aluno_id):
     aluno = buscar(db, usuario, aluno_id)
     repository.apagar(db, aluno)
+    repository.confirmar(db)
