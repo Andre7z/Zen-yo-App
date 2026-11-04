@@ -4,6 +4,7 @@ import { Pencil, Plus, Trash2, UserMinus } from 'lucide-react'
 import { alunosApi, faixasApi, ordenarAlunosPorNome, rotuloFaixa, turmasApi, type Aluno, type Faixa, type Turma } from '../servicos/dominio'
 import { opcoesDeTamanho, useTamanhos } from '../hooks/use-tamanhos'
 import { useRecurso } from '../hooks/use-recurso'
+import { useNotificacao } from '../notificacoes-context'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
 import { EntradaData } from '../components/EntradaData'
@@ -27,6 +28,7 @@ export function AlunosPage() {
   const [buscaAluno, setBuscaAluno] = useState('')
   const modoTurma = Boolean(turmaId)
   const recurso = useRecurso(alunosApi)
+  const notificacao = useNotificacao()
   const tamanhos = useTamanhos()
   const [faixas, setFaixas] = useState<Faixa[]>([])
   const [turmas, setTurmas] = useState<Turma[]>([])
@@ -108,7 +110,10 @@ export function AlunosPage() {
     const cpfResponsavelInvalido = dados.responsavel_cpf.trim() !== '' && !cpfValido(dados.responsavel_cpf)
     setErroCpf(cpfInvalido ? 'CPF inválido. Confira os números digitados.' : '')
     setErroCpfResponsavel(cpfResponsavelInvalido ? 'CPF inválido. Confira os números digitados.' : '')
-    if (cpfInvalido || cpfResponsavelInvalido) return
+    if (cpfInvalido || cpfResponsavelInvalido) {
+      notificacao.erro(cpfInvalido ? 'CPF do aluno inválido. Confira os números digitados.' : 'CPF do responsável inválido. Confira os números digitados.')
+      return
+    }
     const payload = {
       nome: dados.nome.trim(),
       cpf: dados.cpf.trim() || null,
@@ -138,19 +143,19 @@ export function AlunosPage() {
 
   async function incluirNaTurma() {
     if (!idsSelecionados.length || !turmaAtual) return
-    const sucesso = await recurso.executar(() => turmasApi.adicionarAlunos(turmaAtual.id, idsSelecionados))
+    const sucesso = await recurso.executar(() => turmasApi.adicionarAlunos(turmaAtual.id, idsSelecionados), 'Alunos adicionados à turma.')
     if (sucesso) { setIdsSelecionados([]); setSelecionando(false) }
   }
 
   async function removerDaTurma(aluno: Aluno) {
     if (window.confirm(`Remover ${aluno.nome} da turma ${turmaAtual?.nome ?? ''}?`)) {
-      if (turmaAtual) await recurso.executar(() => turmasApi.removerAluno(turmaAtual.id, aluno.id))
+      if (turmaAtual) await recurso.executar(() => turmasApi.removerAluno(turmaAtual.id, aluno.id), 'Aluno removido da turma.')
     }
   }
 
   async function apagar(aluno: Aluno) {
     if (window.confirm(`Excluir o cadastro de ${aluno.nome}?`)) {
-      await recurso.executar(() => alunosApi.apagar(aluno.id))
+      await recurso.executar(() => alunosApi.apagar(aluno.id), 'Aluno excluído com sucesso.')
     }
   }
 

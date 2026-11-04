@@ -46,7 +46,7 @@ export function TurmasPage() {
 
   async function apagar(turma: Turma) {
     const possuiAlunos = alunos.some((aluno) => aluno.turma_ids.includes(turma.id))
-    if (!possuiAlunos && window.confirm(`Excluir a turma ${turma.nome}?`)) await recurso.executar(() => turmasApi.apagar(turma.id))
+    if (!possuiAlunos && window.confirm(`Excluir a turma ${turma.nome}?`)) await recurso.executar(() => turmasApi.apagar(turma.id), 'Turma excluída com sucesso.')
   }
 
   return (

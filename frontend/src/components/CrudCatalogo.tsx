@@ -63,7 +63,7 @@ export function CrudCatalogo<T extends Identificado>({ api, campos, titulo, rotu
 
   async function apagar(item: T) {
     const nome = colunas[0]?.valor(item) ?? `#${item.id}`
-    if (window.confirm(`Excluir ${nome}?`)) await recurso.executar(() => api.apagar(item.id))
+    if (window.confirm(`Excluir ${nome}?`)) await recurso.executar(() => api.apagar(item.id), 'Excluído com sucesso.')
   }
 
   return (
