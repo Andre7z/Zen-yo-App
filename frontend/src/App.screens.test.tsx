@@ -362,11 +362,13 @@ describe('telas conectadas aos recursos FastAPI', () => {
     const dialogo = await screen.findByRole('dialog', { name: 'Copa Zen' })
     expect(within(dialogo).getByText(/Idade: não informada/)).toBeTruthy()
     fireEvent.change(within(dialogo).getByLabelText('Peso de Caio Silva'), { target: { value: '38,5' } })
+    fireEvent.change(within(dialogo).getByLabelText('Data de nascimento de Caio Silva'), { target: { value: '2015-03-10' } })
+    fireEvent.change(within(dialogo).getByLabelText('Gênero de Caio Silva'), { target: { value: 'Feminino' } })
     fireEvent.click(within(dialogo).getByRole('button', { name: 'Salvar alterações dos alunos' }))
 
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/7'), expect.objectContaining({ method: 'PATCH' })))
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/7') && init?.method === 'PATCH')
-    expect(JSON.parse(String(envio?.[1]?.body))).toEqual({ peso: 38.5 })
+    expect(JSON.parse(String(envio?.[1]?.body))).toEqual({ peso: 38.5, data_nascimento: '2015-03-10', genero: 'Feminino' })
   })
 
   it('na turma não exclui aluno, adiciona por seleção e remove da turma', async () => {

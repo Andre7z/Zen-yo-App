@@ -11,7 +11,7 @@ import { opcoesDeTamanho, useTamanhos } from '../hooks/use-tamanhos'
 
 const vazio = { tipo: 'frequencia' as Atividade['tipo'], nome: '', data: formatarDataParaEntrada(dataAtualIso()), local: '', descricao: '', nova_faixa: '' }
 type DadosAtividade = typeof vazio
-type Rascunho = { proxima_faixa: string; tamanho_faixa: string; tamanho_kimono: string; faixa_grossa: boolean; peso: string }
+type Rascunho = { proxima_faixa: string; tamanho_faixa: string; tamanho_kimono: string; faixa_grossa: boolean; peso: string; data_nascimento: string; genero: string }
 
 export function AtividadesPage() {
   const recurso = useRecurso(atividadesApi)
@@ -74,7 +74,7 @@ export function AtividadesPage() {
   }
 
   function rascunhoDe(aluno: Aluno): Rascunho {
-    return rascunhos[aluno.id] ?? { proxima_faixa: aluno.proxima_faixa ?? '', tamanho_faixa: aluno.tamanho_faixa ?? '', tamanho_kimono: aluno.tamanho_kimono ?? '', faixa_grossa: aluno.faixa_grossa ?? false, peso: aluno.peso !== null && aluno.peso !== undefined ? String(aluno.peso).replace('.', ',') : '' }
+    return rascunhos[aluno.id] ?? { proxima_faixa: aluno.proxima_faixa ?? '', tamanho_faixa: aluno.tamanho_faixa ?? '', tamanho_kimono: aluno.tamanho_kimono ?? '', faixa_grossa: aluno.faixa_grossa ?? false, peso: aluno.peso !== null && aluno.peso !== undefined ? String(aluno.peso).replace('.', ',') : '', data_nascimento: aluno.data_nascimento ?? '', genero: aluno.genero ?? '' }
   }
 
   function alterarRascunho(aluno: Aluno, parcial: Partial<Rascunho>) {
@@ -107,7 +107,7 @@ export function AtividadesPage() {
           setErroGraduacao(`Informe um peso válido para ${aluno.nome}.`)
           return
         }
-        envios.push({ aluno, dados: { peso } })
+        envios.push({ aluno, dados: { peso, data_nascimento: rascunho.data_nascimento || null, genero: (rascunho.genero || null) as Aluno['genero'] } })
       } else if (item.tipo === 'entrega_de_kimono') {
         envios.push({ aluno, dados: { tamanho_kimono: rascunho.tamanho_kimono || null } })
       } else if (item.tipo === 'troca_de_faixa') {
@@ -323,8 +323,9 @@ export function AtividadesPage() {
                                           <CampoModulo rotulo="Tamanho do judogi"><select aria-label={`Tamanho do judogi de ${aluno.nome}`} value={rascunho.tamanho_kimono} onChange={(event) => alterarRascunho(aluno, { tamanho_kimono: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.kimono, rascunho.tamanho_kimono).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
                     </div>}
                                         {item.tipo === 'campeonato' && <div className="activity-participant-fields">
-                                          <span className="activity-participant-info">Idade: {calcularIdade(aluno.data_nascimento) ?? 'não informada'}</span>
-                                          <span className="activity-participant-info">Gênero: {aluno.genero ?? 'não informado'}</span>
+                                          <CampoModulo rotulo="Data de nascimento"><input aria-label={`Data de nascimento de ${aluno.nome}`} type="date" value={rascunho.data_nascimento} onChange={(event) => alterarRascunho(aluno, { data_nascimento: event.target.value })} /></CampoModulo>
+                                          <span className="activity-participant-info">Idade: {calcularIdade(rascunho.data_nascimento || null) ?? 'não informada'}</span>
+                                          <CampoModulo rotulo="Gênero"><select aria-label={`Gênero de ${aluno.nome}`} value={rascunho.genero} onChange={(event) => alterarRascunho(aluno, { genero: event.target.value })}><option value="">Não informado</option><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option></select></CampoModulo>
                                           <CampoModulo rotulo="Peso (kg)"><input aria-label={`Peso de ${aluno.nome}`} inputMode="decimal" value={rascunho.peso} onChange={(event) => alterarRascunho(aluno, { peso: event.target.value })} /></CampoModulo>
                                         </div>}
                                         {item.tipo === 'troca_de_faixa' && <div className="activity-participant-fields">
