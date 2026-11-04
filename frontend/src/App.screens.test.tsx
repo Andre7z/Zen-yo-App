@@ -14,13 +14,13 @@ const aluno = {
   data_nascimento: null,
   faixa_id: 2,
   proxima_faixa: null,
-  turma_id: 5,
-  turma: 'Infantil',
+  turma_ids: [5],
+  celular: null,
   tamanho_kimono: 'M2',
   tamanho_faixa: '2',
   codigo_zempo: 'ZP001',
 }
-const alunoOutraTurma = { ...aluno, id: 8, nome: 'Lia Santos', turma_id: 6, turma: 'Adultos' }
+const alunoOutraTurma = { ...aluno, id: 8, nome: 'Lia Santos', turma_ids: [6] }
 const atividade = {
   id: 9,
   tipo: 'frequencia',
@@ -53,6 +53,7 @@ function configurarApi() {
     const caminho = new URL(String(input)).pathname
     const metodo = init?.method ?? 'GET'
     if (caminho === '/usuarios/eu' && metodo === 'GET') return Response.json(usuario)
+    if (/^\/turmas\/\d+\/alunos$/.test(caminho) && metodo === 'POST') return new Response(null, { status: 204 })
     if (metodo === 'POST' || metodo === 'PATCH') {
       const corpo = init?.body
       const dados = corpo instanceof FormData
@@ -110,12 +111,11 @@ describe('telas conectadas aos recursos FastAPI', () => {
     fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'Bruna Costa' } })
     fireEvent.change(screen.getByLabelText('Data de nascimento'), { target: { value: '15052010' } })
     fireEvent.change(screen.getByLabelText('Faixa'), { target: { value: '2' } })
-    fireEvent.change(screen.getByLabelText('Turma'), { target: { value: '5' } })
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar aluno' }))
 
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/'), expect.objectContaining({ method: 'POST' })))
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/') && init?.method === 'POST')
-    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Bruna Costa', data_nascimento: '2010-05-15', faixa_id: 2, turma_id: 5, cpf: null, tamanho_kimono: null, tamanho_faixa: null, codigo_zempo: null })
+    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Bruna Costa', data_nascimento: '2010-05-15', faixa_id: 2, celular: null, cpf: null, tamanho_kimono: null, tamanho_faixa: null, codigo_zempo: null })
   })
 
   it('bloqueia CPF inválido ao cadastrar aluno e aceita CPF válido com máscara', async () => {
@@ -346,7 +346,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
 
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/'), expect.objectContaining({ method: 'POST' })))
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/') && init?.method === 'POST')
-    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Bruna Costa', turma_id: null, responsavel_nome: 'Maria Costa', responsavel_cpf: null })
+    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Bruna Costa', celular: null, responsavel_nome: 'Maria Costa', responsavel_cpf: null, responsavel_parentesco: null })
   })
 
   it('edita o peso do aluno na atividade de campeonato', async () => {
@@ -379,14 +379,14 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(within(dialogo).queryByLabelText('Adicionar Caio Silva')).toBeNull()
     fireEvent.click(within(dialogo).getByLabelText('Adicionar Lia Santos'))
     fireEvent.click(within(dialogo).getByRole('button', { name: 'Adicionar à turma (1)' }))
-    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/8'), expect.objectContaining({ method: 'PATCH' })))
-    const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/8') && init?.method === 'PATCH')
-    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ turma_id: 5 })
+    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/turmas/5/alunos'), expect.objectContaining({ method: 'POST' })))
+    const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/turmas/5/alunos') && init?.method === 'POST')
+    expect(JSON.parse(String(envio?.[1]?.body))).toEqual({ aluno_ids: [8] })
 
     fireEvent.click(await screen.findByRole('button', { name: 'Remover Caio Silva da turma' }))
     await waitFor(() => {
-      const remocao = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/7') && init?.method === 'PATCH')
-      expect(JSON.parse(String(remocao?.[1]?.body))).toMatchObject({ turma_id: null })
+      const remocao = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/turmas/5/alunos/7') && init?.method === 'DELETE')
+      expect(remocao).toBeTruthy()
     })
   })
 

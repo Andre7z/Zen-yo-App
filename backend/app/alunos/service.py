@@ -11,7 +11,6 @@ o repository, que e quem sabe o que fazer com ele.
 from ..faixas import service as faixas_service
 from ..ordenacao import ordenar_alunos_por_nome
 from ..responsaveis import service as responsaveis_service
-from ..turmas import service as turmas_service
 from . import repository
 from .erros import (
 AlunoNaoEncontrado
@@ -21,15 +20,13 @@ _CAMPOS_RESPONSAVEL = {
     "responsavel_nome": "nome",
     "responsavel_cpf": "cpf",
     "responsavel_celular": "celular",
+    "responsavel_parentesco": "parentesco",
 }
 
 
 def _validar_vinculos(db, usuario, dados):
-    # Faixa e turma tambem precisam ser do proprio usuario.
     if dados.get("faixa_id") is not None:
         faixas_service.buscar(db, usuario, dados["faixa_id"])
-    if dados.get("turma_id") is not None:
-        turmas_service.buscar(db, usuario, dados["turma_id"])
 
 
 def _separar_responsavel(dados):

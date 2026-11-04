@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from ..validacoes import texto_legivel as _texto_legivel
 
 
@@ -25,3 +25,7 @@ class TurmaAtualizar(BaseModel):
     @classmethod
     def nome_legivel(cls, v):
         return None if v is None else _texto_legivel(v, "nome")
+
+
+class AlunosTurmaEntrada(BaseModel):
+    aluno_ids: list[int] = Field(default_factory=list)

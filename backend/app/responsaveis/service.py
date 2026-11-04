@@ -6,6 +6,7 @@ _CAMPOS_API = {
     "responsavel_nome": "nome",
     "responsavel_cpf": "cpf",
     "responsavel_celular": "celular",
+    "responsavel_parentesco": "parentesco",
 }
 
 
@@ -39,6 +40,7 @@ def atualizar(db, aluno, mudancas):
         "nome": responsavel.nome,
         "cpf": responsavel.cpf,
         "celular": responsavel.celular,
+        "parentesco": responsavel.parentesco,
         **dados_responsavel,
     }
     if all(valor is None for valor in valores_atualizados.values()):

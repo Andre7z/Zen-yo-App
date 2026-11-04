@@ -25,11 +25,16 @@ def normalizar_tamanho(texto):
     return str(texto).strip().upper() if texto else ""
 
 
+def _nome_turmas(aluno):
+    nomes = [turma.nome for turma in getattr(aluno, "turmas", [])]
+    return ", ".join(sorted(nomes)) if nomes else getattr(aluno, "turma", None)
+
+
 def montar_linhas(alunos, confirmados=()):
     return [
         {
             "nome": aluno.nome,
-            "turma": normalizar_turma(getattr(aluno, "turma", None)),
+            "turma": normalizar_turma(_nome_turmas(aluno)),
             "tamanho": normalizar_tamanho(getattr(aluno, "tamanho_kimono", None)),
             "confirmado": getattr(aluno, "id", None) in confirmados,
         }

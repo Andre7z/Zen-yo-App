@@ -7,7 +7,7 @@ from ..usuarios.models import Usuario
 from . import service
 from .dependencias import obter_facade
 from .facade import TurmaFacade
-from .schemas import TurmaAtualizar, TurmaEntrada, TurmaPublico
+from .schemas import AlunosTurmaEntrada, TurmaAtualizar, TurmaEntrada, TurmaPublico
 
 router = APIRouter(
     prefix="/turmas",
@@ -66,3 +66,23 @@ def apagar(
     db: Session = Depends(get_db),
 ):
     service.apagar(db, usuario, turma_id)
+
+
+@router.post("/{turma_id}/alunos", status_code=204)
+def adicionar_alunos(
+    turma_id: int,
+    dados: AlunosTurmaEntrada,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    service.adicionar_alunos(db, usuario, turma_id, dados.aluno_ids)
+
+
+@router.delete("/{turma_id}/alunos/{aluno_id}", status_code=204)
+def remover_aluno(
+    turma_id: int,
+    aluno_id: int,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    service.remover_aluno(db, usuario, turma_id, aluno_id)

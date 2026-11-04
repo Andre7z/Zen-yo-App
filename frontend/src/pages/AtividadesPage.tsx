@@ -265,9 +265,13 @@ export function AtividadesPage() {
         const participantes = ordenarAlunosPorNome(alunos.filter((aluno) => item.aluno_ids.includes(aluno.id)))
         const alunosDisponiveis = ordenarAlunosPorNome(alunos.filter((aluno) => {
           const nome = aluno.nome.toLocaleLowerCase('pt-BR')
-          const turma = aluno.turma?.toLocaleLowerCase('pt-BR') ?? ''
+          const turma = turmas
+            .filter((itemTurma) => aluno.turma_ids.includes(itemTurma.id))
+            .map((itemTurma) => itemTurma.nome)
+            .join(', ')
+            .toLocaleLowerCase('pt-BR')
           const correspondeBusca = `${nome} ${turma}`.includes(buscaAluno.trim().toLocaleLowerCase('pt-BR'))
-          const correspondeTurma = !turmaFiltro || String(aluno.turma_id ?? turmas.find((itemTurma) => itemTurma.nome.trim().toLocaleLowerCase('pt-BR') === turma.trim())?.id ?? '') === turmaFiltro
+          const correspondeTurma = !turmaFiltro || aluno.turma_ids.includes(Number(turmaFiltro))
           return correspondeBusca && correspondeTurma
         }))
         return (
@@ -285,10 +289,14 @@ export function AtividadesPage() {
               <div className="participant-picker-list" aria-label="Lista de alunos disponíveis">
                 {alunosDisponiveis.map((aluno) => {
                   const selecionado = idsParticipantes.includes(aluno.id)
+                  const turmasAluno = turmas
+                    .filter((itemTurma) => aluno.turma_ids.includes(itemTurma.id))
+                    .map((itemTurma) => itemTurma.nome)
+                    .join(', ')
                   return <label className={`participant-picker-row${selecionado ? ' is-selected' : ''}`} key={aluno.id}>
                     <input aria-label={`Adicionar ${aluno.nome}`} type="checkbox" checked={selecionado} onChange={(event) => setIdsParticipantes((atuais) => event.target.checked ? [...atuais, aluno.id] : atuais.filter((id) => id !== aluno.id))} />
                     <span className="participant-picker-check" aria-hidden="true" />
-                    <span className="participant-picker-identity"><strong>{aluno.nome}</strong><small>{aluno.turma ?? turmas.find((turma) => turma.id === aluno.turma_id)?.nome ?? 'Sem turma'} · {faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Faixa não informada'}</small></span>
+                    <span className="participant-picker-identity"><strong>{aluno.nome}</strong><small>{turmasAluno || 'Sem turma'} · {faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Faixa não informada'}</small></span>
                   </label>
                 })}
                 {!alunosDisponiveis.length && <p className="module-empty">Nenhum aluno encontrado com esses filtros.</p>}

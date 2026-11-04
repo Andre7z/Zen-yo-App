@@ -41,8 +41,10 @@ def test_responsavel_persiste_em_tabela_separada_e_mantem_contrato_publico():
             {
                 "nome": "Caio",
                 "faixa_id": faixa.id,
+                "celular": "11999999999",
                 "responsavel_nome": "Maria Costa",
                 "responsavel_cpf": "52998224725",
+                "responsavel_parentesco": "Mãe",
             },
         )
 
@@ -52,11 +54,16 @@ def test_responsavel_persiste_em_tabela_separada_e_mantem_contrato_publico():
         assert responsavel.aluno_id == aluno.id
         assert responsavel.nome == "Maria Costa"
         assert responsavel.cpf == "529.982.247-25"
+        assert responsavel.parentesco == "Mãe"
+        assert publico.celular == "11999999999"
         assert publico.responsavel_nome == "Maria Costa"
         assert publico.responsavel_cpf == "529.982.247-25"
+        assert publico.responsavel_parentesco == "Mãe"
         assert "responsavel_nome" not in Aluno.__table__.columns
         assert "responsavel_cpf" not in Aluno.__table__.columns
         assert "responsavel_celular" not in Aluno.__table__.columns
+        assert "parentesco" not in Aluno.__table__.columns
+        assert "celular" in Aluno.__table__.columns
     engine.dispose()
 
 
@@ -72,6 +79,7 @@ def test_atualizar_responsavel_preserva_campos_e_remove_quando_vazio():
                 "faixa_id": faixa.id,
                 "responsavel_nome": "Maria Costa",
                 "responsavel_cpf": "52998224725",
+                "responsavel_parentesco": "Mãe",
             },
         )
 
@@ -83,15 +91,21 @@ def test_atualizar_responsavel_preserva_campos_e_remove_quando_vazio():
         )
         assert atualizado.responsavel_nome == "Maria Silva"
         assert atualizado.responsavel_cpf == "529.982.247-25"
+        assert atualizado.responsavel_parentesco == "Mãe"
 
         atualizado = alunos_service.atualizar(
             db,
             usuario,
             aluno.id,
-            {"responsavel_nome": None, "responsavel_cpf": None},
+            {
+                "responsavel_nome": None,
+                "responsavel_cpf": None,
+                "responsavel_parentesco": None,
+            },
         )
         assert atualizado.responsavel_nome is None
         assert atualizado.responsavel_cpf is None
+        assert atualizado.responsavel_parentesco is None
         assert db.query(Responsavel).count() == 0
     engine.dispose()
 
@@ -172,10 +186,15 @@ def test_controller_de_responsavel_busca_salva_e_apaga():
         assert cliente.get(rota).status_code == 404
         assert cliente.put(rota, json={}).status_code == 409
 
-        salvo = cliente.put(rota, json={"nome": "Maria", "cpf": "52998224725"})
+        salvo = cliente.put(
+            rota,
+            json={"nome": "Maria", "cpf": "52998224725", "parentesco": "Mãe"},
+        )
         assert salvo.status_code == 200
         assert salvo.json()["cpf"] == "529.982.247-25"
-        assert cliente.get(rota).json()["nome"] == "Maria"
+        responsavel = cliente.get(rota).json()
+        assert responsavel["nome"] == "Maria"
+        assert responsavel["parentesco"] == "Mãe"
 
         assert cliente.delete(rota).status_code == 204
         assert cliente.get(rota).status_code == 404

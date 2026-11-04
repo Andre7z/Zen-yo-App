@@ -67,3 +67,7 @@ alunos, e o módulo `responsaveis/` tem todas as camadas (controller, service,
 repository, model, schemas e erros). Eles podem ser informados junto com o
 aluno (`/aluno/`) ou gerenciados em `/aluno/{aluno_id}/responsavel/`.
 
+Alunos e turmas têm relação muitos-para-muitos, persistida em `aluno_turmas`.
+O cadastro do aluno não define turma: os vínculos são gerenciados pelas rotas
+de turma. O celular pertence ao aluno, enquanto o parentesco pertence ao
+responsável.

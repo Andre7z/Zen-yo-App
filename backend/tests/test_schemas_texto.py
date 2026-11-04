@@ -16,6 +16,8 @@ def test_aluno_exige_nome_e_faixa_e_deixa_dados_adicionais_opcionais():
     assert aluno.nome == "Caio"
     assert aluno.faixa_id == 2
     assert aluno.cpf is None
+    assert "turma_id" not in AlunoCriar.model_fields
+    assert "turma" not in AlunoCriar.model_fields
 
     with pytest.raises(ValidationError):
         AlunoCriar(nome="Caio")
