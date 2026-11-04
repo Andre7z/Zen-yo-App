@@ -1,4 +1,4 @@
-import mimetypes
+﻿import mimetypes
 import re
 from pathlib import Path
 from urllib.parse import quote
@@ -40,7 +40,7 @@ async def _salvar_arquivo(arquivo: UploadFile):
     conteudo = await arquivo.read(_TAMANHO_MAXIMO_ARQUIVO + 1)
     await arquivo.close()
     if len(conteudo) > _TAMANHO_MAXIMO_ARQUIVO:
-        raise HTTPException(status_code=413, detail="O arquivo deve ter no máximo 50 MB.")
+        raise HTTPException(status_code=413, detail="O arquivo deve ter no mÃ¡ximo 50 MB.")
 
     chave = uuid4().hex
     tipo = arquivo.content_type or mimetypes.guess_type(nome)[0] or "application/octet-stream"
@@ -68,7 +68,7 @@ async def criar_com_arquivo(
     try:
         dados = AnexoEntrada(titulo=titulo, categoria=categoria, descricao=descricao, link=link).model_dump()
     except ValidationError as falha:
-        raise HTTPException(status_code=422, detail=falha.errors()) from falha
+        raise HTTPException(status_code=422, detail=falha.errors(include_context=False, include_url=False)) from falha
     extra, nome, url = await _salvar_arquivo(arquivo)
     dados.update(nome_arquivo=nome, arquivo_url=url, **extra)
     return service.criar(db, usuario, dados)
@@ -99,7 +99,7 @@ async def substituir_arquivo(
     try:
         mudancas = AnexoAtualizar(**mudancas).model_dump(exclude_unset=True)
     except ValidationError as falha:
-        raise HTTPException(status_code=422, detail=falha.errors()) from falha
+        raise HTTPException(status_code=422, detail=falha.errors(include_context=False, include_url=False)) from falha
     extra, nome, url = await _salvar_arquivo(arquivo)
     mudancas.update(nome_arquivo=nome, arquivo_url=url, **extra)
     atualizado = service.atualizar(db, usuario, anexo_id, mudancas)

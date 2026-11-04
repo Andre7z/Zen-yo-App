@@ -9,6 +9,10 @@ import { baixarArquivo } from '../api'
 
 const vazio = { titulo: '', categoria: 'Calendarios' as Anexo['categoria'], descricao: '', nome_arquivo: '', arquivo_url: '', link: '' }
 type DadosAnexo = typeof vazio
+const TAMANHO_MAXIMO_ARQUIVO = 50 * 1024 * 1024
+
+// Navegadores de celular não renderizam PDF em iframe e mostram só um botão "Abrir".
+const telaPequena = () => window.matchMedia?.('(max-width: 700px)').matches ?? false
 
 export function AnexosPage() {
   const recurso = useRecurso(anexosApi)
@@ -109,16 +113,28 @@ export function AnexosPage() {
       {formAberto && <ModalDetalhes contexto="CADASTRO" titulo={editando ? 'Editar anexo' : 'Novo anexo'} aoFechar={() => setFormAberto(false)}><form className="module-form" onSubmit={salvar}><div className="module-form-grid">
         <CampoModulo rotulo="Título"><input required maxLength={160} value={dados.titulo} onChange={(event) => setDados({ ...dados, titulo: event.target.value })} /></CampoModulo>
         <CampoModulo rotulo="Categoria"><select value={dados.categoria === 'Apostila' ? 'Apostilas' : dados.categoria} onChange={(event) => setDados({ ...dados, categoria: event.target.value as Anexo['categoria'] })}><option value="Calendarios">Calendários</option><option value="Panilhas">Planilhas</option><option value="Fichas">Fichas</option><option value="Apostilas">Apostilas</option><option value="Regulamentos">Regulamentos</option><option value="Outro">Outro</option></select></CampoModulo>
-        <CampoModulo rotulo="Arquivo"><input type="file" onChange={(event) => setArquivo(event.target.files?.[0] ?? null)} />{arquivo && <small>{arquivo.name}</small>}</CampoModulo>
+        <CampoModulo rotulo="Arquivo"><input type="file" onChange={(event) => {
+          const escolhido = event.target.files?.[0] ?? null
+          if (escolhido && escolhido.size > TAMANHO_MAXIMO_ARQUIVO) {
+            event.target.value = ''
+            setArquivo(null)
+            setErroArquivo('Não é possível salvar este arquivo: o tamanho máximo é 50 MB.')
+            return
+          }
+          setErroArquivo('')
+          setArquivo(escolhido)
+        }} />{arquivo && <small>{arquivo.name}</small>}</CampoModulo>
         <CampoModulo rotulo="Link externo"><input type="url" maxLength={500} value={dados.link} onChange={(event) => setDados({ ...dados, link: event.target.value })} /></CampoModulo>
         <CampoModulo rotulo="Descrição"><textarea rows={3} value={dados.descricao} onChange={(event) => setDados({ ...dados, descricao: event.target.value })} /></CampoModulo>
       </div><div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando}>{recurso.salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Cadastrar anexo'}</button><button className="module-secondary" type="button" onClick={() => setFormAberto(false)}>Cancelar</button></div></form></ModalDetalhes>}
       {previa && <ModalDetalhes grande titulo={previa.anexo.titulo} aoFechar={fecharPrevia}>
         {previa.tipo.startsWith('image/')
           ? <img className="anexo-previa" src={previa.url} alt={`Prévia de ${previa.anexo.titulo}`} />
-          : previa.tipo === 'application/pdf' || previa.tipo.startsWith('text/')
-            ? <iframe className="anexo-previa" src={previa.url} title={`Prévia de ${previa.anexo.titulo}`} />
-            : <p className="module-empty">Este tipo de arquivo não tem prévia. Use o botão de baixar.</p>}
+          : previa.tipo === 'application/pdf' && telaPequena()
+            ? <p className="module-empty">A prévia de PDF não está disponível no celular. Use “Abrir em nova aba” ou baixe o arquivo.</p>
+            : previa.tipo === 'application/pdf' || previa.tipo.startsWith('text/')
+              ? <iframe className="anexo-previa" src={previa.url} title={`Prévia de ${previa.anexo.titulo}`} />
+              : <p className="module-empty">Este tipo de arquivo não tem prévia. Use o botão de baixar.</p>}
         <div className="module-form-actions">
           <a className="module-secondary" href={previa.url} target="_blank" rel="noreferrer"><ExternalLink size={16} />Abrir em nova aba</a>
           <button className="module-secondary" type="button" onClick={() => void baixar(previa.anexo)}><Download size={16} />Baixar arquivo</button>

@@ -47,6 +47,7 @@ Rotas que precisam de autenticação.
 `main` — configuração principal da API;
 `usuarios/` — usuários e login;
 `alunos/` — cadastro e gerenciamento dos alunos;
+`responsaveis/` — persistência e regras dos responsáveis vinculados aos alunos;
 `atividades/` — cadastro e gerenciamento das atividades;
 `database` — conexão com o banco de dados;
 `seguranca` — autenticação;
@@ -61,4 +62,8 @@ Erros: reúne os erros específicos de cada módulo.
 
 As tabelas do banco são criadas e atualizadas usando o Alembic.
 
+Responsáveis são persistidos em tabela própria, em relação um-para-um com
+alunos, e o módulo `responsaveis/` tem todas as camadas (controller, service,
+repository, model, schemas e erros). Eles podem ser informados junto com o
+aluno (`/aluno/`) ou gerenciados em `/aluno/{aluno_id}/responsavel/`.
 

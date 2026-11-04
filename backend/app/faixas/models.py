@@ -5,7 +5,7 @@ from ..database import Base
 
 
 class Faixa(Base):
-    """Catalogo de faixas do dojo. O campo `nome` representa a cor e `tipo` define Kyu ou Dan."""
+    """Catalogo de faixas. O campo `nome` representa a cor e `tipo` define Kyu ou Dan."""
 
     __tablename__ = "faixas"
 

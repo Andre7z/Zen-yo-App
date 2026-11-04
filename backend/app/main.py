@@ -16,6 +16,9 @@ from .atividades.erros import ErroAtividade, AtividadeNaoEncontrada
 from .faixas import controller as faixas_controller
 from .faixas.erros import ErroFaixa, FaixaNaoEncontrada
 
+from .responsaveis import controller as responsaveis_controller
+from .responsaveis.erros import ErroResponsavel, ResponsavelNaoEncontrado
+
 from .turmas import controller as turmas_controller
 from .turmas.erros import ErroTurma, TurmaNaoEncontrada
 
@@ -44,6 +47,7 @@ app.add_middleware(
 
 app.include_router(usuarios_controller.router)
 app.include_router(alunos_controller.router)
+app.include_router(responsaveis_controller.router)
 app.include_router(atividades_controller.router)
 app.include_router(anexos_controller.router)
 app.include_router(faixas_controller.router)
@@ -75,6 +79,11 @@ def traduzir_recusa_de_anexo(request: Request, erro: ErroAnexo):
 @app.exception_handler(ErroFaixa)
 def traduzir_recusa_de_faixa(request: Request, erro: ErroFaixa):
     return _resposta_erro_de_dominio(erro, FaixaNaoEncontrada)
+
+
+@app.exception_handler(ErroResponsavel)
+def traduzir_recusa_de_responsavel(request: Request, erro: ErroResponsavel):
+    return _resposta_erro_de_dominio(erro, ResponsavelNaoEncontrado)
 
 
 @app.exception_handler(ErroTurma)

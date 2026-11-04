@@ -11,9 +11,11 @@ from app.main import (
     traduzir_recusa_de_atividade,
     traduzir_recusa_de_anexo,
     traduzir_recusa_de_faixa,
+    traduzir_recusa_de_responsavel,
     traduzir_recusa_de_turma,
     traduzir_recusa_de_usuario,
 )
+from app.responsaveis.erros import ResponsavelNaoEncontrado, ResponsavelSemDados
 from app.turmas.erros import ErroTurma, TurmaNaoEncontrada
 from app.usuarios.erros import CredenciaisInvalidas, EmailJaCadastrado
 
@@ -28,6 +30,8 @@ from app.usuarios.erros import CredenciaisInvalidas, EmailJaCadastrado
         (traduzir_recusa_de_anexo, ErroAnexo, 409),
         (traduzir_recusa_de_faixa, FaixaNaoEncontrada, 404),
         (traduzir_recusa_de_faixa, ErroFaixa, 409),
+        (traduzir_recusa_de_responsavel, ResponsavelNaoEncontrado, 404),
+        (traduzir_recusa_de_responsavel, ResponsavelSemDados, 409),
         (traduzir_recusa_de_turma, TurmaNaoEncontrada, 404),
         (traduzir_recusa_de_turma, ErroTurma, 409),
     ],

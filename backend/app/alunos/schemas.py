@@ -2,7 +2,7 @@ from datetime import date
 from calendar import monthrange
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.alunos.cpf import normalizar_cpf
 
@@ -55,6 +55,7 @@ class AlunoCriar(_ValidaDadosAluno):
 
 
 class AlunoPublico(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
     nome: str

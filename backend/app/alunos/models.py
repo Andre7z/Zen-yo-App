@@ -29,19 +29,33 @@ class Aluno(Base):
     faixa_grossa = Column(Boolean, nullable=False, default=False, server_default=expression.false())
     codigo_zempo = Column(String(14), nullable=True)
     peso = Column(Float, nullable=True)
-    responsavel_nome = Column(String(120), nullable=True)
-    responsavel_cpf = Column(String(14), nullable=True)
-    responsavel_celular = Column(String(20), nullable=True)
     dono_id = Column(Integer, ForeignKey("usuarios.id", name="fk_alunos_dono"), nullable=True)
 
     faixa_obj = relationship("Faixa", back_populates="alunos")
     turma_obj = relationship("Turma", back_populates="alunos")
+    responsavel = relationship(
+        "Responsavel",
+        back_populates="aluno",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
     atividades = relationship(
         "Atividade",
         secondary=atividade_alunos,
         back_populates="alunos",
     )
 
+    @property
+    def responsavel_nome(self):
+        return self.responsavel.nome if self.responsavel else None
+
+    @property
+    def responsavel_cpf(self):
+        return self.responsavel.cpf if self.responsavel else None
+
+    @property
+    def responsavel_celular(self):
+        return self.responsavel.celular if self.responsavel else None
 
     @property
     def idade(self):
@@ -62,4 +76,5 @@ class Aluno(Base):
 
 from ..atividades.models import Atividade  # noqa: E402
 from ..faixas.models import Faixa  # noqa: E402
+from ..responsaveis.models import Responsavel  # noqa: E402
 from ..turmas.models import Turma  # noqa: E402
