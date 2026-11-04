@@ -42,8 +42,7 @@ class AlunoCriar(_ValidaDadosAluno):
     genero: Genero | None = None
     faixa_id: int
     proxima_faixa: str | None = None
-    turma_id: int | None = None
-    turma: str | None = None
+    celular: str | None = None
     tamanho_kimono: str | None = None
     tamanho_faixa: str | None = None
     faixa_grossa: bool = False
@@ -64,8 +63,8 @@ class AlunoPublico(BaseModel):
     genero: str | None = None
     faixa_id: int
     proxima_faixa: str | None = None
-    turma_id: int | None = None
-    turma: str | None
+    turma_ids: list[int] = Field(default_factory=list)
+    celular: str | None = None
     tamanho_kimono: str | None
     tamanho_faixa: str | None
     faixa_grossa: bool = False
@@ -74,6 +73,7 @@ class AlunoPublico(BaseModel):
     responsavel_nome: str | None = None
     responsavel_cpf: str | None = None
     responsavel_celular: str | None = None
+    responsavel_parentesco: str | None = None
 
 
 class AlunoAtualizar(_ValidaDadosAluno):
@@ -84,8 +84,7 @@ class AlunoAtualizar(_ValidaDadosAluno):
     genero: Genero | None = None
     faixa_id: int | None = None
     proxima_faixa: str | None = None
-    turma_id: int | None = None
-    turma: str | None = None
+    celular: str | None = None
     tamanho_kimono: str | None = None
     tamanho_faixa: str | None = None
     faixa_grossa: bool | None = None
@@ -94,3 +93,4 @@ class AlunoAtualizar(_ValidaDadosAluno):
     responsavel_nome: str | None = None
     responsavel_cpf: str | None = None
     responsavel_celular: str | None = None
+    responsavel_parentesco: str | None = None

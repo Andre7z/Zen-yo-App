@@ -45,7 +45,7 @@ export function TurmasPage() {
   }
 
   async function apagar(turma: Turma) {
-    const possuiAlunos = alunos.some((aluno) => aluno.turma_id === turma.id)
+    const possuiAlunos = alunos.some((aluno) => aluno.turma_ids.includes(turma.id))
     if (!possuiAlunos && window.confirm(`Excluir a turma ${turma.nome}?`)) await recurso.executar(() => turmasApi.apagar(turma.id))
   }
 
@@ -56,11 +56,11 @@ export function TurmasPage() {
         <CampoModulo rotulo="Nome da turma"><input required minLength={2} value={dados.nome} onChange={(event) => setDados({ ...dados, nome: event.target.value })} /></CampoModulo>
       </div><div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando}>{recurso.salvando ? 'Salvando...' : 'Salvar turma'}</button><button className="module-secondary" type="button" onClick={() => setFormAberto(false)}>Cancelar</button></div></form></ModalDetalhes>}
       {visualizando && <ModalDetalhes titulo={visualizando.nome} aoFechar={() => setVisualizando(null)}>
-        <dl className="module-details"><div><dt>Alunos</dt><dd>{alunos.filter((aluno) => aluno.turma_id === visualizando.id || (aluno.turma_id === null && aluno.turma === visualizando.nome)).length}</dd></div></dl>
+        <dl className="module-details"><div><dt>Alunos</dt><dd>{alunos.filter((aluno) => aluno.turma_ids.includes(visualizando.id)).length}</dd></div></dl>
         <div className="module-form-actions"><Link className="module-primary" to={ROTAS.turmaAlunos.replace(':turmaId', String(visualizando.id))}>Gerenciar alunos</Link></div>
       </ModalDetalhes>}
       <div className="module-list" aria-label="Lista de turmas">{recurso.itens.map((turma) => {
-        const totalAlunos = alunos.filter((aluno) => aluno.turma_id === turma.id || (aluno.turma_id === null && aluno.turma === turma.nome)).length
+        const totalAlunos = alunos.filter((aluno) => aluno.turma_ids.includes(turma.id)).length
         return <article className="module-record" key={turma.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${turma.nome}`} onClick={() => setVisualizando(turma)}><strong>{turma.nome}</strong><span>{totalAlunos} {totalAlunos === 1 ? 'aluno' : 'alunos'}</span></button><div className="record-actions"><Link className="module-secondary" to={ROTAS.turmaAlunos.replace(':turmaId', String(turma.id))}>Gerenciar alunos</Link><BotaoIcone label={`Editar ${turma.nome}`} onClick={() => iniciarEdicao(turma)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={totalAlunos ? `Exclua os alunos antes de excluir ${turma.nome}` : `Excluir ${turma.nome}`} disabled={totalAlunos > 0} onClick={() => void apagar(turma)}><Trash2 size={16} /></BotaoIcone></div></article>
       })}{!recurso.itens.length && <p className="module-empty">Nenhuma turma cadastrada.</p>}</div>
     </PaginaModulo>

@@ -34,6 +34,19 @@ def test_quantidades_por_turma_e_tamanho_com_totais():
     assert quantidades["total_geral"] == 3
 
 
+def test_relatorio_agrupa_aluno_vinculado_a_varias_turmas():
+    aluno = SimpleNamespace(
+        id=4,
+        nome="Eva",
+        turmas=[SimpleNamespace(nome="Adultos"), SimpleNamespace(nome="Infantil")],
+        tamanho_kimono="M",
+    )
+
+    linha = controle_kimonos.gerar_relatorio([aluno])["linhas"][0]
+
+    assert linha["turma"] == "ADULTOS, INFANTIL"
+
+
 def test_xlsx_preserva_layout_da_tabela():
     planilha = load_workbook(BytesIO(controle_kimonos.gerar_xlsx(_alunos(), TAMANHOS, {1})))
     folha = planilha.active

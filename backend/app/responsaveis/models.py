@@ -19,6 +19,7 @@ class Responsavel(Base):
     nome = Column(String(120), nullable=True)
     cpf = Column(String(14), nullable=True)
     celular = Column(String(20), nullable=True)
+    parentesco = Column(String(60), nullable=True)
 
     aluno = relationship("Aluno", back_populates="responsavel")
 

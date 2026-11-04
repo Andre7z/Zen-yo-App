@@ -7,6 +7,7 @@ class ResponsavelDados(BaseModel):
     nome: str | None = None
     cpf: str | None = None
     celular: str | None = None
+    parentesco: str | None = None
 
     @field_validator("cpf")
     @classmethod
@@ -26,3 +27,4 @@ class ResponsavelPublico(BaseModel):
     nome: str | None = None
     cpf: str | None = None
     celular: str | None = None
+    parentesco: str | None = None

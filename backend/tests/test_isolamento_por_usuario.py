@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.alunos import service as alunos_service
 from app.alunos.erros import AlunoNaoEncontrado
+from app.alunos.schemas import AlunoPublico
 from app.database import Base
 from app.faixas import service as faixas_service
 from app.faixas.erros import FaixaNaoEncontrada
@@ -65,8 +66,10 @@ def test_alunos_e_turmas_sao_isolados_por_usuario(db):
     faixa_bia = faixas_service.listar(db, bia)[0]
     turma_ana = turmas_service.criar(db, ana, {"nome": "Infantil"})
     aluno = alunos_service.criar(
-        db, ana, {"nome": "Caio", "faixa_id": faixa_ana.id, "turma_id": turma_ana.id}
+        db, ana, {"nome": "Caio", "faixa_id": faixa_ana.id}
     )
+    turmas_service.adicionar_alunos(db, ana, turma_ana.id, [aluno.id])
+    assert aluno in turma_ana.alunos
 
     assert alunos_service.listar(db, bia) == []
     assert turmas_service.listar(db, bia) == []
@@ -78,7 +81,24 @@ def test_alunos_e_turmas_sao_isolados_por_usuario(db):
         turmas_service.buscar(db, bia, turma_ana.id)
     with pytest.raises(FaixaNaoEncontrada):
         alunos_service.criar(db, bia, {"nome": "Leo", "faixa_id": faixa_ana.id})
+    aluno_bia = alunos_service.criar(db, bia, {"nome": "Leo", "faixa_id": faixa_bia.id})
     with pytest.raises(TurmaNaoEncontrada):
-        alunos_service.criar(
-            db, bia, {"nome": "Leo", "faixa_id": faixa_bia.id, "turma_id": turma_ana.id}
-        )
+        turmas_service.adicionar_alunos(db, bia, turma_ana.id, [aluno_bia.id])
+    assert aluno.turma_ids == [turma_ana.id]
+    assert aluno_bia.turma_ids == []
+
+    outra_turma_ana = turmas_service.criar(db, ana, {"nome": "Adultos"})
+    turmas_service.adicionar_alunos(db, ana, outra_turma_ana.id, [aluno.id])
+    assert set(aluno.turma_ids) == {turma_ana.id, outra_turma_ana.id}
+    assert set(AlunoPublico.model_validate(aluno).turma_ids) == {
+        turma_ana.id,
+        outra_turma_ana.id,
+    }
+    turmas_service.remover_aluno(db, ana, turma_ana.id, aluno.id)
+    assert aluno.turma_ids == [outra_turma_ana.id]
+
+    turma_bia = turmas_service.criar(db, bia, {"nome": "Adultos"})
+    turmas_service.adicionar_alunos(db, bia, turma_bia.id, [aluno_bia.id])
+    assert set(aluno_bia.turma_ids) == {turma_bia.id}
+    turmas_service.remover_aluno(db, bia, turma_bia.id, aluno_bia.id)
+    assert aluno_bia.turma_ids == []

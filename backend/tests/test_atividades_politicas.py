@@ -34,7 +34,6 @@ def test_aluno_calcula_idade_corretamente():
         cpf="12345678901",
         data_nascimento=hoje.replace(year=hoje.year - 10),
         faixa_id=1,
-        turma="juvenil",
         tamanho_kimono="M",
         tamanho_faixa="M",
         codigo_zempo="ABC123",

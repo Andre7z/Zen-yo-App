@@ -1,6 +1,26 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Table, false
+from sqlalchemy import Boolean, Column, ForeignKey, Index, Integer, Table, false
+from sqlalchemy.orm import relationship
 
 from .database import Base
+
+
+class AlunoTurma(Base):
+    __tablename__ = "aluno_turmas"
+    __table_args__ = (Index("ix_aluno_turmas_turma_id", "turma_id"),)
+
+    aluno_id = Column(
+        Integer,
+        ForeignKey("alunos.id", name="fk_aluno_turmas_aluno", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    turma_id = Column(
+        Integer,
+        ForeignKey("turmas.id", name="fk_aluno_turmas_turma", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+    aluno = relationship("Aluno", back_populates="vinculos_turma")
+    turma = relationship("Turma", back_populates="vinculos_aluno")
 
 
 atividade_alunos = Table(

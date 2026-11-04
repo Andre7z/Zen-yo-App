@@ -13,8 +13,8 @@ export type Aluno = Identificado & {
   genero?: 'Masculino' | 'Feminino' | null
   faixa_id: number
   proxima_faixa: string | null
-  turma_id: number | null
-  turma: string | null
+  turma_ids: number[]
+  celular: string | null
   tamanho_kimono: string | null
   tamanho_faixa: string | null
   faixa_grossa: boolean
@@ -23,6 +23,7 @@ export type Aluno = Identificado & {
   responsavel_nome: string | null
   responsavel_cpf: string | null
   responsavel_celular: string | null
+  responsavel_parentesco: string | null
 }
 export function ordenarAlunosPorNome(alunos: Aluno[]) {
   return [...alunos].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }))
@@ -89,7 +90,17 @@ export const anexosApi = {
   },
 }
 export const faixasApi = recurso<Faixa>('/faixas/')
-export const turmasApi = recurso<Turma>('/turmas/')
+export const turmasApi = {
+  ...recurso<Turma>('/turmas/'),
+  adicionarAlunos: (turmaId: number, alunoIds: number[]) => apiRequest<void>(`/turmas/${turmaId}/alunos`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ aluno_ids: alunoIds }),
+  }),
+  removerAluno: (turmaId: number, alunoId: number) => apiRequest<void>(`/turmas/${turmaId}/alunos/${alunoId}`, {
+    method: 'DELETE',
+  }),
+}
 export const tamanhosApi = recurso<Tamanho>('/tamanhos/')
 
 const RELATORIOS_XLSX_POR_TIPO: Record<string, string> = {

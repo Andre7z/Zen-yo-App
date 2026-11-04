@@ -12,9 +12,10 @@ import { cpfValido, formatarCpf } from '../servicos/cpf'
 import { ROTAS } from '../routes'
 
 const vazio = {
-  nome: '', cpf: '', data_nascimento: '', genero: '', faixa_id: '', proxima_faixa: '', turma_id: '',
+  nome: '', cpf: '', data_nascimento: '', genero: '', faixa_id: '', proxima_faixa: '',
+  celular: '',
   tamanho_kimono: '', tamanho_faixa: '', codigo_zempo: '', peso: '',
-  responsavel_nome: '', responsavel_cpf: '', responsavel_celular: '',
+  responsavel_nome: '', responsavel_cpf: '', responsavel_celular: '', responsavel_parentesco: '',
 }
 type DadosAluno = typeof vazio
 
@@ -51,9 +52,12 @@ export function AlunosPage() {
 
   const turmaAtual = turmas.find((turma) => turma.id === Number(turmaFiltro))
   const alunosListados = ordenarAlunosPorNome(turmaFiltro
-    ? recurso.itens.filter((aluno) => aluno.turma_id === Number(turmaFiltro) || (aluno.turma_id === null && aluno.turma === turmaAtual?.nome))
+    ? recurso.itens.filter((aluno) => aluno.turma_ids.includes(Number(turmaFiltro)))
     : recurso.itens)
-  const nomeTurma = (aluno: Aluno) => turmas.find((turma) => turma.id === aluno.turma_id)?.nome ?? aluno.turma
+  const nomeTurma = (aluno: Aluno) => turmas
+    .filter((turma) => aluno.turma_ids.includes(turma.id))
+    .map((turma) => turma.nome)
+    .join(', ')
 
   function iniciarEdicao(aluno: Aluno) {
     setDados({
@@ -63,7 +67,7 @@ export function AlunosPage() {
       genero: aluno.genero ?? '',
       faixa_id: String(aluno.faixa_id),
       proxima_faixa: aluno.proxima_faixa ?? '',
-      turma_id: aluno.turma_id ? String(aluno.turma_id) : '',
+      celular: aluno.celular ?? '',
       tamanho_kimono: aluno.tamanho_kimono ?? '',
       peso: aluno.peso !== null && aluno.peso !== undefined ? String(aluno.peso).replace('.', ',') : '',
       tamanho_faixa: aluno.tamanho_faixa ?? '',
@@ -71,6 +75,7 @@ export function AlunosPage() {
       responsavel_nome: aluno.responsavel_nome ?? '',
       responsavel_cpf: aluno.responsavel_cpf ?? '',
       responsavel_celular: aluno.responsavel_celular ?? '',
+      responsavel_parentesco: aluno.responsavel_parentesco ?? '',
     })
     setEditando(aluno.id)
     setVisualizando(null)
@@ -111,8 +116,7 @@ export function AlunosPage() {
       genero: dados.genero || null,
       faixa_id: Number(dados.faixa_id),
       proxima_faixa: dados.proxima_faixa || null,
-      turma_id: dados.turma_id ? Number(dados.turma_id) : null,
-      turma: turmas.find((turma) => turma.id === Number(dados.turma_id))?.nome ?? null,
+      celular: dados.celular.trim() || null,
       tamanho_kimono: dados.tamanho_kimono || null,
       peso,
       tamanho_faixa: dados.tamanho_faixa || null,
@@ -120,6 +124,7 @@ export function AlunosPage() {
       responsavel_nome: dados.responsavel_nome.trim() || null,
       responsavel_cpf: dados.responsavel_cpf.trim() || null,
       responsavel_celular: dados.responsavel_celular.trim() || null,
+      responsavel_parentesco: dados.responsavel_parentesco.trim() || null,
     }
     const sucesso = await recurso.executar(() => editando
       ? alunosApi.atualizar(editando, payload)
@@ -133,14 +138,13 @@ export function AlunosPage() {
 
   async function incluirNaTurma() {
     if (!idsSelecionados.length || !turmaAtual) return
-    const turma = turmaAtual
-    const sucesso = await recurso.executar(() => Promise.all(idsSelecionados.map((id) => alunosApi.atualizar(id, { turma_id: turma.id, turma: turma.nome }))))
+    const sucesso = await recurso.executar(() => turmasApi.adicionarAlunos(turmaAtual.id, idsSelecionados))
     if (sucesso) { setIdsSelecionados([]); setSelecionando(false) }
   }
 
   async function removerDaTurma(aluno: Aluno) {
     if (window.confirm(`Remover ${aluno.nome} da turma ${turmaAtual?.nome ?? ''}?`)) {
-      await recurso.executar(() => alunosApi.atualizar(aluno.id, { turma_id: null, turma: null }))
+      if (turmaAtual) await recurso.executar(() => turmasApi.removerAluno(turmaAtual.id, aluno.id))
     }
   }
 
@@ -155,7 +159,7 @@ export function AlunosPage() {
       <div className="module-toolbar">
         <p>{alunosListados.length} {alunosListados.length === 1 ? 'aluno' : 'alunos'}</p>
                 <Link className="module-secondary" to={ROTAS.turmas}>Turmas</Link>
-                <button className="module-primary" type="button" onClick={() => { if (modoTurma) { setIdsSelecionados([]); setBuscaAluno(''); setFormAberto(false); setSelecionando(true); return } setDados({ ...vazio, turma_id: turmaFiltro });  setEditando(null); setVisualizando(null); setFormAberto(true) }}>
+                <button className="module-primary" type="button" onClick={() => { if (modoTurma) { setIdsSelecionados([]); setBuscaAluno(''); setFormAberto(false); setSelecionando(true); return } setDados(vazio); setEditando(null); setVisualizando(null); setFormAberto(true) }}>
           <Plus size={16} />{modoTurma ? 'Adicionar alunos' : 'Novo aluno'}
         </button>
       </div>
@@ -174,7 +178,7 @@ export function AlunosPage() {
             <CampoModulo rotulo="Gênero"><select value={dados.genero} onChange={(event) => setDados({ ...dados, genero: event.target.value })}><option value="">Não informado</option><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option></select></CampoModulo>
             <CampoModulo rotulo="Faixa"><select required value={dados.faixa_id} onChange={(event) => setDados({ ...dados, faixa_id: event.target.value })}><option value="">Selecione</option>{faixas.map((faixa) => <option key={faixa.id} value={faixa.id}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
             <CampoModulo rotulo="Próxima faixa"><select value={dados.proxima_faixa} onChange={(event) => setDados({ ...dados, proxima_faixa: event.target.value })}><option value="">Não definida</option>{faixas.map((faixa) => <option key={faixa.id} value={rotuloFaixa(faixa)}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
-            <CampoModulo rotulo="Turma"><select value={dados.turma_id} onChange={(event) => setDados({ ...dados, turma_id: event.target.value })}><option value="">Sem turma</option>{turmas.map((turma) => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}</select></CampoModulo>
+            <CampoModulo rotulo="Celular do aluno"><input type="tel" inputMode="tel" value={dados.celular} onChange={(event) => setDados({ ...dados, celular: event.target.value })} /></CampoModulo>
             <CampoModulo rotulo="Peso (kg)"><input inputMode="decimal" value={dados.peso} onChange={(event) => { setErroPeso(''); setDados({ ...dados, peso: event.target.value }) }} />{erroPeso && <small className="module-field-error" role="alert">{erroPeso}</small>}</CampoModulo>
             <CampoModulo rotulo="Tamanho do judogi"><select value={dados.tamanho_kimono} onChange={(event) => setDados({ ...dados, tamanho_kimono: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.kimono, dados.tamanho_kimono).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
             <CampoModulo rotulo="Tamanho da faixa"><select value={dados.tamanho_faixa} onChange={(event) => setDados({ ...dados, tamanho_faixa: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.faixa, dados.tamanho_faixa).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
@@ -182,6 +186,7 @@ export function AlunosPage() {
             <CampoModulo rotulo="Nome do responsável"><input value={dados.responsavel_nome} onChange={(event) => setDados({ ...dados, responsavel_nome: event.target.value })} /></CampoModulo>
             <CampoModulo rotulo="CPF do responsável"><input aria-label="CPF do responsável" inputMode="numeric" aria-invalid={Boolean(erroCpfResponsavel)} placeholder="000.000.000-00" value={dados.responsavel_cpf} onChange={(event) => { setErroCpfResponsavel(''); setDados({ ...dados, responsavel_cpf: formatarCpf(event.target.value) }) }} />{erroCpfResponsavel && <small className="module-field-error" role="alert">{erroCpfResponsavel}</small>}</CampoModulo>
             <CampoModulo rotulo="Celular do responsável"><input type="tel" inputMode="tel" value={dados.responsavel_celular} onChange={(event) => setDados({ ...dados, responsavel_celular: event.target.value })} /></CampoModulo>
+            <CampoModulo rotulo="Parentesco do responsável"><input value={dados.responsavel_parentesco} onChange={(event) => setDados({ ...dados, responsavel_parentesco: event.target.value })} /></CampoModulo>
           </div>
           <div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando || Boolean(erroFaixas || erroTurmas)}>{recurso.salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Cadastrar aluno'}</button><button className="module-secondary" type="button" onClick={() => setFormAberto(false)}>Cancelar</button></div>
         </form>
@@ -190,7 +195,7 @@ export function AlunosPage() {
 
       {selecionando && turmaAtual && (() => {
         const termo = buscaAluno.trim().toLocaleLowerCase('pt-BR')
-        const disponiveis = ordenarAlunosPorNome(recurso.itens.filter((aluno) => aluno.turma_id !== turmaAtual.id && aluno.nome.toLocaleLowerCase('pt-BR').includes(termo)))
+        const disponiveis = ordenarAlunosPorNome(recurso.itens.filter((aluno) => !aluno.turma_ids.includes(turmaAtual.id) && aluno.nome.toLocaleLowerCase('pt-BR').includes(termo)))
         return (
           <ModalDetalhes titulo={`Adicionar alunos · ${turmaAtual.nome}`} aoFechar={() => setSelecionando(false)}>
             <div className="participant-picker-toolbar"><p>{idsSelecionados.length} {idsSelecionados.length === 1 ? 'selecionado' : 'selecionados'}</p></div>
@@ -203,7 +208,7 @@ export function AlunosPage() {
                 return <label className={`participant-picker-row${marcado ? ' is-selected' : ''}`} key={aluno.id}>
                   <input aria-label={`Adicionar ${aluno.nome}`} type="checkbox" checked={marcado} onChange={(event) => setIdsSelecionados((atuais) => event.target.checked ? [...atuais, aluno.id] : atuais.filter((id) => id !== aluno.id))} />
                   <span className="participant-picker-check" aria-hidden="true" />
-                  <span className="participant-picker-identity"><strong>{aluno.nome}</strong><small>{nomeTurma(aluno) ?? 'Sem turma'} · {faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Faixa não informada'}</small></span>
+                  <span className="participant-picker-identity"><strong>{aluno.nome}</strong><small>{nomeTurma(aluno) || 'Sem turma'} · {faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Faixa não informada'}</small></span>
                 </label>
               })}
               {!disponiveis.length && <p className="module-empty">Nenhum aluno disponível.</p>}
@@ -224,12 +229,13 @@ export function AlunosPage() {
           <ModalDetalhes titulo={aluno.nome} aoFechar={() => setVisualizando(null)}>
             <dl className="module-details">
               <div><dt>CPF</dt><dd>{aluno.cpf ?? 'Não informado'}</dd></div>
+              <div><dt>Celular do aluno</dt><dd>{aluno.celular ?? 'Não informado'}</dd></div>
               <div><dt>Data de nascimento</dt><dd>{aluno.data_nascimento ? formatarDataParaEntrada(aluno.data_nascimento) : 'Não informada'}</dd></div>
               <div><dt>Idade</dt><dd>{idade === null ? 'Não informada' : `${idade} anos`}</dd></div>
                             <div><dt>Gênero</dt><dd>{aluno.genero ?? 'Não informado'}</dd></div>
                             <div><dt>Faixa</dt><dd>{faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Não informada'}</dd></div>
               <div><dt>Próxima faixa</dt><dd>{aluno.proxima_faixa ?? 'Não definida'}</dd></div>
-              <div><dt>Turma</dt><dd>{nomeTurma(aluno) ?? 'Sem turma'}</dd></div>
+              <div><dt>Turmas</dt><dd>{nomeTurma(aluno) || 'Sem turma'}</dd></div>
               <div><dt>Peso</dt><dd>{aluno.peso ? `${String(aluno.peso).replace('.', ',')} kg` : 'Não informado'}</dd></div>
               <div><dt>Tamanho do judogi</dt><dd>{aluno.tamanho_kimono ?? 'Não informado'}</dd></div>
               <div><dt>Tamanho da faixa</dt><dd>{aluno.tamanho_faixa ?? 'Não informado'}</dd></div>
@@ -237,6 +243,7 @@ export function AlunosPage() {
               <div><dt>Responsável</dt><dd>{aluno.responsavel_nome ?? 'Não informado'}</dd></div>
               <div><dt>CPF do responsável</dt><dd>{aluno.responsavel_cpf ?? 'Não informado'}</dd></div>
               <div><dt>Celular do responsável</dt><dd>{aluno.responsavel_celular ?? 'Não informado'}</dd></div>
+              <div><dt>Parentesco do responsável</dt><dd>{aluno.responsavel_parentesco ?? 'Não informado'}</dd></div>
             </dl>
             <div className="module-form-actions"><button className="module-primary" type="button" onClick={() => iniciarEdicao(aluno)}><Pencil size={16} />Editar</button></div>
           </ModalDetalhes>
