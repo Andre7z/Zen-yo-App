@@ -1,73 +1,31 @@
-# Gestão de Judô — Zen'yo
+# Zen’yo — Backend
+API do Zen’yo, responsável pelas regras do sistema e pelo acesso aos dados.
 
-O Zen'yo é gerenciador de atividades de judô. O sistema permite fazer login, cadastrar alunos e registrar atividades, logo terá a parte de anexos.
+## Tecnologias
+Python e FastAPI — API e regras do sistema.
+SQLAlchemy e Alembic — acesso e migrações do banco de dados.
+PostgreSQL — armazenamento dos dados.
+JWT e bcrypt — autenticação e senhas.
+openpyxl — exportação de relatórios em XLSX.
+Pytest — testes automatizados.
 
-Tecnologias FastAPI, SQLAlchemy, SQLite e Alembic.
+## Estrutura
+Cada módulo em `app/` (alunos, responsaveis, turmas, faixas, tamanhos, atividades, anexos, usuarios) é dividido em controller, service, repository, models, schemas e erros.
+
+## Funções da API
+Usuários — cadastro, login e perfil; cada usuário acessa apenas seus dados.
+Alunos e responsáveis — cadastro e contatos.
+Turmas — relação N:N com alunos, pela tabela `aluno_turmas`.
+Faixas e tamanhos — graduações e tamanhos de judogi e faixa.
+Atividades — treinos, campeonatos, entregas de judogi e graduações, com participantes.
+Relatórios — controles em JSON e XLSX.
+Anexos — upload e consulta de documentos.
 
 ## Como rodar
-
-Primeiro, instale as dependências do projeto:
-
 ```
 poetry install
-```
-
-Depois, renomeie o arquivo `env.exemplo` para `.env` e configure as informações necessárias.
-
-Para criar e atualizar as tabelas do banco, execute:
-
-```
 poetry run alembic upgrade head
-```
-
-Agora, inicie a API:
-
-```
 poetry run uvicorn app.main:app --reload
 ```
-
-Acesse o docs adicionando o /docs:
-
-http://127.0.0.1:8000/docs
-
-para rodar o frontend 
-npm run dev
-E acesse http://localhost:5173/
-
-## Funções no `/docs`
-
-Login;
-CRUD de alunos;
-CRUD de atividades;
-Filtro de atividades por tipo e nome;
-Rotas que precisam de autenticação.
-
-## Onde cada coisa fica
-
-`main` — configuração principal da API;
-`usuarios/` — usuários e login;
-`alunos/` — cadastro e gerenciamento dos alunos;
-`responsaveis/` — persistência e regras dos responsáveis vinculados aos alunos;
-`atividades/` — cadastro e gerenciamento das atividades;
-`database` — conexão com o banco de dados;
-`seguranca` — autenticação;
-`alembic/` — migrações do banco de dados.
-
-Controller: recebe as requisições da API e chama os serviços.
-Service: concentra as regras e a lógica da aplicação.
-Repository: realiza as operações no banco de dados.
-Model: representa as tabelas e relacionamentos do banco.
-Schema: define e valida os dados de entrada e saída da API.
-Erros: reúne os erros específicos de cada módulo.
-
-As tabelas do banco são criadas e atualizadas usando o Alembic.
-
-Responsáveis são persistidos em tabela própria, em relação um-para-um com
-alunos, e o módulo `responsaveis/` tem todas as camadas (controller, service,
-repository, model, schemas e erros). Eles podem ser informados junto com o
-aluno (`/aluno/`) ou gerenciados em `/aluno/{aluno_id}/responsavel/`.
-
-Alunos e turmas têm relação muitos-para-muitos, persistida em `aluno_turmas`.
-O cadastro do aluno não define turma: os vínculos são gerenciados pelas rotas
-de turma. O celular pertence ao aluno, enquanto o parentesco pertence ao
-responsável.
+Defina `DATABASE_URL` no arquivo `.env`. Documentação da API em http://127.0.0.1:8000/docs.
+Testes: `poetry run pytest`

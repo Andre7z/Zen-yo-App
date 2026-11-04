@@ -1,43 +1,17 @@
-# gestao-de-judo
+# Zen’yo App
+O Zen’yo App - Sistema de gestão de atividades de Judô.
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+## Tecnologias
+React, TypeScript e Vite — interface do sistema.
+Python e FastAPI — API e regras do sistema.
+SQLAlchemy e Alembic — acesso e atualização do banco de dados.
+PostgreSQL — armazenamento dos dados.
 
-## Built with v0
-
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
-
-[Continue working on v0 →](https://v0.app/chat/projects/prj_dsykGgyBvoBBWTuuTgYtnrJwOfev)
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-## Learn More
-
-To learn more, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
-
-## Refatoração (Atividade 10)
-
-| Cheiro | Onde | Antes | Depois | O que doía |
-|---|---|---|---|---|
-| Função longa | `app/atividades/[id]/page.tsx` — `DetalheAtividadePage` | A página também renderizava a lista, os estados dos participantes e o modal de inclusão. | Seção e modal movidos para `components/participantes-atividade.tsx`; a página mantém os callbacks e o fluxo. | A página acumulava apresentação e interação de participantes junto do detalhe, relatório e exclusão da atividade. |
-| Código duplicado | `backend/app/{atividades,anexos,dojos,faixas,turmas}/schemas.py` | Cinco cópias de `_texto_legivel` normalizavam espaços, verificavam o tamanho mínimo e montavam a mesma mensagem. | Regra compartilhada em `backend/app/validacoes.py`; schemas mantêm as guardas de valores opcionais. | Uma mudança poderia divergir entre módulos e duplicava a mesma manutenção. |
-| Código duplicado | `backend/app/main.py` — handlers de erros de domínio | Seis handlers repetiam a conversão de “não encontrado” para 404 e demais recusas para 409. | Mapeamento comum em `_resposta_erro_de_dominio`; autenticação segue com o tratamento especial 401/Bearer. | Alterar o mapeamento exigia repetir a mesma regra em cada handler. |
-
-Os testes de comportamento foram executados antes e depois de cada refatoração: página de atividade, 3 testes; schemas, 24 testes; handlers, 37 testes. Na validação final passaram 37 testes backend, 3 testes Next e 4 testes Vite; o build de produção Next também concluiu com sucesso.
+## Funções
+Usuários e login — acesso à conta e proteção dos dados.
+Alunos e responsáveis — cadastro e consulta de informações e contatos.
+Turmas — organização dos alunos, com possibilidade de participar de mais de uma turma.
+Faixas e tamanhos — gerenciamento das graduações e dos tamanhos de judogi e faixa.
+Atividades — organização de treinos, campeonatos, entregas de judogi e graduações, incluindo participantes e confirmação.
+Relatórios — consulta e exportação dos controles de frequência, campeonatos, judogis e graduações.
+Anexos — armazenamento e consulta de documentos.
