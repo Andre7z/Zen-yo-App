@@ -158,7 +158,13 @@
 .activity-participant-row:has(.activity-participant-fields) { flex-wrap: wrap; }
 .activity-participant-fields { display: flex; width: 100%; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
 .activity-participant-fields .module-field { flex: 1 1 140px; min-width: 0; }
-@media (max-width: 700px) {
+.activity-participant-fields-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.activity-participant-fields-grid .module-field { min-width: 0; }
+.activity-participant-age { display: flex; min-height: 40px; align-items: center; align-self: end; gap: 8px; color: #354139; font-size: 11px; font-weight: 650; text-transform: uppercase; }
+.activity-participant-age strong { color: #202a24; font-size: 13px; font-weight: 650; }
+@media (max-width: 900px) {
+  .activity-participant-fields-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}@media (max-width: 700px) {
   .module-toolbar { flex-wrap: wrap; gap: 8px; }
   .module-toolbar .module-primary, .module-toolbar .module-secondary { flex: 1 1 100%; justify-content: center; }
   .module-record { flex-wrap: wrap; }
@@ -364,6 +370,8 @@
 @media (max-width: 700px) {
   .module-field > select { width: min(100%, 260px); min-width: 180px; max-width: 260px; }
   .activity-participant-fields .module-field { flex: 0 1 auto; }
+  .activity-participant-fields-grid { grid-template-columns: minmax(0, 1fr); }
+  .activity-participant-fields-grid .module-field > select { width: 100%; min-width: 0; max-width: none; }
 }
 .activity-participant-info { min-height: 38px; display: inline-flex; align-items: center; color: #344c3d; font-size: 12px; font-weight: 650; }
 .home-calendar { margin-top: 36px; }
