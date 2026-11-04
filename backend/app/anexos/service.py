@@ -1,7 +1,12 @@
 """Regras do dominio dos anexos."""
 
 from . import repository
-from .erros import AnexoNaoEncontrado
+from .erros import AnexoNaoEncontrado, AnexoSemConteudo
+
+
+def _exigir_arquivo_ou_link(arquivo_url, link):
+    if not (arquivo_url or "").strip() and not (link or "").strip():
+        raise AnexoSemConteudo("Informe um arquivo ou um link externo.")
 
 
 def listar(db, usuario):
@@ -23,11 +28,16 @@ def buscar_por_url(db, usuario, arquivo_url):
 
 
 def criar(db, usuario, dados):
+    _exigir_arquivo_ou_link(dados.get("arquivo_url"), dados.get("link"))
     return repository.criar(db, {**dados, "dono_id": usuario.id})
 
 
 def atualizar(db, usuario, anexo_id, mudancas):
     anexo = buscar(db, usuario, anexo_id)
+    _exigir_arquivo_ou_link(
+        mudancas.get("arquivo_url", anexo.arquivo_url),
+        mudancas.get("link", anexo.link),
+    )
     return repository.atualizar(db, anexo, mudancas)
 
 

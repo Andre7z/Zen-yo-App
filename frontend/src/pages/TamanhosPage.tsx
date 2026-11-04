@@ -57,7 +57,7 @@ export function TamanhosPage() {
   }
 
   async function apagar(tamanho: Tamanho) {
-    if (window.confirm(`Remover o tamanho ${tamanho.nome}?`)) await recurso.executar(() => tamanhosApi.apagar(tamanho.id))
+    if (window.confirm(`Remover o tamanho ${tamanho.nome}?`)) await recurso.executar(() => tamanhosApi.apagar(tamanho.id), 'Tamanho removido com sucesso.')
   }
 
   return (

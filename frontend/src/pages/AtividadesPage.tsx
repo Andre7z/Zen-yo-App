@@ -5,6 +5,7 @@ import { ModalDetalhes } from '../components/ModalDetalhes'
 import { EntradaData } from '../components/EntradaData'
 import { calcularIdade, converterDataParaIso, dataAtividadeValida, dataAtualIso, formatarDataParaEntrada, validarDataNascimento } from '../servicos/datas'
 import { useRecurso } from '../hooks/use-recurso'
+import { useNotificacao } from '../notificacoes-context'
 import { baixarArquivo } from '../api'
 import { atividadesApi, alunosApi, caminhoRelatorioXlsx, faixasApi, ordenarAlunosPorNome, rotuloFaixa, rotuloTipoAtividade, nomeArquivoRelatorioXlsx, turmasApi, type Aluno, type Atividade, type Faixa, type Turma } from '../servicos/dominio'
 import { opcoesDeTamanho, useTamanhos } from '../hooks/use-tamanhos'
@@ -15,6 +16,7 @@ type Rascunho = { proxima_faixa: string; tamanho_faixa: string; tamanho_kimono: 
 
 export function AtividadesPage() {
   const recurso = useRecurso(atividadesApi)
+  const notificacao = useNotificacao()
   const tamanhos = useTamanhos()
   const [alunos, setAlunos] = useState<Aluno[]>([])
   const [turmas, setTurmas] = useState<Turma[]>([])
@@ -133,8 +135,11 @@ export function AtividadesPage() {
         setAlunos((atuais) => atuais.map((outro) => outro.id === atualizado.id ? { ...outro, ...atualizado } : outro))
         setRascunhos((atuais) => { const { [aluno.id]: _descartado, ...restantes } = atuais; return restantes })
       }
+      notificacao.sucesso('Dados dos alunos salvos com sucesso.')
     } catch (falha) {
-      setErroGraduacao(falha instanceof Error ? falha.message : 'Não foi possível salvar os dados dos alunos.')
+      const mensagem = falha instanceof Error ? falha.message : 'Não foi possível salvar os dados dos alunos.'
+      setErroGraduacao(mensagem)
+      notificacao.erro(mensagem)
     } finally {
       setGraduando(null)
     }
@@ -179,8 +184,11 @@ export function AtividadesPage() {
         setAlunos((atuais) => atuais.map((outro) => outro.id === atualizado.id ? { ...outro, ...atualizado } : outro))
         setRascunhos((atuais) => { const { [aluno.id]: _descartado, ...restantes } = atuais; return restantes })
       }
+      notificacao.sucesso(selecionados.length === 1 ? 'Aluno graduado com sucesso.' : 'Alunos graduados com sucesso.')
     } catch (falha) {
-      setErroGraduacao(falha instanceof Error ? falha.message : 'Não foi possível graduar os alunos.')
+      const mensagem = falha instanceof Error ? falha.message : 'Não foi possível graduar os alunos.'
+      setErroGraduacao(mensagem)
+      notificacao.erro(mensagem)
     } finally {
       setGraduando(null)
     }
@@ -217,7 +225,7 @@ export function AtividadesPage() {
   }
 
   async function apagar(item: Atividade) {
-    if (window.confirm(`Excluir a atividade ${item.nome}?`)) await recurso.executar(() => atividadesApi.apagar(item.id))
+    if (window.confirm(`Excluir a atividade ${item.nome}?`)) await recurso.executar(() => atividadesApi.apagar(item.id), 'Atividade excluída com sucesso.')
   }
 
   async function exportarRelatorio(item: Atividade) {
@@ -233,8 +241,11 @@ export function AtividadesPage() {
       link.click()
       link.remove()
       window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+      notificacao.sucesso('Relatório gerado com sucesso.')
     } catch (falha) {
-      setErroRelatorio(falha instanceof Error ? falha.message : 'Não foi possível exportar o relatório.')
+      const mensagem = falha instanceof Error ? falha.message : 'Não foi possível exportar o relatório.'
+      setErroRelatorio(mensagem)
+      notificacao.erro(mensagem)
     }
   }
 

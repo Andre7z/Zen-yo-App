@@ -11,12 +11,14 @@ import { TurmasPage } from './pages/TurmasPage'
 import { TamanhosPage } from './pages/TamanhosPage'
 import { LayoutProtegido } from './components/LayoutProtegido'
 import { AutenticacaoProvider } from './autenticacao-contexto'
+import { NotificacaoProvider } from './notificacoes-contexto'
 import { useAutenticacao } from './autenticacao-context'
 import { ROTAS } from './routes'
 import './App.css'
 
 function App() {
   return (
+    <NotificacaoProvider>
     <AutenticacaoProvider>
       <BrowserRouter>
         <Routes>
@@ -41,6 +43,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AutenticacaoProvider>
+    </NotificacaoProvider>
   )
 }
 

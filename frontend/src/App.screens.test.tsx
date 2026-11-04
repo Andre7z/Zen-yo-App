@@ -128,6 +128,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect((screen.getByLabelText('CPF') as HTMLInputElement).value).toBe('123.456.789-01')
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar aluno' }))
     expect((await screen.findAllByText('CPF inválido. Confira os números digitados.')).length).toBe(1)
+    expect(await screen.findByText('CPF do aluno inválido. Confira os números digitados.')).toBeTruthy()
     expect(requisicao.mock.calls.some(([url, init]) => String(url).endsWith('/aluno/') && init?.method === 'POST')).toBe(false)
 
     fireEvent.change(screen.getByLabelText('CPF'), { target: { value: '52998224725' } })
@@ -369,6 +370,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/7'), expect.objectContaining({ method: 'PATCH' })))
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/7') && init?.method === 'PATCH')
     expect(JSON.parse(String(envio?.[1]?.body))).toEqual({ peso: 38.5, data_nascimento: '2015-03-10', genero: 'Feminino' })
+    expect(await screen.findByText('Dados dos alunos salvos com sucesso.')).toBeTruthy()
   })
 
   it('na turma não exclui aluno, adiciona por seleção e remove da turma', async () => {
@@ -406,12 +408,35 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(screen.queryByText('Calendário anual')).toBeNull()
   })
 
+  it('informa o arquivo já anexado ao editar um anexo', async () => {
+    requisicao.mockImplementation(async (url: RequestInfo | URL) => {
+      if (String(url).endsWith('/anexos/')) return Response.json([{ ...anexo, arquivo_url: '/anexos/arquivos/abc', link: null }])
+      return Response.json([])
+    })
+    abrir(ROTAS.anexos)
+    await screen.findByText('Calendário anual')
+    fireEvent.click(screen.getByRole('button', { name: 'Editar Calendário anual' }))
+    expect(await screen.findByText('Arquivo já anexado: calendario.pdf. Para substituí-lo, selecione um novo arquivo.')).toBeTruthy()
+  })
+
+  it('exige arquivo ou link externo ao cadastrar anexo', async () => {
+    abrir(ROTAS.anexos)
+    await screen.findByText('Calendário anual')
+    fireEvent.click(screen.getByRole('button', { name: 'Novo anexo' }))
+    fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Guia de faixas' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cadastrar anexo' }))
+
+    expect((await screen.findAllByText('Informe um arquivo ou um link externo.')).length).toBe(2)
+    expect(requisicao.mock.calls.some(([url, init]) => String(url).includes('/anexos/') && init?.method === 'POST')).toBe(false)
+  })
+
   it('usa a categoria Apostilas ao criar anexos', async () => {
     abrir(ROTAS.anexos)
     await screen.findByText('Calendário anual')
     fireEvent.click(screen.getByRole('button', { name: 'Novo anexo' }))
     fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Guia de faixas' } })
     fireEvent.change(screen.getByLabelText('Categoria'), { target: { value: 'Apostilas' } })
+    fireEvent.change(screen.getByLabelText('Link externo'), { target: { value: 'https://exemplo.com/guia' } })
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar anexo' }))
 
     await waitFor(() => {

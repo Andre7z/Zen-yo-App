@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Identificado } from '../servicos/dominio'
+import { useNotificacao } from '../notificacoes-context'
 
 type RecursoApi<T extends Identificado> = {
   listar(): Promise<T[]>
@@ -13,6 +14,7 @@ export function useRecurso<T extends Identificado>(api: RecursoApi<T>) {
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
+  const notificacao = useNotificacao()
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -37,20 +39,23 @@ export function useRecurso<T extends Identificado>(api: RecursoApi<T>) {
     return () => { ativo = false }
   }, [api])
 
-  const executar = useCallback(async (operacao: () => Promise<unknown>) => {
+  const executar = useCallback(async (operacao: () => Promise<unknown>, mensagemSucesso = 'Salvo com sucesso.') => {
     setSalvando(true)
     setErro('')
     try {
       await operacao()
       await carregar()
+      notificacao.sucesso(mensagemSucesso)
       return true
     } catch (falha) {
-      setErro(falha instanceof Error ? falha.message : 'Não foi possível salvar as alterações.')
+      const mensagem = falha instanceof Error ? falha.message : 'Não foi possível salvar as alterações.'
+      setErro(mensagem)
+      notificacao.erro(mensagem)
       return false
     } finally {
       setSalvando(false)
     }
-  }, [carregar])
+  }, [carregar, notificacao])
 
   return { itens, carregando, salvando, erro, carregar, executar }
 }

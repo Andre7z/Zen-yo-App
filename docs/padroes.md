@@ -166,6 +166,6 @@ def criar(db: Session, dados: dict):
     aluno = Aluno(**dados)
     db.add(aluno)
     db.commit()
-    db.refresh(aluno)
+    db.refresh(aluno) 
     return aluno
 

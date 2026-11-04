@@ -3,11 +3,13 @@ import { Mail, Pencil, UserRound } from 'lucide-react'
 import { useAutenticacao } from '../autenticacao-context'
 import { CampoModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
+import { useNotificacao } from '../notificacoes-context'
 
 const formularioVazio = { nome: '', email: '', senha_atual: '', nova_senha: '', confirmar: '' }
 
 export function PerfilPage() {
   const { usuario, atualizarPerfil } = useAutenticacao()
+  const notificacao = useNotificacao()
   const [editando, setEditando] = useState(false)
   const [dados, setDados] = useState(formularioVazio)
   const [erro, setErro] = useState('')
@@ -36,8 +38,11 @@ export function PerfilPage() {
         ...(dados.senha_atual ? { senha_atual: dados.senha_atual } : {}),
       })
       setEditando(false)
+      notificacao.sucesso('Perfil atualizado com sucesso.')
     } catch (falha) {
-      setErro(falha instanceof Error ? falha.message : 'Não foi possível salvar o perfil.')
+      const mensagem = falha instanceof Error ? falha.message : 'Não foi possível salvar o perfil.'
+      setErro(mensagem)
+      notificacao.erro(mensagem)
     } finally {
       setSalvando(false)
     }

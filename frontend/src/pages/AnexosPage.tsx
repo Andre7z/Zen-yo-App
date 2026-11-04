@@ -3,6 +3,7 @@ import { Download, ExternalLink, Eye, Pencil, Plus, Trash2 } from 'lucide-react'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
 import { useRecurso } from '../hooks/use-recurso'
+import { useNotificacao } from '../notificacoes-context'
 import { anexosApi, type Anexo } from '../servicos/dominio'
 import { formatarDataParaEntrada } from '../servicos/datas'
 import { baixarArquivo } from '../api'
@@ -16,6 +17,8 @@ const telaPequena = () => window.matchMedia?.('(max-width: 700px)').matches ?? f
 
 export function AnexosPage() {
   const recurso = useRecurso(anexosApi)
+  const notificacao = useNotificacao()
+  const [erroConteudo, setErroConteudo] = useState('')
   const [dados, setDados] = useState<DadosAnexo>(vazio)
   const [editando, setEditando] = useState<number | null>(null)
   const [visualizando, setVisualizando] = useState<Anexo | null>(null)
@@ -32,12 +35,20 @@ export function AnexosPage() {
     setDados({ titulo: anexo.titulo, categoria: anexo.categoria, descricao: anexo.descricao ?? '', nome_arquivo: anexo.nome_arquivo ?? '', arquivo_url: anexo.arquivo_url ?? '', link: anexo.link ?? '' })
     setArquivo(null)
     setErroArquivo('')
+    setErroConteudo('')
     setEditando(anexo.id)
     setFormAberto(true)
   }
 
   async function salvar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!arquivo && !dados.arquivo_url.trim() && !dados.link.trim()) {
+      const mensagem = 'Informe um arquivo ou um link externo.'
+      setErroConteudo(mensagem)
+      notificacao.erro(mensagem)
+      return
+    }
+    setErroConteudo('')
     const payload = {
       titulo: dados.titulo.trim(),
       categoria: dados.categoria,
@@ -103,28 +114,31 @@ export function AnexosPage() {
   }
 
   async function apagar(anexo: Anexo) {
-    if (window.confirm(`Excluir o anexo ${anexo.titulo}?`)) await recurso.executar(() => anexosApi.apagar(anexo.id))
+    if (window.confirm(`Excluir o anexo ${anexo.titulo}?`)) await recurso.executar(() => anexosApi.apagar(anexo.id), 'Anexo excluído com sucesso.')
   }
 
   return (
     <PaginaModulo kicker="ARQUIVOS" titulo="Anexos" descricao="Organize documentos e links de referência da equipe." carregando={recurso.carregando} erro={recurso.erro || erroArquivo} recarregar={() => { void recurso.carregar() }}>
-      <div className="module-toolbar"><p>{recurso.itens.length} {recurso.itens.length === 1 ? 'anexo' : 'anexos'}</p><button className="module-primary" type="button" onClick={() => { setDados(vazio); setArquivo(null); setErroArquivo(''); setEditando(null); setFormAberto(true) }}><Plus size={16} />Novo anexo</button></div>
+      <div className="module-toolbar"><p>{recurso.itens.length} {recurso.itens.length === 1 ? 'anexo' : 'anexos'}</p><button className="module-primary" type="button" onClick={() => { setDados(vazio); setArquivo(null); setErroArquivo(''); setErroConteudo(''); setEditando(null); setFormAberto(true) }}><Plus size={16} />Novo anexo</button></div>
       <CampoModulo rotulo="Filtrar por categoria"><select value={categoriaFiltro} onChange={(event) => setCategoriaFiltro(event.target.value)}><option value="">Todos</option><option value="Calendarios">Calendários</option><option value="Panilhas">Planilhas</option><option value="Fichas">Fichas</option><option value="Apostilas">Apostilas</option><option value="Regulamentos">Regulamentos</option><option value="Outro">Outro</option></select></CampoModulo>
       {formAberto && <ModalDetalhes contexto="CADASTRO" titulo={editando ? 'Editar anexo' : 'Novo anexo'} aoFechar={() => setFormAberto(false)}><form className="module-form" onSubmit={salvar}><div className="module-form-grid">
         <CampoModulo rotulo="Título"><input required maxLength={160} value={dados.titulo} onChange={(event) => setDados({ ...dados, titulo: event.target.value })} /></CampoModulo>
         <CampoModulo rotulo="Categoria"><select value={dados.categoria === 'Apostila' ? 'Apostilas' : dados.categoria} onChange={(event) => setDados({ ...dados, categoria: event.target.value as Anexo['categoria'] })}><option value="Calendarios">Calendários</option><option value="Panilhas">Planilhas</option><option value="Fichas">Fichas</option><option value="Apostilas">Apostilas</option><option value="Regulamentos">Regulamentos</option><option value="Outro">Outro</option></select></CampoModulo>
-        <CampoModulo rotulo="Arquivo"><input type="file" onChange={(event) => {
+        <CampoModulo rotulo="Arquivo"><input className="file-picker-input" type="file" aria-label="Arquivo" aria-invalid={Boolean(erroConteudo)} onChange={(event) => {
           const escolhido = event.target.files?.[0] ?? null
           if (escolhido && escolhido.size > TAMANHO_MAXIMO_ARQUIVO) {
             event.target.value = ''
             setArquivo(null)
-            setErroArquivo('Não é possível salvar este arquivo: o tamanho máximo é 50 MB.')
+            const mensagem = 'Não é possível salvar este arquivo: o tamanho máximo é 50 MB.'
+            setErroArquivo(mensagem)
+            notificacao.erro(mensagem)
             return
           }
           setErroArquivo('')
+          setErroConteudo('')
           setArquivo(escolhido)
-        }} />{arquivo && <small>{arquivo.name}</small>}</CampoModulo>
-        <CampoModulo rotulo="Link externo"><input type="url" maxLength={500} value={dados.link} onChange={(event) => setDados({ ...dados, link: event.target.value })} /></CampoModulo>
+        }} /><span className="file-picker-button">{arquivo || dados.arquivo_url ? 'Substituir arquivo' : 'Selecionar arquivo'}</span>{arquivo ? <small className="file-picker-status">Novo arquivo selecionado: {arquivo.name}</small> : dados.arquivo_url ? <small className="file-picker-status">Arquivo já anexado: {dados.nome_arquivo || 'documento'}. Para substituí-lo, selecione um novo arquivo.</small> : <small className="file-picker-status">Nenhum arquivo selecionado.</small>}{erroConteudo && <small className="module-field-error" role="alert">{erroConteudo}</small>}</CampoModulo>
+        <CampoModulo rotulo="Link externo"><input type="url" maxLength={500} aria-invalid={Boolean(erroConteudo)} value={dados.link} onChange={(event) => { setErroConteudo(''); setDados({ ...dados, link: event.target.value }) }} /></CampoModulo>
         <CampoModulo rotulo="Descrição"><textarea rows={3} value={dados.descricao} onChange={(event) => setDados({ ...dados, descricao: event.target.value })} /></CampoModulo>
       </div><div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando}>{recurso.salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Cadastrar anexo'}</button><button className="module-secondary" type="button" onClick={() => setFormAberto(false)}>Cancelar</button></div></form></ModalDetalhes>}
       {previa && <ModalDetalhes grande titulo={previa.anexo.titulo} aoFechar={fecharPrevia}>
