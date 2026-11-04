@@ -360,9 +360,9 @@ describe('telas conectadas aos recursos FastAPI', () => {
     abrir(ROTAS.atividades)
     fireEvent.click(await screen.findByRole('button', { name: 'Ver detalhes de Copa Zen' }))
     const dialogo = await screen.findByRole('dialog', { name: 'Copa Zen' })
-    expect(within(dialogo).getByText(/Idade: não informada/)).toBeTruthy()
+    expect(within(dialogo).getByLabelText('Idade de Caio Silva').textContent).toBe('Não informada')
     fireEvent.change(within(dialogo).getByLabelText('Peso de Caio Silva'), { target: { value: '38,5' } })
-    fireEvent.change(within(dialogo).getByLabelText('Data de nascimento de Caio Silva'), { target: { value: '2015-03-10' } })
+    fireEvent.change(within(dialogo).getByLabelText('Data de nascimento de Caio Silva'), { target: { value: '10/03/2015' } })
     fireEvent.change(within(dialogo).getByLabelText('Gênero de Caio Silva'), { target: { value: 'Feminino' } })
     fireEvent.click(within(dialogo).getByRole('button', { name: 'Salvar alterações dos alunos' }))
 
