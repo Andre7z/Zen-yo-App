@@ -6,6 +6,7 @@ import { EntradaData } from '../components/EntradaData'
 import { calcularIdade, converterDataParaIso, dataAtividadeValida, dataAtualIso, formatarDataParaEntrada, validarDataNascimento } from '../servicos/datas'
 import { useRecurso } from '../hooks/use-recurso'
 import { useNotificacao } from '../notificacoes-context'
+import { useAutenticacao } from '../autenticacao-context'
 import { baixarArquivo } from '../api'
 import { atividadesApi, alunosApi, caminhoPlanilhaXlsx, faixasApi, ordenarAlunosPorNome, rotuloFaixa, rotuloTipoAtividade, nomeArquivoPlanilhaXlsx, turmasApi, type Aluno, type Atividade, type Faixa, type Turma } from '../servicos/dominio'
 import { opcoesDeTamanho, useTamanhos } from '../hooks/use-tamanhos'
@@ -17,6 +18,7 @@ type Rascunho = { proxima_faixa: string; tamanho_faixa: string; tamanho_kimono: 
 export function AtividadesPage() {
   const recurso = useRecurso(atividadesApi)
   const notificacao = useNotificacao()
+  const { usuario } = useAutenticacao()
   const tamanhos = useTamanhos()
   const [alunos, setAlunos] = useState<Aluno[]>([])
   const [turmas, setTurmas] = useState<Turma[]>([])
@@ -233,10 +235,11 @@ export function AtividadesPage() {
     const caminho = caminhoPlanilhaXlsx(item.tipo, item.id)
     if (!caminho) { setErroPlanilha('Não existe planilha para este tipo de atividade.'); return }
     try {
+      if (!usuario) throw new Error('Não foi possível identificar o professor para gerar a planilha.')
       const url = URL.createObjectURL(await baixarArquivo(caminho))
       const link = document.createElement('a')
       link.href = url
-      link.download = nomeArquivoPlanilhaXlsx(item.nome)
+      link.download = nomeArquivoPlanilhaXlsx(item.nome, usuario.nome)
       document.body.append(link)
       link.click()
       link.remove()

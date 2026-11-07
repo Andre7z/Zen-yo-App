@@ -8,6 +8,7 @@ from openpyxl.utils import get_column_letter
 
 from ..atividades._estilo_xlsx import BORDA, CENTRO, ESQUERDA, NEGRITO
 from ..ordenacao import ordenar_alunos_por_nome
+from ..nomes import primeiro_e_ultimo_nome
 
 MESES = ("JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO",
          "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO")
@@ -24,7 +25,7 @@ def gerar_xlsx(sensei, ano, mes, blocos):
     folha.title = "Frequência"
     maior = max([2 + len(chamadas) for _, chamadas in blocos] + [3])
     folha.merge_cells(start_row=1, start_column=1, end_row=1, end_column=maior)
-    titulo_geral = texto_seguro(f"FREQUÊNCIA DE {MESES[mes - 1]} {ano} - SENSEI {sensei.upper()}")
+    titulo_geral = texto_seguro(f"FREQUÊNCIA DE {MESES[mes - 1]} {ano} - SENSEI {primeiro_e_ultimo_nome(sensei).upper()}")
     folha.cell(1, 1, titulo_geral)
     folha.cell(1, 1).font = NEGRITO
     folha.cell(1, 1).alignment = CENTRO

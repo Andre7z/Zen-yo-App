@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..nomes import primeiro_e_ultimo_nome
 from ..seguranca import get_current_user
 from ..usuarios.models import Usuario
 from . import service
@@ -31,7 +32,7 @@ def exportar_frequencia(
     from .planilha_frequencia import MESES
 
     conteudo = service.planilha_frequencia(db, usuario, turma_ids, ano, mes)
-    nome = re.sub(r'[\\/:*?"<>|\x00-\x1f]', '-', f"FREQUÊNCIA DE {MESES[mes - 1]} {ano} - SENSEI {usuario.nome.upper()}.xlsx")
+    nome = re.sub(r'[\\/:*?"<>|\x00-\x1f]', '-', f"FREQUÊNCIA DE {MESES[mes - 1]} {ano} - SENSEI {primeiro_e_ultimo_nome(usuario.nome).upper()}.xlsx")
     return Response(
         content=conteudo,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

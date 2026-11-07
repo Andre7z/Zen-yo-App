@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..nomes import primeiro_e_ultimo_nome
 from ..seguranca import get_current_user
 from ..usuarios.models import Usuario
 
@@ -28,8 +29,10 @@ router = APIRouter(
 )
 
 
-def _resposta_planilha(conteudo, nome):
-    nome_seguro = re.sub(r'[\\/:*?"<>|\x00-\x1f]', '-', nome).strip() or "planilha"
+def _resposta_planilha(conteudo, nome, professor):
+    nome_seguro = re.sub(r'[\\/:*?"<>|\x00-\x1f]', '-', nome).strip().upper() or "PLANILHA"
+    nome_professor = re.sub(r'[\\/:*?"<>|\x00-\x1f]', '-', primeiro_e_ultimo_nome(professor).upper())
+    nome_seguro = f"{nome_seguro} - SENSEI {nome_professor}"
     return Response(
         content=conteudo,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -137,7 +140,7 @@ def controle_de_faixas_xlsx(
     db: Session = Depends(get_db),
 ):
     conteudo = service.controle_de_faixas_xlsx(db, usuario, atividade_id)
-    return _resposta_planilha(conteudo, service.buscar(db, usuario, atividade_id).nome)
+    return _resposta_planilha(conteudo, service.buscar(db, usuario, atividade_id).nome, usuario.nome)
 
 
 @router.get("/{atividade_id}/planilha/controle-de-kimonos")
@@ -156,7 +159,7 @@ def controle_de_kimonos_xlsx(
     db: Session = Depends(get_db),
 ):
     conteudo = service.controle_de_kimonos_xlsx(db, usuario, atividade_id)
-    return _resposta_planilha(conteudo, service.buscar(db, usuario, atividade_id).nome)
+    return _resposta_planilha(conteudo, service.buscar(db, usuario, atividade_id).nome, usuario.nome)
 
 
 @router.get("/{atividade_id}/planilha/controle-de-campeonato")
@@ -175,7 +178,7 @@ def controle_de_campeonato_xlsx(
     db: Session = Depends(get_db),
 ):
     conteudo = service.controle_de_campeonato_xlsx(db, usuario, atividade_id)
-    return _resposta_planilha(conteudo, service.buscar(db, usuario, atividade_id).nome)
+    return _resposta_planilha(conteudo, service.buscar(db, usuario, atividade_id).nome, usuario.nome)
 
 
 @router.get("/{atividade_id}/planilha/controle-de-frequencia")
@@ -194,4 +197,4 @@ def controle_de_frequencia_xlsx(
     db: Session = Depends(get_db),
 ):
     conteudo = service.controle_de_frequencia_xlsx(db, usuario, atividade_id)
-    return _resposta_planilha(conteudo, service.buscar(db, usuario, atividade_id).nome)
+    return _resposta_planilha(conteudo, service.buscar(db, usuario, atividade_id).nome, usuario.nome)

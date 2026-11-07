@@ -6,6 +6,7 @@ import { ModalDetalhes } from '../components/ModalDetalhes'
 import { useRecurso } from '../hooks/use-recurso'
 import { atividadesApi, rotuloTipoAtividade, type Atividade } from '../servicos/dominio'
 import { dataAtualIso, formatarDataParaEntrada } from '../servicos/datas'
+import { primeiroEUltimoNome } from '../servicos/nomes'
 import { ROTAS } from '../routes'
 
 export function InicioPage() {
@@ -18,11 +19,11 @@ export function InicioPage() {
     return grupos
   }, {}), [atividades])
   if (!usuario) return null
-  const primeiroNome = usuario.nome.trim().split(/\s+/)[0]
+  const nomeSensei = primeiroEUltimoNome(usuario.nome)
 
   return (
     <section className="home-main">
-      <h1>Bem-vindo, Sensei <em>{primeiroNome}.</em></h1>
+      <h1>Bem-vindo, Sensei <em>{nomeSensei}.</em></h1>
 
       <section className="home-calendar" aria-label="Calendário">
         <h2 className="home-calendar-title"><CalendarDays size={18} />Calendário</h2>

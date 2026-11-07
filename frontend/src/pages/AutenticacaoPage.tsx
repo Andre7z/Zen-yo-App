@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, ArrowRight, LockKeyhole, Mail, ShieldCheck, UserRound } from 'lucide-react'
+import { AlertCircle, ArrowRight, Mail, ShieldCheck, UserRound } from 'lucide-react'
 import { useAutenticacao } from '../autenticacao-context'
 import { ROTAS } from '../routes'
 import { Marca } from '../components/Marca'
+import { CampoSenha } from '../components/CampoSenha'
 
 export function AutenticacaoPage({ tela }: { tela: 'login' | 'cadastro' }) {
   const { entrar, cadastrar } = useAutenticacao()
@@ -45,7 +46,7 @@ export function AutenticacaoPage({ tela }: { tela: 'login' | 'cadastro' }) {
           <form className="auth-form" onSubmit={handleSubmit}>
             {cadastro && <label className="field"><span>Nome completo</span><span className="input-wrap"><UserRound size={17} /><input autoComplete="name" minLength={2} placeholder="Como podemos chamar você?" required value={nome} onChange={(event) => setNome(event.target.value)} /></span></label>}
             <label className="field"><span>E-mail</span><span className="input-wrap"><Mail size={17} /><input autoComplete="email" type="email" placeholder="voce@exemplo.com" required value={email} onChange={(event) => setEmail(event.target.value)} /></span></label>
-            <label className="field"><span>Senha</span><span className="input-wrap"><LockKeyhole size={17} /><input autoComplete={cadastro ? 'new-password' : 'current-password'} minLength={cadastro ? 6 : undefined} placeholder={cadastro ? 'Pelo menos 6 caracteres' : 'Sua senha'} required type="password" value={senha} onChange={(event) => setSenha(event.target.value)} /></span></label>
+            <CampoSenha key={tela} autenticacao rotulo="Senha" autoComplete={cadastro ? 'new-password' : 'current-password'} minLength={cadastro ? 6 : undefined} placeholder={cadastro ? 'Pelo menos 6 caracteres' : 'Sua senha'} required value={senha} onChange={(event) => setSenha(event.target.value)} />
             <button className="submit-button" type="submit" disabled={enviando}>{enviando ? 'Aguarde...' : cadastro ? 'Criar conta' : 'Entrar'}{!enviando && <ArrowRight size={17} />}</button>
           </form>
           <p className="auth-switch">{cadastro ? 'Já tem uma conta?' : 'Ainda não tem conta?'}{' '}<button type="button" onClick={() => { setErro(''); navigate(cadastro ? ROTAS.login : ROTAS.cadastro) }}>{cadastro ? 'Fazer login' : 'Cadastre-se'}</button></p>

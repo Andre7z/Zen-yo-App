@@ -1,4 +1,5 @@
 import { apiRequest, nomeArquivoSeguro } from '../api'
+import { primeiroEUltimoNome } from './nomes'
 
 export type Identificado = { id: number }
 
@@ -128,8 +129,9 @@ export function caminhoPlanilhaXlsx(tipo: string, id: number) {
   return nome ? `/atividades/${id}/planilha/${nome}.xlsx` : null
 }
 
-export function nomeArquivoPlanilhaXlsx(nome: string) {
-  return `${nomeArquivoSeguro(nome).trim() || 'planilha'}.xlsx`
+export function nomeArquivoPlanilhaXlsx(nome: string, professor: string) {
+  const atividade = nomeArquivoSeguro(nome).trim().toUpperCase() || 'PLANILHA'
+  return nomeArquivoSeguro(`${atividade} - SENSEI ${primeiroEUltimoNome(professor).toUpperCase()}.xlsx`)
 }
 
 export const rotuloTipoAtividade = (tipo: string) => tipo === 'entrega_de_kimono' ? 'entrega de judogi' : tipo.replaceAll('_', ' ')
