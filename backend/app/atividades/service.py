@@ -13,7 +13,8 @@ Cada usuario enxerga e altera somente as suas proprias atividades.
 from . import controle_campeonato, controle_faixas, controle_frequencia, controle_kimonos, repository
 from ..tamanhos import service as tamanhos_service
 from .erros import AtividadeNaoEncontrada, TipoDeAtividadeDesconhecido
-from .politicas import RelatorioFactory
+from .politicas import PlanilhaFactory
+from ._estilo_xlsx import nomear_planilha
 
 
 def listar(db, usuario, tipo=None, nome=None):
@@ -73,14 +74,14 @@ def apagar(db, usuario, atividade_id):
     )
 
 
-def gerar_relatorio(db, usuario, atividade_id):
+def gerar_planilha(db, usuario, atividade_id):
     atividade = buscar(
         db,
         usuario,
         atividade_id
     )
 
-    estrategia = RelatorioFactory.criar(atividade.tipo)
+    estrategia = PlanilhaFactory.criar(atividade.tipo)
 
     return estrategia.gerar(atividade)
 
@@ -96,12 +97,12 @@ def _atividade_de_troca(db, usuario, atividade_id):
 
 def controle_de_faixas(db, usuario, atividade_id):
     atividade, alunos = _atividade_de_troca(db, usuario, atividade_id)
-    return controle_faixas.gerar_relatorio(atividade, alunos, tamanhos_service.nomes(db, usuario, "faixa"))
+    return controle_faixas.gerar_planilha(atividade, alunos, tamanhos_service.nomes(db, usuario, "faixa"))
 
 
 def controle_de_faixas_xlsx(db, usuario, atividade_id):
     atividade, alunos = _atividade_de_troca(db, usuario, atividade_id)
-    return controle_faixas.gerar_xlsx(atividade, alunos, tamanhos_service.nomes(db, usuario, "faixa"))
+    return nomear_planilha(controle_faixas.gerar_xlsx(atividade, alunos, tamanhos_service.nomes(db, usuario, "faixa")), atividade.nome)
 
 
 def _atividade_de_entrega_kimono(db, usuario, atividade_id):
@@ -119,12 +120,12 @@ def _confirmados(atividade):
 
 def controle_de_kimonos(db, usuario, atividade_id):
     atividade, alunos = _atividade_de_entrega_kimono(db, usuario, atividade_id)
-    return controle_kimonos.gerar_relatorio(alunos, tamanhos_service.nomes(db, usuario, "kimono"), _confirmados(atividade))
+    return controle_kimonos.gerar_planilha(alunos, tamanhos_service.nomes(db, usuario, "kimono"), _confirmados(atividade))
 
 
 def controle_de_kimonos_xlsx(db, usuario, atividade_id):
     atividade, alunos = _atividade_de_entrega_kimono(db, usuario, atividade_id)
-    return controle_kimonos.gerar_xlsx(alunos, tamanhos_service.nomes(db, usuario, "kimono"), _confirmados(atividade))
+    return nomear_planilha(controle_kimonos.gerar_xlsx(alunos, tamanhos_service.nomes(db, usuario, "kimono"), _confirmados(atividade)), atividade.nome)
 
 
 def _atividade_de_campeonato(db, usuario, atividade_id):
@@ -138,12 +139,12 @@ def _atividade_de_campeonato(db, usuario, atividade_id):
 
 def controle_de_campeonato(db, usuario, atividade_id):
     atividade, alunos = _atividade_de_campeonato(db, usuario, atividade_id)
-    return controle_campeonato.gerar_relatorio(alunos, _confirmados(atividade))
+    return controle_campeonato.gerar_planilha(alunos, _confirmados(atividade))
 
 
 def controle_de_campeonato_xlsx(db, usuario, atividade_id):
     atividade, alunos = _atividade_de_campeonato(db, usuario, atividade_id)
-    return controle_campeonato.gerar_xlsx(alunos, _confirmados(atividade))
+    return nomear_planilha(controle_campeonato.gerar_xlsx(alunos, _confirmados(atividade)), atividade.nome)
 
 
 def _atividade_de_frequencia(db, usuario, atividade_id):
@@ -157,9 +158,9 @@ def _atividade_de_frequencia(db, usuario, atividade_id):
 
 def controle_de_frequencia(db, usuario, atividade_id):
     atividade, alunos = _atividade_de_frequencia(db, usuario, atividade_id)
-    return controle_frequencia.gerar_relatorio(atividade, alunos)
+    return controle_frequencia.gerar_planilha(atividade, alunos)
 
 
 def controle_de_frequencia_xlsx(db, usuario, atividade_id):
     atividade, alunos = _atividade_de_frequencia(db, usuario, atividade_id)
-    return controle_frequencia.gerar_xlsx(atividade, alunos)
+    return nomear_planilha(controle_frequencia.gerar_xlsx(atividade, alunos), atividade.nome)

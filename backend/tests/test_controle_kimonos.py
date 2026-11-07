@@ -23,18 +23,18 @@ TAMANHOS = ["PP", "P", "N2", "M", "G", "N4", "GG"]
 
 
 def test_quantidades_por_turma_e_tamanho_com_totais():
-    relatorio = controle_kimonos.gerar_relatorio(_alunos(), TAMANHOS)
-    quantidades = relatorio["quantidades"]
+    planilha = controle_kimonos.gerar_planilha(_alunos(), TAMANHOS)
+    quantidades = planilha["quantidades"]
     por_turma = {t["turma"]: t for t in quantidades["turmas"]}
 
-    assert relatorio["linhas"][3]["turma"] == "SEM TURMA"
+    assert planilha["linhas"][3]["turma"] == "SEM TURMA"
     assert por_turma["INFANTIL"]["tamanhos"][0] == 2
     assert por_turma["INFANTIL"]["total"] == 2
     assert por_turma["ADULTOS"]["tamanhos"][3] == 1
     assert quantidades["total_geral"] == 3
 
 
-def test_relatorio_agrupa_aluno_vinculado_a_varias_turmas():
+def test_planilha_agrupa_aluno_vinculado_a_varias_turmas():
     aluno = SimpleNamespace(
         id=4,
         nome="Eva",
@@ -42,7 +42,7 @@ def test_relatorio_agrupa_aluno_vinculado_a_varias_turmas():
         tamanho_kimono="M",
     )
 
-    linha = controle_kimonos.gerar_relatorio([aluno])["linhas"][0]
+    linha = controle_kimonos.gerar_planilha([aluno])["linhas"][0]
 
     assert linha["turma"] == "ADULTOS, INFANTIL"
 

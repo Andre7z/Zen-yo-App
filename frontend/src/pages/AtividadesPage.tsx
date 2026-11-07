@@ -7,7 +7,7 @@ import { calcularIdade, converterDataParaIso, dataAtividadeValida, dataAtualIso,
 import { useRecurso } from '../hooks/use-recurso'
 import { useNotificacao } from '../notificacoes-context'
 import { baixarArquivo } from '../api'
-import { atividadesApi, alunosApi, caminhoRelatorioXlsx, faixasApi, ordenarAlunosPorNome, rotuloFaixa, rotuloTipoAtividade, nomeArquivoRelatorioXlsx, turmasApi, type Aluno, type Atividade, type Faixa, type Turma } from '../servicos/dominio'
+import { atividadesApi, alunosApi, caminhoPlanilhaXlsx, faixasApi, ordenarAlunosPorNome, rotuloFaixa, rotuloTipoAtividade, nomeArquivoPlanilhaXlsx, turmasApi, type Aluno, type Atividade, type Faixa, type Turma } from '../servicos/dominio'
 import { opcoesDeTamanho, useTamanhos } from '../hooks/use-tamanhos'
 
 const vazio = { tipo: 'frequencia' as Atividade['tipo'], nome: '', data: formatarDataParaEntrada(dataAtualIso()), local: '', descricao: '', nova_faixa: '' }
@@ -36,7 +36,7 @@ export function AtividadesPage() {
   const [visualizando, setVisualizando] = useState<number | null>(null)
   const [editando, setEditando] = useState<number | null>(null)
   const [formAberto, setFormAberto] = useState(false)
-  const [erroRelatorio, setErroRelatorio] = useState('')
+  const [erroPlanilha, setErroPlanilha] = useState('')
   const [buscaAtividade, setBuscaAtividade] = useState('')
   const [tipoFiltro, setTipoFiltro] = useState('')
   const [situacaoFiltro, setSituacaoFiltro] = useState('')
@@ -228,23 +228,23 @@ export function AtividadesPage() {
     if (window.confirm(`Excluir a atividade ${item.nome}?`)) await recurso.executar(() => atividadesApi.apagar(item.id), 'Atividade excluída com sucesso.')
   }
 
-  async function exportarRelatorio(item: Atividade) {
-    setErroRelatorio('')
-    const caminho = caminhoRelatorioXlsx(item.tipo, item.id)
-    if (!caminho) { setErroRelatorio('Não existe relatório para este tipo de atividade.'); return }
+  async function exportarPlanilha(item: Atividade) {
+    setErroPlanilha('')
+    const caminho = caminhoPlanilhaXlsx(item.tipo, item.id)
+    if (!caminho) { setErroPlanilha('Não existe planilha para este tipo de atividade.'); return }
     try {
       const url = URL.createObjectURL(await baixarArquivo(caminho))
       const link = document.createElement('a')
       link.href = url
-      link.download = nomeArquivoRelatorioXlsx(item.tipo)
+      link.download = nomeArquivoPlanilhaXlsx(item.nome)
       document.body.append(link)
       link.click()
       link.remove()
       window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-      notificacao.sucesso('Relatório gerado com sucesso.')
+      notificacao.sucesso('Planilha gerada com sucesso.')
     } catch (falha) {
-      const mensagem = falha instanceof Error ? falha.message : 'Não foi possível exportar o relatório.'
-      setErroRelatorio(mensagem)
+      const mensagem = falha instanceof Error ? falha.message : 'Não foi possível exportar a planilha.'
+      setErroPlanilha(mensagem)
       notificacao.erro(mensagem)
     }
   }
@@ -274,7 +274,7 @@ export function AtividadesPage() {
         </ModalDetalhes>
       )}
 
-      {erroRelatorio && <p className="module-error" role="alert">{erroRelatorio}</p>}
+      {erroPlanilha && <p className="module-error" role="alert">{erroPlanilha}</p>}
 
       {visualizando !== null && (() => {
         const item = recurso.itens.find((atividade) => atividade.id === visualizando)
@@ -366,7 +366,7 @@ export function AtividadesPage() {
 
       <div className="module-list" aria-label="Lista de atividades">
         {atividadesFiltradas.map((item) => (
-          <article className="module-record" key={item.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${item.nome}`} onClick={() => { setFormAberto(false); setEditando(null); setErroGraduacao(''); setVisualizando(item.id) }}><strong>{item.nome}</strong><span>{formatarDataParaEntrada(item.data)} · {rotuloTipoAtividade(item.tipo)} · {item.aluno_ids.length} alunos · {item.aluno_ids_pagos?.length ?? 0} {item.tipo === 'frequencia' ? 'presentes' : 'confirmados'}{item.local ? ` · ${item.local}` : ''}</span></button><div className="record-actions"><BotaoIcone label={`Relatório de ${item.nome}`} onClick={() => void exportarRelatorio(item)}><FileText size={16} /></BotaoIcone><BotaoIcone label={`Editar ${item.nome}`} onClick={() => iniciarEdicao(item)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${item.nome}`} onClick={() => void apagar(item)}><Trash2 size={16} /></BotaoIcone></div></article>
+          <article className="module-record" key={item.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${item.nome}`} onClick={() => { setFormAberto(false); setEditando(null); setErroGraduacao(''); setVisualizando(item.id) }}><strong>{item.nome}</strong><span>{formatarDataParaEntrada(item.data)} · {rotuloTipoAtividade(item.tipo)} · {item.aluno_ids.length} alunos · {item.aluno_ids_pagos?.length ?? 0} {item.tipo === 'frequencia' ? 'presentes' : 'confirmados'}{item.local ? ` · ${item.local}` : ''}</span></button><div className="record-actions"><BotaoIcone label={`Planilha de ${item.nome}`} onClick={() => void exportarPlanilha(item)}><FileText size={16} /></BotaoIcone><BotaoIcone label={`Editar ${item.nome}`} onClick={() => iniciarEdicao(item)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${item.nome}`} onClick={() => void apagar(item)}><Trash2 size={16} /></BotaoIcone></div></article>
         ))}
         {!atividadesFiltradas.length && <p className="module-empty">{recurso.itens.length ? 'Nenhuma atividade encontrada com esses filtros.' : 'Nenhuma atividade cadastrada.'}</p>}
       </div>

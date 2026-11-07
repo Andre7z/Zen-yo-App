@@ -1,11 +1,16 @@
-import { apiRequest } from '../api'
+import { apiRequest, nomeArquivoSeguro } from '../api'
 
 export type Identificado = { id: number }
 
 export type Faixa = Identificado & { nome: string; tipo: 'Iniciante' | 'Kyu' | 'Dan'; grau: number | null; ordem: number }
 export const formatarGrau = (grau: number) => String(grau).replace('.', ',')
 export const rotuloFaixa = (faixa: Faixa) => faixa.grau ? `${faixa.nome} - ${formatarGrau(faixa.grau)}º ${faixa.tipo}` : faixa.nome
-export type Turma = Identificado & { nome: string }
+export type Turma = Identificado & { nome: string; nucleo: string | null }
+export type ChamadaTurma = {
+  data: string
+  registrada: boolean
+  alunos: { aluno_id: number; nome: string; presente: boolean }[]
+}
 export type Aluno = Identificado & {
   nome: string
   cpf: string | null
@@ -100,24 +105,31 @@ export const turmasApi = {
   removerAluno: (turmaId: number, alunoId: number) => apiRequest<void>(`/turmas/${turmaId}/alunos/${alunoId}`, {
     method: 'DELETE',
   }),
+  listarFrequencias: (turmaId: number) => apiRequest<string[]>(`/turmas/${turmaId}/frequencias`),
+  consultarFrequencia: (turmaId: number, data: string) => apiRequest<ChamadaTurma>(`/turmas/${turmaId}/frequencias/${data}`),
+  salvarFrequencia: (turmaId: number, data: string, alunos: { aluno_id: number; presente: boolean }[]) =>
+    apiRequest<ChamadaTurma>(`/turmas/${turmaId}/frequencias/${data}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alunos }),
+    }),
 }
 export const tamanhosApi = recurso<Tamanho>('/tamanhos/')
 
-const RELATORIOS_XLSX_POR_TIPO: Record<string, string> = {
+const PLANILHAS_XLSX_POR_TIPO: Record<string, string> = {
   troca_de_faixa: 'controle-de-faixas',
   entrega_de_kimono: 'controle-de-kimonos',
   frequencia: 'controle-de-frequencia',
   campeonato: 'controle-de-campeonato',
 }
 
-export function caminhoRelatorioXlsx(tipo: string, id: number) {
-  const nome = RELATORIOS_XLSX_POR_TIPO[tipo]
-  return nome ? `/atividades/${id}/relatorio/${nome}.xlsx` : null
+export function caminhoPlanilhaXlsx(tipo: string, id: number) {
+  const nome = PLANILHAS_XLSX_POR_TIPO[tipo]
+  return nome ? `/atividades/${id}/planilha/${nome}.xlsx` : null
 }
 
-export function nomeArquivoRelatorioXlsx(tipo: string) {
-  const nome = tipo === 'entrega_de_kimono' ? 'controle-de-judogis' : RELATORIOS_XLSX_POR_TIPO[tipo] ?? 'relatorio'
-  return `${nome}.xlsx`
+export function nomeArquivoPlanilhaXlsx(nome: string) {
+  return `${nomeArquivoSeguro(nome).trim() || 'planilha'}.xlsx`
 }
 
 export const rotuloTipoAtividade = (tipo: string) => tipo === 'entrega_de_kimono' ? 'entrega de judogi' : tipo.replaceAll('_', ' ')

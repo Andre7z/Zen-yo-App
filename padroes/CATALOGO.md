@@ -6,7 +6,7 @@ aplicado de verdade no projeto.
 
 | Padrão | Família | Que problema resolve | Onde caberia no MEU projeto | Já usei? Onde? |
 |---|---|---|---|---|
-| Strategy | Comportamental | Uma regra que muda de caso para caso vira uma escada de if que cresce a cada caso novo | Cálculo de regras diferentes para atividades, troca de faixa ou geração de relatórios | — |
+| Strategy | Comportamental | Uma regra que muda de caso para caso vira uma escada de if que cresce a cada caso novo | Cálculo de regras diferentes para atividades, troca de faixa ou geração de planilhas | — |
 | Factory Method | Criacional | Quando existem vários tipos de objetos, fica difícil organizar a criação de cada um | Criação de diferentes tipos de atividades, como troca de faixa, festival e entrega de kimono | — |
 | Observer | Comportamental | Permite avisar vários componentes quando um objeto sofre alteração | O Observer é um padrão de projeto utilizado para notificar automaticamente objetos ou usuários quando ocorre alguma mudança em outro objeto.
 Exemplo: notificações do YouTube.

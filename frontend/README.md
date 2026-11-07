@@ -16,7 +16,7 @@ Interface web do Zen’yo, que consome a API do backend.
 - Alunos — cadastro com responsável e contatos.
 - Turmas — organização dos alunos em uma ou mais turmas.
 - Faixas e tamanhos — graduações e tamanhos de judogi e faixa.
-- Atividades — treinos, campeonatos, entregas e graduações, com relatórios.
+- Atividades — treinos, campeonatos, entregas e graduações, com planilhas.
 - Anexos — envio e consulta de documentos.
 
 Telas internas exigem login; sem sessão válida o app redireciona para o login. O token fica só na memória, então recarregar a página encerra a sessão.

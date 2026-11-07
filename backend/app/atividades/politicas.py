@@ -1,10 +1,10 @@
-"""As estrategias de relatorio: o padrao Strategy dentro das atividades.
+"""As estrategias de planilha: o padrao Strategy dentro das atividades.
 
-Cada tipo de atividade tem um jeito proprio de gerar seu relatorio.
+Cada tipo de atividade tem um jeito proprio de gerar seu planilha.
 Aqui cada jeito vira um objeto, e todos respondem a MESMA pergunta:
-como gerar o relatorio da atividade.
+como gerar a planilha da atividade.
 
-O Service recebe uma estrategia e pergunta como gerar o relatorio.
+O Service recebe uma estrategia e pergunta como gerar a planilha.
 Ele nao precisa saber qual tipo de atividade esta sendo tratado.
 
 A pergunta "que tipo de atividade e'?" existe no sistema inteiro uma vez so':
@@ -14,11 +14,11 @@ from .erros import TipoDeAtividadeDesconhecido
 from ..ordenacao import ordenar_alunos_por_nome
 
 
-class EstrategiaRelatorio:
-    """O contrato: toda estrategia sabe gerar um relatorio."""
+class EstrategiaPlanilha:
+    """O contrato: toda estrategia sabe gerar uma planilha."""
 
     def gerar(self, atividade):
-        """Gera o relatorio da atividade."""
+        """Gera a planilha da atividade."""
         raise NotImplementedError
 
 
@@ -31,7 +31,7 @@ def _alunos_da_atividade(atividade):
     return [aluno] if aluno is not None else []
 
 
-class RelatorioTrocaDeFaixa(EstrategiaRelatorio):
+class PlanilhaTrocaDeFaixa(EstrategiaPlanilha):
     def gerar(self, atividade):
         return [
             {
@@ -44,7 +44,7 @@ class RelatorioTrocaDeFaixa(EstrategiaRelatorio):
         ]
 
 
-class RelatorioEntregaKimono(EstrategiaRelatorio):
+class PlanilhaEntregaKimono(EstrategiaPlanilha):
     def gerar(self, atividade):
         return [
             {
@@ -56,7 +56,7 @@ class RelatorioEntregaKimono(EstrategiaRelatorio):
         ]
 
 
-class RelatorioFrequencia(EstrategiaRelatorio):
+class PlanilhaFrequencia(EstrategiaPlanilha):
     def gerar(self, atividade):
         alunos_presentes = set(getattr(atividade, "aluno_ids_pagos", []) or [])
         return [
@@ -69,7 +69,7 @@ class RelatorioFrequencia(EstrategiaRelatorio):
         ]
 
 
-class RelatorioCampeonato(EstrategiaRelatorio):
+class PlanilhaCampeonato(EstrategiaPlanilha):
     def gerar(self, atividade):
         return [
             {
@@ -83,16 +83,16 @@ class RelatorioCampeonato(EstrategiaRelatorio):
         ]
 
 
-class RelatorioFactory:
+class PlanilhaFactory:
     """Cria a estrategia correta conforme o tipo de atividade."""
 
     @staticmethod
     def criar(tipo_atividade):
         estrategias = {
-            "troca_de_faixa": RelatorioTrocaDeFaixa(),
-            "entrega_de_kimono": RelatorioEntregaKimono(),
-            "frequencia": RelatorioFrequencia(),
-            "campeonato": RelatorioCampeonato(),
+            "troca_de_faixa": PlanilhaTrocaDeFaixa(),
+            "entrega_de_kimono": PlanilhaEntregaKimono(),
+            "frequencia": PlanilhaFrequencia(),
+            "campeonato": PlanilhaCampeonato(),
         }
 
         if tipo_atividade not in estrategias:
@@ -107,4 +107,4 @@ class RelatorioFactory:
 
 def estrategia_para(tipo_atividade):
     """Compatibilidade com o codigo antigo: delega para a fabrica."""
-    return RelatorioFactory.criar(tipo_atividade)
+    return PlanilhaFactory.criar(tipo_atividade)

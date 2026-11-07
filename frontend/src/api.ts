@@ -63,6 +63,12 @@ export async function baixarArquivo(path: string): Promise<Blob> {
   return response.blob()
 }
 
+export function nomeArquivoSeguro(nome: string): string {
+  return Array.from(nome, (caractere) =>
+    caractere.charCodeAt(0) < 32 || /[\\/:*?"<>|]/.test(caractere) ? '-' : caractere,
+  ).join('')
+}
+
 function mensagemErro(payload: unknown, status: number): string {
   if (payload && typeof payload === 'object' && 'detail' in payload) {
     const detail = payload.detail

@@ -119,6 +119,23 @@
 .module-heading .home-intro { max-width: 620px; }
 .module-toolbar { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
 .module-toolbar > p { color: #656b66; font-size: 12px; }
+.turmas-acoes, .turma-detalhes-acoes { display: flex; flex-direction: column; gap: 8px; }
+.turmas-toolbar { flex-direction: column; align-items: flex-start; }
+.turma-detalhes-acoes { margin-top: 18px; }
+.turma-record-links { display: flex; flex-direction: column; gap: 8px; }
+.turma-record-icones { display: flex; }
+.frequencia-lista, .frequencia-selecao { display: grid; gap: 10px; }
+.frequencia-aluno, .frequencia-selecao { border: 1px solid #d8ddd7; border-radius: 4px; padding: 10px; }
+.frequencia-aluno { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+.frequencia-aluno-nome { min-width: 0; overflow-wrap: anywhere; }
+.frequencia-aluno-marcacao { display: flex; flex: 0 0 auto; align-items: center; gap: 5px; }
+.frequencia-aluno-marcacao input { margin: 0; }
+.frequencia-selecao input { margin-right: 5px; }
+.frequencia-data::-webkit-calendar-picker-indicator { width: 20px; height: 20px; cursor: pointer; background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23354139' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01'/%3E%3C/svg%3E"); }
+.historico-frequencia { margin-top: 24px; }
+.historico-frequencia h3 { margin-bottom: 10px; font-size: 13px; text-transform: uppercase; }
+.historico-frequencia-lista { list-style: none; padding: 0; margin: 0; border-top: 1px solid #e2e5e0; }
+.historico-frequencia-lista li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #e2e5e0; }
 .module-primary, .module-secondary { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; gap: 8px; padding: 0 13px; border: 1px solid #202a24; border-radius: 4px; cursor: pointer; font: inherit; font-size: 12px; font-weight: 650; text-decoration: none; }
 .module-primary { color: #fff; background: #202a24; }
 .module-primary:hover:not(:disabled) { background: #414d45; }
@@ -172,6 +189,10 @@
 }@media (max-width: 700px) {
   .module-toolbar { flex-wrap: wrap; gap: 8px; }
   .module-toolbar .module-primary, .module-toolbar .module-secondary { flex: 1 1 100%; justify-content: center; }
+  .turmas-toolbar { align-items: stretch; }
+  .turmas-acoes { width: 100%; }
+  .turma-record-actions, .turma-record-links { width: 100%; }
+  .turma-record-links { min-width: 0; flex: 1; }
   .module-record { flex-wrap: wrap; }
   .record-open { min-height: 44px; }
   .module-form-actions { flex-direction: column; }
@@ -341,6 +362,7 @@
   .home-main, .module-page { width: calc(100% - 28px); }
   .sidebar-link { gap: 5px; padding-inline: 8px; font-size: 10px; }
   .module-toolbar { align-items: flex-end; gap: 8px; }
+  .turmas-toolbar { align-items: stretch; }
   .module-toolbar > p { font-size: 11px; }
   .module-toolbar .module-primary { padding-inline: 9px; font-size: 11px; }
   .record-actions .icon-action { width: 31px; }
