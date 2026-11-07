@@ -152,7 +152,7 @@ principal é reduzir o acoplamento entre os módulos, não diminuir chamadas na 
 Que problema ele resolve?
 Permite agrupar alterações na sessão do banco e confirmá-las juntas com `commit()`.
 
-O que aconteceria sem ele?
+O que aconteceria sem ele? 
 Uma parte das alterações poderia ser salva antes de outra falhar. O banco ficaria com apenas uma parte da operação concluída.
 
 Quando vale e quando é burocracia — neste projeto:

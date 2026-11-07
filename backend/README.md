@@ -29,3 +29,11 @@ poetry run uvicorn app.main:app --reload
 ```
 Defina `DATABASE_URL` no arquivo `.env`. Documentação da API em http://127.0.0.1:8000/docs.
 Testes: `poetry run pytest`
+
+## Docker
+O Dockerfile na raiz gera uma imagem somente para a API. Execute os comandos a partir da raiz do repositório:
+```
+docker build -t zenyo-api .
+docker run --rm -p 8000:8000 -e DATABASE_URL="postgresql+psycopg://usuario:senha@host.docker.internal:5432/zenyo" zenyo-api
+```
+Configure `DATABASE_URL` com os dados do PostgreSQL acessível pelo container. A imagem aplica as migrações antes de iniciar a API; a interface frontend é implantada separadamente.

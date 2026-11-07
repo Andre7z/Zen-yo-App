@@ -7,7 +7,7 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir poetry
+RUN pip install --no-cache-dir poetry==2.4.1
 
 # Copia os arquivos de dependências do backend
 COPY backend/pyproject.toml backend/poetry.lock ./
@@ -21,4 +21,4 @@ COPY backend/ ./
 EXPOSE 8000
 
 # Aplica as migrations pendentes antes de iniciar a API
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

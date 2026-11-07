@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import App from './App'
-import { clearToken, saveToken } from './api'
-import { ROTAS } from './routes'
+import App from '../src/App'
+import { clearToken, saveToken } from '../src/api'
+import { ROTAS } from '../src/routes'
 
 const usuario = { id: 4, nome: 'Ana Professora', email: 'ana@example.com' }
 const faixa = { id: 2, nome: 'Amarela', tipo: 'Kyu', grau: 6, ordem: 994 }
