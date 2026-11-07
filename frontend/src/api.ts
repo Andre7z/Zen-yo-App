@@ -72,7 +72,10 @@ export function nomeArquivoSeguro(nome: string): string {
 function mensagemErro(payload: unknown, status: number): string {
   if (payload && typeof payload === 'object' && 'detail' in payload) {
     const detail = payload.detail
-    if (typeof detail === 'string') return detail
+    if (typeof detail === 'string') {
+      if (status === 404 && detail === 'Not Found') return 'Rota não encontrada na API. Verifique se o backend está atualizado.'
+      return detail
+    }
     if (Array.isArray(detail)) {
       const mensagens = detail.map((item) => item && typeof item === 'object' && 'msg' in item ? String(item.msg) : '').filter(Boolean)
       if (mensagens.length) return mensagens.join(' ')

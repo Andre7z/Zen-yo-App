@@ -170,6 +170,22 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect((within(dialogo).getByRole('checkbox', { name: 'Lia Santos Presente' }) as HTMLInputElement).checked).toBe(true)
   })
 
+  it('explica quando a rota de chamada não existe no backend publicado', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      if (/\/turmas\/5\/frequencias\/\d{4}-\d{2}-\d{2}$/.test(new URL(String(input)).pathname)) {
+        return Response.json({ detail: 'Not Found' }, { status: 404 })
+      }
+      return padrao(input, init)
+    })
+    abrir(ROTAS.turmas)
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalhes de Infantil A' }))
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Infantil A' })).getByRole('button', { name: 'Registro de frequência' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Registro de frequência · Infantil A' })
+    expect(await within(dialogo).findByText('Rota não encontrada na API. Verifique se o backend está atualizado.')).toBeTruthy()
+    expect(within(dialogo).getByRole('button', { name: 'Tentar novamente' })).toBeTruthy()
+  })
+
   it('mantém a falta ao abrir uma chamada já registrada', async () => {
     const padrao = requisicao.getMockImplementation()!
     requisicao.mockImplementation(async (input, init) => {
@@ -510,6 +526,36 @@ describe('telas conectadas aos recursos FastAPI', () => {
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/'), expect.objectContaining({ method: 'POST' })))
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/') && init?.method === 'POST')
     expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'João Érica', celular: '(64)99988-7766', responsavel_celular: '(64)9988-7766' })
+  })
+
+  it('adiciona JU ao código Zempo sem exigir seis dígitos', async () => {
+    abrir(ROTAS.alunos)
+    await screen.findByText('Caio Silva')
+    fireEvent.click(screen.getByRole('button', { name: 'Novo aluno' }))
+    const codigo = screen.getByLabelText('Código Zempo') as HTMLInputElement
+    expect(codigo.placeholder).toBe('JU000000')
+    expect((screen.getByLabelText('Celular do aluno') as HTMLInputElement).placeholder).toBe('(00)00000-0000')
+    expect((screen.getByLabelText('Celular do responsável') as HTMLInputElement).placeholder).toBe('(00)00000-0000')
+    fireEvent.change(codigo, { target: { value: '003' } })
+    expect(codigo.value).toBe('JU003')
+    fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'Bruna Costa' } })
+    fireEvent.change(screen.getByLabelText('Faixa'), { target: { value: '2' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cadastrar aluno' }))
+    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/'), expect.objectContaining({ method: 'POST' })))
+    const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/') && init?.method === 'POST')
+    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ codigo_zempo: 'JU003' })
+  })
+
+  it('preserva código Zempo antigo ao editar outros campos', async () => {
+    abrir(ROTAS.alunos)
+    await screen.findByText('Caio Silva')
+    fireEvent.click(screen.getByRole('button', { name: 'Editar Caio Silva' }))
+    expect((screen.getByLabelText('Código Zempo') as HTMLInputElement).value).toBe('ZP001')
+    fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'Caio Silva Neto' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/7'), expect.objectContaining({ method: 'PATCH' })))
+    const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/7') && init?.method === 'PATCH')
+    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ codigo_zempo: 'ZP001' })
   })
 
   it('edita o peso do aluno na atividade de campeonato', async () => {
