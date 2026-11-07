@@ -53,6 +53,7 @@ class Aluno(Base):
         secondary=atividade_alunos,
         back_populates="alunos",
     )
+    presencas_turma = relationship("PresencaTurma", back_populates="aluno", cascade="all, delete-orphan")
 
     @property
     def responsavel_nome(self):

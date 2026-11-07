@@ -4,7 +4,7 @@ from . import repository
 from .erros import TamanhoDuplicado, TamanhoEmUso, TamanhoNaoEncontrado
 
 PADRAO = {
-    "kimono": ["M00", "M0", "M1", "M2", "M3", "A0", "A1", "A2", "A4", "A5"],
+    "kimono": ["M00", "M0", "M1", "M2", "M3", "A0", "A1", "A2", "A3", "A4", "A5"],
     "faixa": ["PP", "P", "N2", "M", "G", "N4", "GG"],
 }
 

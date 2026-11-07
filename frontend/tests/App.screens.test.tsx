@@ -44,8 +44,8 @@ const anexo = {
   link: 'https://example.com/calendario',
   criado_em: '2026-10-13',
 }
-const turma = { id: 5, nome: 'Infantil A' }
-const turmaOutra = { id: 6, nome: 'Adultos' }
+const turma = { id: 5, nome: 'Infantil A', nucleo: 'Centro' }
+const turmaOutra = { id: 6, nome: 'Adultos', nucleo: 'Bairro' }
 const requisicao = vi.fn<typeof fetch>()
 
 function configurarApi() {
@@ -66,10 +66,11 @@ function configurarApi() {
     if (caminho === '/aluno/') return Response.json([aluno, alunoOutraTurma])
     if (caminho === '/faixas/') return Response.json([faixa, faixaSeguinte])
     if (caminho === '/turmas/') return Response.json([turma, turmaOutra])
+    if (/^\/turmas\/\d+\/frequencias$/.test(caminho)) return Response.json([])
     if (caminho === '/atividades/') return Response.json([atividade, atividadeFaixa])
     if (caminho === '/anexos/') return Response.json([anexo])
     if (caminho === '/tamanhos/') return Response.json([])
-    if (/^\/atividades\/\d+\/relatorio\/controle-de-(faixas|kimonos|frequencia)\.xlsx$/.test(caminho)) {
+    if (/^\/atividades\/\d+\/planilha\/controle-de-(faixas|kimonos|frequencia)\.xlsx$/.test(caminho)) {
       return new Response(new Blob(['conteudo']), { status: 200 })
     }
     return Response.json({ detail: `Rota não encontrada: ${caminho}` }, { status: 404 })
@@ -97,6 +98,147 @@ afterEach(() => {
 })
 
 describe('telas conectadas aos recursos FastAPI', () => {
+  it('lista as chamadas da turma e abre a data selecionada para edição', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      const caminho = new URL(String(input)).pathname
+      if (caminho === '/turmas/5/frequencias') return Response.json(['2026-11-05', '2026-10-02'])
+      if (caminho === '/turmas/5/frequencias/2026-10-02') {
+        return Response.json({ data: '2026-10-02', registrada: true, alunos: [{ aluno_id: 7, nome: 'Caio Silva', presente: false }] })
+      }
+      return padrao(input, init)
+    })
+    abrir(ROTAS.turmas)
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalhes de Infantil A' }))
+    const detalhes = screen.getByRole('dialog', { name: 'Infantil A' })
+    const historico = within(detalhes).getByRole('region', { name: 'Chamadas registradas' })
+    const itens = await within(historico).findAllByRole('listitem')
+    expect(itens.map((item) => item.querySelector('time')?.textContent)).toEqual(['05/11/2026', '02/10/2026'])
+    fireEvent.click(within(historico).getByRole('button', { name: 'Editar registro de 02/10/2026' }))
+    const chamada = await screen.findByRole('dialog', { name: 'Registro de frequência · Infantil A' })
+    expect((within(chamada).getByLabelText('Data da aula') as HTMLInputElement).value).toBe('2026-10-02')
+    expect(await within(chamada).findByRole('checkbox', { name: 'Caio Silva Faltou' })).toBeTruthy()
+  })
+
+  it('mostra erro no histórico e permite tentar novamente', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    let tentativas = 0
+    requisicao.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/turmas/5/frequencias') {
+        tentativas += 1
+        return tentativas === 1 ? Response.json({ detail: 'Falha ao carregar chamadas.' }, { status: 500 }) : Response.json([])
+      }
+      return padrao(input, init)
+    })
+    abrir(ROTAS.turmas)
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalhes de Infantil A' }))
+    const historico = within(screen.getByRole('dialog', { name: 'Infantil A' })).getByRole('region', { name: 'Chamadas registradas' })
+    expect(await within(historico).findByText('Falha ao carregar chamadas.')).toBeTruthy()
+    fireEvent.click(within(historico).getByRole('button', { name: 'Tentar novamente' }))
+    expect(await within(historico).findByText('Nenhuma chamada registrada.')).toBeTruthy()
+  })
+
+  it('inicia com todos presentes e registra falta ao desmarcar', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      const caminho = new URL(String(input)).pathname
+      if (/^\/turmas\/5\/frequencias\/\d{4}-\d{2}-\d{2}$/.test(caminho)) {
+        const alunos = [{ aluno_id: 7, nome: 'Caio Silva', presente: true }, { aluno_id: 8, nome: 'Lia Santos', presente: true }]
+        if (init?.method === 'PUT') return Response.json({ data: caminho.slice(-10), registrada: true, alunos: [{ ...alunos[0], presente: false }, alunos[1]] })
+        return Response.json({ data: caminho.slice(-10), registrada: false, alunos })
+      }
+      return padrao(input, init)
+    })
+    abrir(ROTAS.turmas)
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalhes de Infantil A' }))
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Infantil A' })).getByRole('button', { name: 'Registro de frequência' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Registro de frequência · Infantil A' })
+    await within(dialogo).findByText('Caio Silva')
+    const presencas = within(dialogo).getAllByRole('checkbox', { name: /Presente/ }) as HTMLInputElement[]
+    expect(presencas.map((checkbox) => checkbox.checked)).toEqual([true, true])
+    fireEvent.click(presencas[0])
+    expect(presencas[0].checked).toBe(false)
+    expect(within(dialogo).getByRole('checkbox', { name: 'Caio Silva Faltou' })).toBeTruthy()
+    expect(within(dialogo).getAllByText('Presente')).toHaveLength(1)
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Salvar frequência' }))
+    await waitFor(() => {
+      const envio = requisicao.mock.calls.find(([url, init]) => String(url).includes('/turmas/5/frequencias/') && init?.method === 'PUT')
+      expect(JSON.parse(String(envio?.[1]?.body))).toEqual({ alunos: [{ aluno_id: 7, presente: false }, { aluno_id: 8, presente: true }] })
+    })
+    expect(await within(dialogo).findByText('Chamada registrada. Você pode alterar as marcações.')).toBeTruthy()
+    expect((within(dialogo).getByRole('checkbox', { name: 'Caio Silva Faltou' }) as HTMLInputElement).checked).toBe(false)
+    expect((within(dialogo).getByRole('checkbox', { name: 'Lia Santos Presente' }) as HTMLInputElement).checked).toBe(true)
+  })
+
+  it('mantém a falta ao abrir uma chamada já registrada', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      const caminho = new URL(String(input)).pathname
+      if (/^\/turmas\/5\/frequencias\/\d{4}-\d{2}-\d{2}$/.test(caminho)) {
+        return Response.json({ data: caminho.slice(-10), registrada: true, alunos: [{ aluno_id: 7, nome: 'Caio Silva', presente: false }] })
+      }
+      return padrao(input, init)
+    })
+    abrir(ROTAS.turmas)
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalhes de Infantil A' }))
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Infantil A' })).getByRole('button', { name: 'Registro de frequência' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Registro de frequência · Infantil A' })
+    expect(await within(dialogo).findByText('Faltou')).toBeTruthy()
+    expect((within(dialogo).getByRole('checkbox', { name: 'Caio Silva Faltou' }) as HTMLInputElement).checked).toBe(false)
+    fireEvent.click(within(dialogo).getByRole('checkbox', { name: 'Caio Silva Faltou' }))
+    expect((within(dialogo).getByRole('checkbox', { name: 'Caio Silva Presente' }) as HTMLInputElement).checked).toBe(true)
+  })
+
+  it('abre registro de frequência diretamente na turma escolhida', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      const caminho = new URL(String(input)).pathname
+      if (/^\/turmas\/6\/frequencias\/\d{4}-\d{2}-\d{2}$/.test(caminho)) {
+        return Response.json({ data: caminho.slice(-10), registrada: false, alunos: [{ aluno_id: 8, nome: 'Lia Santos', presente: true }] })
+      }
+      return padrao(input, init)
+    })
+    abrir(ROTAS.turmas)
+    const nomeTurma = await screen.findByText('Adultos')
+    const turma = nomeTurma.closest('article')
+    expect(turma).not.toBeNull()
+    fireEvent.click(within(turma!).getByRole('button', { name: 'Registro de frequência' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Registro de frequência · Adultos' })
+    expect(await within(dialogo).findByText('Lia Santos')).toBeTruthy()
+  })
+
+  it('exporta a frequência de várias turmas no mês escolhido', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/turmas/planilha-de-frequencia.xlsx') return new Response(new Blob(['xlsx']))
+      return padrao(input, init)
+    })
+    URL.createObjectURL = vi.fn(() => 'blob:frequencia')
+    URL.revokeObjectURL = vi.fn()
+    let nomeArquivo = ''
+    const clique = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      nomeArquivo = this.download
+    })
+    abrir(ROTAS.turmas)
+    fireEvent.click(await screen.findByRole('button', { name: 'Gerar planilha de frequência das turmas' }))
+    const dialogo = screen.getByRole('dialog', { name: 'Planilha de frequência das turmas' })
+    fireEvent.change(within(dialogo).getByLabelText('Mês'), { target: { value: '2026-11' } })
+    fireEvent.click(within(dialogo).getByLabelText('Infantil A'))
+    fireEvent.click(within(dialogo).getByLabelText('Adultos'))
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Gerar planilha' }))
+    await waitFor(() => {
+      const chamada = requisicao.mock.calls.find(([url]) => String(url).includes('/turmas/planilha-de-frequencia.xlsx?'))
+      expect(chamada).toBeDefined()
+      const parametros = new URL(String(chamada?.[0])).searchParams
+      expect(parametros.get('ano')).toBe('2026')
+      expect(parametros.get('mes')).toBe('11')
+      expect(parametros.getAll('turma_ids')).toEqual(['5', '6'])
+    })
+    expect(clique).toHaveBeenCalled()
+    expect(nomeArquivo).toBe('FREQUÊNCIA DE NOVEMBRO 2026 - SENSEI ANA PROFESSORA.xlsx')
+    clique.mockRestore()
+  })
+
   it('abre os alunos da turma e cria cadastro com a faixa selecionada em /alunos', async () => {
     abrir(ROTAS.turmas)
     await screen.findByText('Infantil A')
@@ -350,6 +492,26 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Bruna Costa', celular: null, responsavel_nome: 'Maria Costa', responsavel_cpf: null, responsavel_parentesco: null })
   })
 
+  it('restringe o nome a letras e formata os telefones do aluno e responsável', async () => {
+    abrir(ROTAS.alunos)
+    await screen.findByText('Caio Silva')
+    fireEvent.click(screen.getByRole('button', { name: 'Novo aluno' }))
+    const nome = screen.getByLabelText('Nome completo') as HTMLInputElement
+    const celular = screen.getByLabelText('Celular do aluno') as HTMLInputElement
+    const responsavel = screen.getByLabelText('Celular do responsável') as HTMLInputElement
+    fireEvent.change(nome, { target: { value: 'João 12-Érica!' } })
+    expect(nome.value).toBe('João Érica')
+    fireEvent.change(celular, { target: { value: '64999887766' } })
+    fireEvent.change(responsavel, { target: { value: '6499887766' } })
+    expect(celular.value).toBe('(64)99988-7766')
+    expect(responsavel.value).toBe('(64)9988-7766')
+    fireEvent.change(screen.getByLabelText('Faixa'), { target: { value: '2' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cadastrar aluno' }))
+    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/'), expect.objectContaining({ method: 'POST' })))
+    const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/') && init?.method === 'POST')
+    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'João Érica', celular: '(64)99988-7766', responsavel_celular: '(64)9988-7766' })
+  })
+
   it('edita o peso do aluno na atividade de campeonato', async () => {
     const padrao = requisicao.getMockImplementation()!
     requisicao.mockImplementation(async (input, init) => {
@@ -475,19 +637,25 @@ describe('telas conectadas aos recursos FastAPI', () => {
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/7'), expect.objectContaining({ method: 'DELETE' })))
   })
 
-  it('exporta o relatório de uma atividade em xlsx sem pré-visualização', async () => {
+  it('exporta a planilha de uma atividade em xlsx sem pré-visualização', async () => {
     const criarObjectURL = vi.fn(() => 'blob:mock')
     const revogarObjectURL = vi.fn()
     URL.createObjectURL = criarObjectURL
     URL.revokeObjectURL = revogarObjectURL
+    let nomeArquivo = ''
+    const clique = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      nomeArquivo = this.download
+    })
 
     abrir(ROTAS.atividades)
     expect(await screen.findByText('Treino infantil')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Relatório de Treino infantil' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Planilha de Treino infantil' }))
 
-    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/9/relatorio/controle-de-frequencia.xlsx'), expect.anything()))
+    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/9/planilha/controle-de-frequencia.xlsx'), expect.anything()))
     expect(criarObjectURL).toHaveBeenCalled()
-    expect(screen.queryByRole('region', { name: 'Relatório da atividade' })).toBeNull()
+    expect(nomeArquivo).toBe('Treino infantil.xlsx')
+    expect(screen.queryByRole('region', { name: 'Planilha da atividade' })).toBeNull()
+    clique.mockRestore()
   })
 
   it('envia arquivo e metadados de anexo em multipart', async () => {
@@ -524,17 +692,44 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Laranja', tipo: 'Kyu', grau: 5 })
   })
 
-  it('lista e cria turmas sem exigir dojo', async () => {
+  it('cria turma com núcleo obrigatório', async () => {
     abrir(ROTAS.turmas)
     expect(await screen.findByText('Infantil A')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Nova turma' }))
     expect(await screen.findByRole('dialog', { name: 'Nova turma' })).toBeTruthy()
     fireEvent.change(screen.getByLabelText('Nome da turma'), { target: { value: 'Juvenil' } })
+    expect((screen.getByLabelText('Núcleo') as HTMLInputElement).required).toBe(true)
+    fireEvent.change(screen.getByLabelText('Núcleo'), { target: { value: 'Centro' } })
     fireEvent.click(screen.getByRole('button', { name: 'Salvar turma' }))
 
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/turmas/'), expect.objectContaining({ method: 'POST' })))
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/turmas/') && init?.method === 'POST')
-    expect(JSON.parse(String(envio?.[1]?.body))).toEqual({ nome: 'Juvenil' })
+    expect(JSON.parse(String(envio?.[1]?.body))).toEqual({ nome: 'Juvenil', nucleo: 'Centro' })
+  })
+
+  it('exibe o núcleo e permite preencher o de uma turma antiga', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/turmas/' && !init?.method) {
+        return Response.json([{ ...turma, nucleo: null }, turmaOutra])
+      }
+      return padrao(input, init)
+    })
+    abrir(ROTAS.turmas)
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalhes de Infantil A' }))
+    const detalhes = screen.getByRole('dialog', { name: 'Infantil A' })
+    expect(within(detalhes).getByText('Não informado')).toBeTruthy()
+    fireEvent.click(within(detalhes).getByRole('button', { name: 'Fechar detalhes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Editar Infantil A' }))
+    const campo = screen.getByLabelText('Núcleo') as HTMLInputElement
+    expect(campo.value).toBe('')
+    expect(campo.required).toBe(true)
+    fireEvent.change(campo, { target: { value: ' Centro ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar turma' }))
+    await waitFor(() => {
+      const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/turmas/5') && init?.method === 'PATCH')
+      expect(JSON.parse(String(envio?.[1]?.body))).toEqual({ nome: 'Infantil A', nucleo: 'Centro' })
+    })
   })
 
   it('cadastra tamanho em popup', async () => {

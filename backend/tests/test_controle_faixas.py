@@ -30,12 +30,12 @@ def _atividade():
 def test_quantidades_por_faixa_e_tamanho_com_totais():
     atividade, alunos = _atividade()
 
-    relatorio = controle_faixas.gerar_relatorio(atividade, alunos)
-    quantidades = relatorio["quantidades"]
+    planilha = controle_faixas.gerar_planilha(atividade, alunos)
+    quantidades = planilha["quantidades"]
     por_faixa = {f["faixa"]: f for f in quantidades["faixas"]}
 
-    assert relatorio["linhas"][0]["faixa"] == "BRANCA PONTA CINZA"
-    assert relatorio["linhas"][1]["grossa"] is True
+    assert planilha["linhas"][0]["faixa"] == "BRANCA PONTA CINZA"
+    assert planilha["linhas"][1]["grossa"] is True
     assert por_faixa["BRANCA PONTA CINZA"]["tamanhos"][0] == 2
     assert por_faixa["BRANCA PONTA CINZA"]["total"] == 2
     assert por_faixa["AZUL"]["tamanhos"][2] == 1

@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.atividades.schemas import AtividadeAtualizar, AtividadeEntrada
-from app.alunos.schemas import AlunoCriar
+from app.alunos.schemas import AlunoAtualizar, AlunoCriar
 from app.anexos.schemas import AnexoAtualizar, AnexoEntrada
 from app.faixas.schemas import FaixaAtualizar, FaixaEntrada
 from app.turmas.schemas import TurmaAtualizar, TurmaEntrada
@@ -21,6 +21,20 @@ def test_aluno_exige_nome_e_faixa_e_deixa_dados_adicionais_opcionais():
 
     with pytest.raises(ValidationError):
         AlunoCriar(nome="Caio")
+
+
+@pytest.mark.parametrize("nome", ["José Ângelo", "João Açúcar", "A\u0301lvaro", "李 明"])
+def test_nome_do_aluno_aceita_letras_e_acentos(nome):
+    assert AlunoCriar(nome=nome, faixa_id=2).nome
+    assert AlunoAtualizar(nome=nome).nome
+
+
+@pytest.mark.parametrize("nome", ["Ana 2", "Ana-Silva", "Ana!", "  ", "A", "\u0301Ana"])
+def test_nome_do_aluno_rejeita_outros_caracteres(nome):
+    with pytest.raises(ValidationError):
+        AlunoCriar(nome=nome, faixa_id=2)
+    with pytest.raises(ValidationError):
+        AlunoAtualizar(nome=nome)
 
 
 def test_schemas_normalizam_textos_de_entrada():
@@ -40,7 +54,7 @@ def test_schemas_normalizam_textos_de_entrada():
         link=" https://exemplo.com/regulamento ",
     )
     faixa = FaixaEntrada(nome=" Azul ", tipo=" Kyu ")
-    turma = TurmaEntrada(nome=" Adultos ")
+    turma = TurmaEntrada(nome=" Adultos ", nucleo=" Centro ")
 
     assert (atividade.tipo, atividade.nome, atividade.local, atividade.descricao) == (
         "frequência",
@@ -57,7 +71,7 @@ def test_schemas_normalizam_textos_de_entrada():
     assert anexo.arquivo_url == "https://cdn.exemplo.com/regulamento.pdf"
     assert anexo.link == "https://exemplo.com/regulamento"
     assert (faixa.nome, faixa.tipo) == ("Azul", "Kyu")
-    assert turma.nome == "Adultos"
+    assert (turma.nome, turma.nucleo) == ("Adultos", "Centro")
 
 
 @pytest.mark.parametrize(
@@ -74,7 +88,8 @@ def test_schemas_normalizam_textos_de_entrada():
             "titulo",
         ),
         (FaixaEntrada, {"nome": "x", "tipo": "Kyu"}, "nome"),
-        (TurmaEntrada, {"nome": "x"}, "nome"),
+        (TurmaEntrada, {"nome": "x", "nucleo": "Centro"}, "nome"),
+        (TurmaEntrada, {"nome": "Adultos", "nucleo": "x"}, "núcleo"),
     ],
 )
 def test_schemas_rejeitam_textos_com_menos_de_dois_caracteres(schema, dados, campo):

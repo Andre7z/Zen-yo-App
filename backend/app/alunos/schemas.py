@@ -1,6 +1,7 @@
 from datetime import date
 from calendar import monthrange
 from typing import Literal
+import unicodedata
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -10,6 +11,26 @@ Genero = Literal["Masculino", "Feminino"]
 
 
 class _ValidaDadosAluno(BaseModel):
+
+    @field_validator("nome", check_fields=False)
+    @classmethod
+    def validar_nome(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return valor
+        valor = unicodedata.normalize("NFC", valor.strip())
+        anterior_e_letra = False
+        for caractere in valor:
+            if caractere.isalpha():
+                anterior_e_letra = True
+            elif unicodedata.category(caractere).startswith("M") and anterior_e_letra:
+                continue
+            elif caractere == " ":
+                anterior_e_letra = False
+            else:
+                raise ValueError("O nome do aluno deve conter apenas letras e espaços")
+        if len(valor) < 2:
+            raise ValueError("O nome do aluno precisa ter pelo menos 2 caracteres")
+        return valor
 
     @field_validator("cpf", "responsavel_cpf", check_fields=False)
     @classmethod

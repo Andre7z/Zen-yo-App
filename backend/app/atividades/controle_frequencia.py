@@ -1,8 +1,8 @@
-"""Relatorio "CONTROLE DE FREQUENCIA" da atividade de frequencia.
+"""Planilha "CONTROLE DE FREQUENCIA" da atividade de frequencia.
 
 Monta as linhas (nome, presenca, data) e a tabela de quantidades de
 presentes/ausentes, e gera a planilha .xlsx no mesmo estilo dos demais
-relatorios de atividade.
+planilhas de atividade.
 """
 from io import BytesIO
 
@@ -34,7 +34,7 @@ def calcular_quantidades(linhas):
     return {"presentes": presentes, "ausentes": ausentes, "total_geral": presentes + ausentes}
 
 
-def gerar_relatorio(atividade, alunos):
+def gerar_planilha(atividade, alunos):
     linhas = montar_linhas(atividade, alunos)
     return {"titulo": TITULO, "linhas": linhas, "quantidades": calcular_quantidades(linhas)}
 

@@ -1,7 +1,7 @@
-"""Relatorio "CONTROLE DE CAMPEONATO" da atividade de campeonato.
+"""Planilha "CONTROLE DE CAMPEONATO" da atividade de campeonato.
 
 Monta as linhas (nome, idade, genero, peso, codigo zempo) e gera a planilha .xlsx
-no mesmo estilo dos demais relatorios de atividade.
+no mesmo estilo dos demais planilhas de atividade.
 """
 from io import BytesIO
 
@@ -29,7 +29,7 @@ def montar_linhas(alunos, confirmados=()):
     ]
 
 
-def gerar_relatorio(alunos, confirmados=()):
+def gerar_planilha(alunos, confirmados=()):
     linhas = montar_linhas(alunos, confirmados)
     return {"titulo": TITULO, "linhas": linhas, "total_geral": len(linhas)}
 

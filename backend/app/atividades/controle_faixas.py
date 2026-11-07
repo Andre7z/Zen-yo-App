@@ -1,4 +1,4 @@
-"""Relatorio "CONTROLE DE FAIXAS" da atividade de troca de faixa.
+"""Planilha "CONTROLE DE FAIXAS" da atividade de troca de faixa.
 
 Monta as linhas (nome, faixa, tamanho, grossa), a tabela de quantidades por
 faixa e tamanho e a planilha .xlsx no layout da tabela original.
@@ -82,7 +82,7 @@ def calcular_quantidades(linhas, tamanhos=None):
     }
 
 
-def gerar_relatorio(atividade, alunos, tamanhos=None):
+def gerar_planilha(atividade, alunos, tamanhos=None):
     linhas = montar_linhas(atividade, alunos)
     return {"titulo": TITULO, "linhas": linhas, "quantidades": calcular_quantidades(linhas, tamanhos)}
 

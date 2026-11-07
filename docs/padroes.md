@@ -84,7 +84,7 @@ O que aconteceria sem ele?
 O service de atividades também precisaria conhecer a busca de alunos. Isso aumentaria o acoplamento entre os módulos.
 
 Quando vale e quando é burocracia — neste projeto:
-Vale a pena ao criar ou editar uma atividade com alunos, pois esse fluxo usa os módulos de alunos e atividades. Listar, buscar, apagar e gerar relatório continuam no service de atividades, porque não precisam coordenar outros módulos.
+Vale a pena ao criar ou editar uma atividade com alunos, pois esse fluxo usa os módulos de alunos e atividades. Listar, buscar, apagar e gerar planilha continuam no service de atividades, porque não precisam coordenar outros módulos.
 
 em atividades/facade
 class AtividadeFacade:

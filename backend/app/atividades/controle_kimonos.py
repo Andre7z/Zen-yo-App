@@ -1,4 +1,4 @@
-"""Relatorio "CONTROLE DE ENTREGA DE JUDOGIS" da atividade de entrega de judogi.
+"""Planilha "CONTROLE DE ENTREGA DE JUDOGIS" da atividade de entrega de judogi.
 
 Monta as linhas (nome, turma, tamanho, confirmado), a tabela de quantidades por turma e
 tamanho e a planilha .xlsx no mesmo layout do controle de faixas.
@@ -66,7 +66,7 @@ def calcular_quantidades(linhas, tamanhos=None):
     }
 
 
-def gerar_relatorio(alunos, tamanhos=None, confirmados=()):
+def gerar_planilha(alunos, tamanhos=None, confirmados=()):
     linhas = montar_linhas(alunos, confirmados)
     return {"titulo": TITULO, "linhas": linhas, "quantidades": calcular_quantidades(linhas, tamanhos)}
 

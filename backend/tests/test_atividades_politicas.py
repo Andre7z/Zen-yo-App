@@ -9,22 +9,22 @@ from app.alunos import service as alunos_service
 from app.atividades.facade import AtividadeFacade
 from app.atividades.erros import TipoDeAtividadeDesconhecido
 from app.atividades.politicas import (
-    RelatorioEntregaKimono,
-    RelatorioFactory,
-    RelatorioFrequencia,
-    RelatorioTrocaDeFaixa,
+    PlanilhaEntregaKimono,
+    PlanilhaFactory,
+    PlanilhaFrequencia,
+    PlanilhaTrocaDeFaixa,
 )
 
 
 def test_factory_cria_estrategia_correta():
-    assert isinstance(RelatorioFactory.criar("troca_de_faixa"), RelatorioTrocaDeFaixa)
-    assert isinstance(RelatorioFactory.criar("entrega_de_kimono"), RelatorioEntregaKimono)
-    assert isinstance(RelatorioFactory.criar("frequencia"), RelatorioFrequencia)
+    assert isinstance(PlanilhaFactory.criar("troca_de_faixa"), PlanilhaTrocaDeFaixa)
+    assert isinstance(PlanilhaFactory.criar("entrega_de_kimono"), PlanilhaEntregaKimono)
+    assert isinstance(PlanilhaFactory.criar("frequencia"), PlanilhaFrequencia)
 
 
 def test_factory_lanca_erro_para_tipo_desconhecido():
     with pytest.raises(TipoDeAtividadeDesconhecido):
-        RelatorioFactory.criar("tipo_inexistente")
+        PlanilhaFactory.criar("tipo_inexistente")
 
 
 def test_aluno_calcula_idade_corretamente():
@@ -42,7 +42,7 @@ def test_aluno_calcula_idade_corretamente():
     assert aluno.idade == 10
 
 
-def test_factory_gera_relatorio_para_varios_alunos():
+def test_factory_gera_planilha_para_varios_alunos():
     atividade = SimpleNamespace(
         tipo="troca_de_faixa",
         nova_faixa="azul",
@@ -60,13 +60,13 @@ def test_factory_gera_relatorio_para_varios_alunos():
         ],
     )
 
-    relatorio = RelatorioFactory.criar("troca_de_faixa").gerar(atividade)
+    planilha = PlanilhaFactory.criar("troca_de_faixa").gerar(atividade)
 
-    assert relatorio[0]["aluno"] == "Ana"
-    assert relatorio[1]["nova_faixa"] == "azul"
+    assert planilha[0]["aluno"] == "Ana"
+    assert planilha[1]["nova_faixa"] == "azul"
 
 
-def test_relatorio_de_frequencia_retorna_presenca_individual():
+def test_planilha_de_frequencia_retorna_presenca_individual():
     atividade = SimpleNamespace(
         data=date(2026, 10, 19),
         aluno_ids_pagos=[7],
@@ -76,9 +76,9 @@ def test_relatorio_de_frequencia_retorna_presenca_individual():
         ],
     )
 
-    relatorio = RelatorioFactory.criar("frequencia").gerar(atividade)
+    planilha = PlanilhaFactory.criar("frequencia").gerar(atividade)
 
-    assert relatorio == [
+    assert planilha == [
         {"aluno": "Ana", "presenca": True, "data": date(2026, 10, 19)},
         {"aluno": "Beto", "presenca": False, "data": date(2026, 10, 19)},
     ]

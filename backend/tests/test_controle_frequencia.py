@@ -19,11 +19,11 @@ def _atividade():
 
 def test_quantidades_de_presentes_e_ausentes():
     atividade, alunos = _atividade()
-    relatorio = controle_frequencia.gerar_relatorio(atividade, alunos)
+    planilha = controle_frequencia.gerar_planilha(atividade, alunos)
 
-    assert relatorio["linhas"][0]["presenca"] is True
-    assert relatorio["linhas"][1]["presenca"] is False
-    assert relatorio["quantidades"] == {"presentes": 2, "ausentes": 1, "total_geral": 3}
+    assert planilha["linhas"][0]["presenca"] is True
+    assert planilha["linhas"][1]["presenca"] is False
+    assert planilha["quantidades"] == {"presentes": 2, "ausentes": 1, "total_geral": 3}
 
 
 def test_xlsx_preserva_layout_da_tabela():

@@ -48,17 +48,17 @@ def _nomes_da_planilha(conteudo):
     return [folha.cell(row, 1).value for row in range(3, 5)]
 
 
-def test_todos_os_relatorios_e_planilhas_ordenam_alunos_por_nome():
+def test_dados_e_planilhas_ordenam_alunos_por_nome():
     alunos = _alunos()
     atividade = SimpleNamespace(data=date(2026, 11, 2), aluno_ids_pagos=[], nova_faixa=None)
 
-    relatorios = [
-        (controle_frequencia.gerar_relatorio(atividade, alunos), controle_frequencia.gerar_xlsx(atividade, alunos)),
-        (controle_campeonato.gerar_relatorio(alunos), controle_campeonato.gerar_xlsx(alunos)),
-        (controle_faixas.gerar_relatorio(atividade, alunos), controle_faixas.gerar_xlsx(atividade, alunos)),
-        (controle_kimonos.gerar_relatorio(alunos), controle_kimonos.gerar_xlsx(alunos)),
+    planilhas = [
+        (controle_frequencia.gerar_planilha(atividade, alunos), controle_frequencia.gerar_xlsx(atividade, alunos)),
+        (controle_campeonato.gerar_planilha(alunos), controle_campeonato.gerar_xlsx(alunos)),
+        (controle_faixas.gerar_planilha(atividade, alunos), controle_faixas.gerar_xlsx(atividade, alunos)),
+        (controle_kimonos.gerar_planilha(alunos), controle_kimonos.gerar_xlsx(alunos)),
     ]
 
-    for relatorio, planilha in relatorios:
-        assert [linha["nome"] for linha in relatorio["linhas"]] == ["Álvaro", "Zeca"]
+    for dados, planilha in planilhas:
+        assert [linha["nome"] for linha in dados["linhas"]] == ["Álvaro", "Zeca"]
         assert _nomes_da_planilha(planilha) == ["Álvaro", "Zeca"]
