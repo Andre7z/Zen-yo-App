@@ -34,6 +34,7 @@ Testes: `poetry run pytest`
 
 A chamada usa a lista atual de alunos ao ser registrada pela primeira vez, com todos marcados como presentes; desmarque quem faltou e salve. Chamadas já salvas mantêm os participantes e as marcações mesmo após mudanças de turma. A planilha usa `V` para presença, `X` para ausência e `-` quando o aluno não estava na chamada. Ao excluir um aluno ou uma turma, os registros de frequência correspondentes também são excluídos. As rotas de atividades usam `/planilha` no lugar de `/relatorio`.
 Nos detalhes da turma, o histórico lista as datas com chamada registrada, da mais recente para a mais antiga, e permite editar cada registro. Na planilha mensal, os cabeçalhos das chamadas mostram somente o dia.
+Os arquivos de planilhas incluem o primeiro e o último nome do sensei; na planilha mensal de turmas, esse nome também aparece no cabeçalho.
 
 ## Docker
 O Dockerfile na raiz gera uma imagem somente para a API. Execute os comandos a partir da raiz do repositório:

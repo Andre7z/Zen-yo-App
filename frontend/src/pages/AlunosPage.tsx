@@ -12,6 +12,7 @@ import { calcularIdade, converterDataParaIso, formatarDataParaEntrada, validarDa
 import { cpfValido, formatarCpf } from '../servicos/cpf'
 import { exibirTelefone, formatarTelefone } from '../servicos/telefone'
 import { formatarCodigoZempo } from '../servicos/zempo'
+import { normalizarBusca } from '../servicos/busca'
 import { ROTAS } from '../routes'
 
 const vazio = {
@@ -28,6 +29,7 @@ export function AlunosPage() {
   const [selecionando, setSelecionando] = useState(false)
   const [idsSelecionados, setIdsSelecionados] = useState<number[]>([])
   const [buscaAluno, setBuscaAluno] = useState('')
+  const [buscaLista, setBuscaLista] = useState('')
   const modoTurma = Boolean(turmaId)
   const recurso = useRecurso(alunosApi)
   const notificacao = useNotificacao()
@@ -55,9 +57,10 @@ export function AlunosPage() {
   }, [])
 
   const turmaAtual = turmas.find((turma) => turma.id === Number(turmaFiltro))
-  const alunosListados = ordenarAlunosPorNome(turmaFiltro
-    ? recurso.itens.filter((aluno) => aluno.turma_ids.includes(Number(turmaFiltro)))
-    : recurso.itens)
+  const termoBusca = normalizarBusca(buscaLista)
+  const alunosListados = ordenarAlunosPorNome(recurso.itens.filter((aluno) =>
+    (!turmaFiltro || aluno.turma_ids.includes(Number(turmaFiltro)))
+    && normalizarBusca(aluno.nome).includes(termoBusca)))
   const nomeTurma = (aluno: Aluno) => turmas
     .filter((turma) => aluno.turma_ids.includes(turma.id))
     .map((turma) => turma.nome)
@@ -171,9 +174,10 @@ export function AlunosPage() {
         </button>
       </div>
 
-      {modoTurma ? null : (
-      <CampoModulo rotulo="Filtrar por turma"><select value={turmaFiltro} onChange={(event) => setTurmaFiltro(event.target.value)}><option value="">Todas as turmas</option>{turmas.map((turma) => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}</select></CampoModulo>
-            )}
+      <div className="module-filters" aria-label="Filtros de alunos">
+        <CampoModulo rotulo="Buscar aluno"><input type="search" value={buscaLista} onChange={(event) => setBuscaLista(event.target.value)} placeholder="Nome do aluno" /></CampoModulo>
+        {!modoTurma && <CampoModulo rotulo="Filtrar por turma"><select value={turmaFiltro} onChange={(event) => setTurmaFiltro(event.target.value)}><option value="">Todas as turmas</option>{turmas.map((turma) => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}</select></CampoModulo>}
+      </div>
 
             {formAberto && (
               <ModalDetalhes contexto="CADASTRO" titulo={editando ? 'Editar aluno' : 'Novo aluno'} aoFechar={() => setFormAberto(false)}>
@@ -229,7 +233,7 @@ export function AlunosPage() {
       })()}
 
       {visualizando !== null && (() => {
-        const aluno = alunosListados.find((item) => item.id === visualizando)
+        const aluno = recurso.itens.find((item) => item.id === visualizando)
         if (!aluno) return null
         const idade = calcularIdade(aluno.data_nascimento)
         return (

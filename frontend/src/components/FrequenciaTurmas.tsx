@@ -3,6 +3,7 @@ import { baixarArquivo, nomeArquivoSeguro } from '../api'
 import { useAutenticacao } from '../autenticacao-context'
 import { useNotificacao } from '../notificacoes-context'
 import { dataAtualIso } from '../servicos/datas'
+import { primeiroEUltimoNome } from '../servicos/nomes'
 import { turmasApi, type ChamadaTurma, type Turma } from '../servicos/dominio'
 import { ModalDetalhes } from './ModalDetalhes'
 import { CampoModulo } from './PaginaModulo'
@@ -89,12 +90,13 @@ export function ExportarFrequencia({ turmas, aoFechar }: { turmas: Turma[]; aoFe
     setGerando(true)
     setErro('')
     try {
+      if (!usuario) throw new Error('Não foi possível identificar o professor para gerar a planilha.')
       const blob = await baixarArquivo(`/turmas/planilha-de-frequencia.xlsx?${parametros}`)
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       const nomeMes = new Date(Number(ano), Number(numeroMes) - 1, 1).toLocaleString('pt-BR', { month: 'long' }).toUpperCase()
       link.href = url
-      link.download = nomeArquivoSeguro(`FREQUÊNCIA DE ${nomeMes} ${ano} - SENSEI ${usuario?.nome.toUpperCase() ?? ''}.xlsx`)
+      link.download = nomeArquivoSeguro(`FREQUÊNCIA DE ${nomeMes} ${ano} - SENSEI ${primeiroEUltimoNome(usuario.nome).toUpperCase()}.xlsx`)
       document.body.append(link)
       link.click()
       link.remove()

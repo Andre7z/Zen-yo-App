@@ -98,6 +98,16 @@ afterEach(() => {
 })
 
 describe('telas conectadas aos recursos FastAPI', () => {
+  it('mostra o primeiro e o último nome do sensei na tela inicial', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/usuarios/eu') return Response.json({ ...usuario, nome: 'Luiz Rocha Moraes' })
+      return padrao(input, init)
+    })
+    abrir(ROTAS.inicio)
+    expect(await screen.findByRole('heading', { name: 'Bem-vindo, Sensei Luiz Moraes.' })).toBeTruthy()
+  })
+
   it('lista as chamadas da turma e abre a data selecionada para edição', async () => {
     const padrao = requisicao.getMockImplementation()!
     requisicao.mockImplementation(async (input, init) => {
@@ -226,6 +236,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
   it('exporta a frequência de várias turmas no mês escolhido', async () => {
     const padrao = requisicao.getMockImplementation()!
     requisicao.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/usuarios/eu') return Response.json({ ...usuario, nome: 'Luiz Rocha Moraes' })
       if (new URL(String(input)).pathname === '/turmas/planilha-de-frequencia.xlsx') return new Response(new Blob(['xlsx']))
       return padrao(input, init)
     })
@@ -251,7 +262,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
       expect(parametros.getAll('turma_ids')).toEqual(['5', '6'])
     })
     expect(clique).toHaveBeenCalled()
-    expect(nomeArquivo).toBe('FREQUÊNCIA DE NOVEMBRO 2026 - SENSEI ANA PROFESSORA.xlsx')
+    expect(nomeArquivo).toBe('FREQUÊNCIA DE NOVEMBRO 2026 - SENSEI LUIZ MORAES.xlsx')
     clique.mockRestore()
   })
 
@@ -508,6 +519,34 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Bruna Costa', celular: null, responsavel_nome: 'Maria Costa', responsavel_cpf: null, responsavel_parentesco: null })
   })
 
+  it('busca alunos sem diferenciar acentos ou maiúsculas e combina com o filtro de turma', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/aluno/') return Response.json([{ ...aluno, nome: 'João Silva' }, alunoOutraTurma])
+      return padrao(input, init)
+    })
+    abrir(ROTAS.alunos)
+    await screen.findByText('João Silva')
+    const busca = screen.getByLabelText('Buscar aluno')
+    fireEvent.change(busca, { target: { value: '  JOAO  ' } })
+    expect(screen.getByText('João Silva')).toBeTruthy()
+    expect(screen.queryByText('Lia Santos')).toBeNull()
+    fireEvent.change(screen.getByLabelText('Filtrar por turma'), { target: { value: '6' } })
+    expect(screen.getByText('Nenhum aluno encontrado.')).toBeTruthy()
+    fireEvent.change(busca, { target: { value: '' } })
+    expect(screen.getByText('Lia Santos')).toBeTruthy()
+  })
+
+  it('busca na lista de alunos de uma turma sem alterar a seleção de novos alunos', async () => {
+    abrir('/turmas/5/alunos')
+    await screen.findByText('Caio Silva')
+    fireEvent.change(screen.getByLabelText('Buscar aluno'), { target: { value: 'inexistente' } })
+    expect(screen.getByText('Nenhum aluno encontrado.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar alunos' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Adicionar alunos · Infantil A' })
+    expect(within(dialogo).getByLabelText('Adicionar Lia Santos')).toBeTruthy()
+  })
+
   it('restringe o nome a letras e formata os telefones do aluno e responsável', async () => {
     abrir(ROTAS.alunos)
     await screen.findByText('Caio Silva')
@@ -616,6 +655,67 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(screen.queryByText('Calendário anual')).toBeNull()
   })
 
+  it('ordena anexos por título e número, inclusive ao filtrar por categoria', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/anexos/' && !init?.method) {
+        return Response.json([
+          { ...anexo, id: 1, titulo: 'Apostila 10', categoria: 'Apostilas' },
+          { ...anexo, id: 2, titulo: 'Ética', categoria: 'Fichas' },
+          { ...anexo, id: 3, titulo: 'apostila 2', categoria: 'Apostila' },
+          { ...anexo, id: 4, titulo: 'Apostila 1', categoria: 'Apostilas' },
+          { ...anexo, id: 5, titulo: 'Documento', categoria: 'Fichas' },
+        ])
+      }
+      return padrao(input, init)
+    })
+    abrir(ROTAS.anexos)
+    await screen.findByText('Apostila 10')
+    const titulos = () => within(screen.getByLabelText('Lista de anexos')).getAllByRole('button', { name: /^Ver detalhes de / }).map((botao) => botao.querySelector('strong')?.textContent)
+    expect(titulos()).toEqual(['Apostila 1', 'apostila 2', 'Apostila 10', 'Documento', 'Ética'])
+    fireEvent.change(screen.getByLabelText('Filtrar por categoria'), { target: { value: 'Apostilas' } })
+    expect(titulos()).toEqual(['Apostila 1', 'apostila 2', 'Apostila 10'])
+  })
+
+  it('busca anexos pelo título com filtro de categoria', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/anexos/' && !init?.method) {
+        return Response.json([anexo, { ...anexo, id: 8, titulo: 'Apostila 10', categoria: 'Apostilas' }])
+      }
+      return padrao(input, init)
+    })
+    abrir(ROTAS.anexos)
+    await screen.findByText('Calendário anual')
+    const busca = screen.getByLabelText('Buscar anexo')
+    fireEvent.change(busca, { target: { value: 'CALENDARIO' } })
+    expect(screen.getByText('Calendário anual')).toBeTruthy()
+    expect(screen.queryByText('Apostila 10')).toBeNull()
+    fireEvent.change(screen.getByLabelText('Filtrar por categoria'), { target: { value: 'Apostilas' } })
+    expect(screen.getByText('Nenhum anexo encontrado.')).toBeTruthy()
+    fireEvent.change(busca, { target: { value: '10' } })
+    expect(screen.getByText('Apostila 10')).toBeTruthy()
+  })
+
+  it('busca turmas por nome ou núcleo e preserva todas na exportação', async () => {
+    abrir(ROTAS.turmas)
+    await screen.findByText('Infantil A')
+    const busca = screen.getByLabelText('Buscar turma')
+    fireEvent.change(busca, { target: { value: 'baiRRo' } })
+    expect(screen.getByText('Adultos')).toBeTruthy()
+    expect(screen.queryByText('Infantil A')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Gerar planilha de frequência das turmas' }))
+    const dialogo = screen.getByRole('dialog', { name: 'Planilha de frequência das turmas' })
+    expect(within(dialogo).getByLabelText('Infantil A')).toBeTruthy()
+    expect(within(dialogo).getByLabelText('Adultos')).toBeTruthy()
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Fechar formulário' }))
+    fireEvent.change(busca, { target: { value: 'nao existe' } })
+    expect(screen.getByText('Nenhuma turma encontrada.')).toBeTruthy()
+    fireEvent.change(busca, { target: { value: 'INFANTIL' } })
+    expect(screen.getByText('Infantil A')).toBeTruthy()
+    expect(screen.queryByText('Adultos')).toBeNull()
+  })
+
   it('informa o arquivo já anexado ao editar um anexo', async () => {
     requisicao.mockImplementation(async (url: RequestInfo | URL) => {
       if (String(url).endsWith('/anexos/')) return Response.json([{ ...anexo, arquivo_url: '/anexos/arquivos/abc', link: null }])
@@ -642,14 +742,14 @@ describe('telas conectadas aos recursos FastAPI', () => {
     abrir(ROTAS.anexos)
     await screen.findByText('Calendário anual')
     fireEvent.click(screen.getByRole('button', { name: 'Novo anexo' }))
-    fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Guia de faixas' } })
+    fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Apostila 10' } })
     fireEvent.change(screen.getByLabelText('Categoria'), { target: { value: 'Apostilas' } })
     fireEvent.change(screen.getByLabelText('Link externo'), { target: { value: 'https://exemplo.com/guia' } })
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar anexo' }))
 
     await waitFor(() => {
       const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/anexos/') && init?.method === 'POST')
-      expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ titulo: 'Guia de faixas', categoria: 'Apostilas' })
+      expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ titulo: 'Apostila 10', categoria: 'Apostilas' })
     })
   })
 
@@ -684,6 +784,11 @@ describe('telas conectadas aos recursos FastAPI', () => {
   })
 
   it('exporta a planilha de uma atividade em xlsx sem pré-visualização', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/usuarios/eu') return Response.json({ ...usuario, nome: 'Luiz Rocha Moraes' })
+      return padrao(input, init)
+    })
     const criarObjectURL = vi.fn(() => 'blob:mock')
     const revogarObjectURL = vi.fn()
     URL.createObjectURL = criarObjectURL
@@ -699,7 +804,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
 
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/9/planilha/controle-de-frequencia.xlsx'), expect.anything()))
     expect(criarObjectURL).toHaveBeenCalled()
-    expect(nomeArquivo).toBe('Treino infantil.xlsx')
+    expect(nomeArquivo).toBe('TREINO INFANTIL - SENSEI LUIZ MORAES.xlsx')
     expect(screen.queryByRole('region', { name: 'Planilha da atividade' })).toBeNull()
     clique.mockRestore()
   })

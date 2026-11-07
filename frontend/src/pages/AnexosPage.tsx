@@ -7,6 +7,7 @@ import { useNotificacao } from '../notificacoes-context'
 import { anexosApi, type Anexo } from '../servicos/dominio'
 import { formatarDataParaEntrada } from '../servicos/datas'
 import { baixarArquivo } from '../api'
+import { normalizarBusca } from '../servicos/busca'
 
 const vazio = { titulo: '', categoria: 'Calendarios' as Anexo['categoria'], descricao: '', nome_arquivo: '', arquivo_url: '', link: '' }
 type DadosAnexo = typeof vazio
@@ -26,10 +27,13 @@ export function AnexosPage() {
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [erroArquivo, setErroArquivo] = useState('')
   const [categoriaFiltro, setCategoriaFiltro] = useState('')
+  const [busca, setBusca] = useState('')
   const [previa, setPrevia] = useState<{ anexo: Anexo; url: string; tipo: string } | null>(null)
-  const anexosFiltrados = categoriaFiltro
-    ? recurso.itens.filter((anexo) => anexo.categoria === categoriaFiltro || (categoriaFiltro === 'Apostilas' && anexo.categoria === 'Apostila'))
-    : recurso.itens
+  const termoBusca = normalizarBusca(busca)
+  const anexosFiltrados = recurso.itens.filter((anexo) =>
+    (!categoriaFiltro || anexo.categoria === categoriaFiltro || (categoriaFiltro === 'Apostilas' && anexo.categoria === 'Apostila'))
+    && normalizarBusca(anexo.titulo).includes(termoBusca))
+    .sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR', { sensitivity: 'base', numeric: true }))
 
   function iniciarEdicao(anexo: Anexo) {
     setDados({ titulo: anexo.titulo, categoria: anexo.categoria, descricao: anexo.descricao ?? '', nome_arquivo: anexo.nome_arquivo ?? '', arquivo_url: anexo.arquivo_url ?? '', link: anexo.link ?? '' })
@@ -120,7 +124,10 @@ export function AnexosPage() {
   return (
     <PaginaModulo kicker="ARQUIVOS" titulo="Anexos" descricao="Organize documentos e links de referência da equipe." carregando={recurso.carregando} erro={recurso.erro || erroArquivo} recarregar={() => { void recurso.carregar() }}>
       <div className="module-toolbar"><p>{recurso.itens.length} {recurso.itens.length === 1 ? 'anexo' : 'anexos'}</p><button className="module-primary" type="button" onClick={() => { setDados(vazio); setArquivo(null); setErroArquivo(''); setErroConteudo(''); setEditando(null); setFormAberto(true) }}><Plus size={16} />Novo anexo</button></div>
-      <CampoModulo rotulo="Filtrar por categoria"><select value={categoriaFiltro} onChange={(event) => setCategoriaFiltro(event.target.value)}><option value="">Todos</option><option value="Calendarios">Calendários</option><option value="Panilhas">Planilhas</option><option value="Fichas">Fichas</option><option value="Apostilas">Apostilas</option><option value="Regulamentos">Regulamentos</option><option value="Outro">Outro</option></select></CampoModulo>
+      <div className="module-filters" aria-label="Filtros de anexos">
+        <CampoModulo rotulo="Buscar anexo"><input type="search" value={busca} onChange={(event) => setBusca(event.target.value)} placeholder="Título do anexo" /></CampoModulo>
+        <CampoModulo rotulo="Filtrar por categoria"><select value={categoriaFiltro} onChange={(event) => setCategoriaFiltro(event.target.value)}><option value="">Todos</option><option value="Calendarios">Calendários</option><option value="Panilhas">Planilhas</option><option value="Fichas">Fichas</option><option value="Apostilas">Apostilas</option><option value="Regulamentos">Regulamentos</option><option value="Outro">Outro</option></select></CampoModulo>
+      </div>
       {formAberto && <ModalDetalhes contexto="CADASTRO" titulo={editando ? 'Editar anexo' : 'Novo anexo'} aoFechar={() => setFormAberto(false)}><form className="module-form" onSubmit={salvar}><div className="module-form-grid">
         <CampoModulo rotulo="Título"><input required maxLength={160} value={dados.titulo} onChange={(event) => setDados({ ...dados, titulo: event.target.value })} /></CampoModulo>
         <CampoModulo rotulo="Categoria"><select value={dados.categoria === 'Apostila' ? 'Apostilas' : dados.categoria} onChange={(event) => setDados({ ...dados, categoria: event.target.value as Anexo['categoria'] })}><option value="Calendarios">Calendários</option><option value="Panilhas">Planilhas</option><option value="Fichas">Fichas</option><option value="Apostilas">Apostilas</option><option value="Regulamentos">Regulamentos</option><option value="Outro">Outro</option></select></CampoModulo>

@@ -17,6 +17,7 @@ from app.atividades.models import Atividade
 from app.database import Base, get_db
 from app.faixas.models import Faixa
 from app.main import app
+from app.nomes import primeiro_e_ultimo_nome
 from app.seguranca import get_current_user
 from app.turmas import service
 from app.turmas.erros import ErroTurma, TurmaNaoEncontrada
@@ -51,6 +52,16 @@ def dados():
 
 def marcar(*pares):
     return [PresencaEntrada(aluno_id=aluno.id, presente=presente) for aluno, presente in pares]
+
+
+@pytest.mark.parametrize(("nome", "esperado"), [
+    ("Luiz Rocha Moraes", "Luiz Moraes"),
+    ("  José   da  Silva  ", "José Silva"),
+    ("Ana", "Ana"),
+    ("Ana Silva", "Ana Silva"),
+])
+def test_primeiro_e_ultimo_nome(nome, esperado):
+    assert primeiro_e_ultimo_nome(nome) == esperado
 
 
 def test_chamada_preserva_alunos_do_dia_e_exige_marcacoes_completas(dados):
@@ -190,6 +201,7 @@ def test_conflito_de_chamadas_concorrentes_pede_atualizacao(dados, monkeypatch):
 
 def test_rotas_de_frequencia_e_planilha(dados):
     db, usuario, _, turma, _, privada, ana, _ = dados
+    usuario.nome = "Luiz Rocha Moraes"
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_current_user] = lambda: usuario
     try:
@@ -199,8 +211,10 @@ def test_rotas_de_frequencia_e_planilha(dados):
             assert cliente.put(caminho, json={"alunos": [{"aluno_id": ana.id, "presente": True}]}).status_code == 200
             resposta = cliente.get("/turmas/planilha-de-frequencia.xlsx", params={"ano": 2026, "mes": 11, "turma_ids": turma.id})
             assert resposta.status_code == 200
-            assert "SENSEI%20ANA.xlsx" in resposta.headers["content-disposition"]
-            assert load_workbook(BytesIO(resposta.content)).active["C5"].value == "V"
+            assert "SENSEI%20LUIZ%20MORAES.xlsx" in resposta.headers["content-disposition"]
+            folha = load_workbook(BytesIO(resposta.content)).active
+            assert folha["A1"].value == "FREQUÊNCIA DE NOVEMBRO 2026 - SENSEI LUIZ MORAES"
+            assert folha["C5"].value == "V"
             assert cliente.get("/turmas/planilha-de-frequencia.xlsx", params={"ano": 2026, "mes": 13, "turma_ids": turma.id}).status_code == 422
             assert cliente.get(f"/turmas/{privada.id}/frequencias/2026-11-02").status_code == 404
     finally:
@@ -227,9 +241,16 @@ def test_planilha_de_atividade_tem_nome_no_arquivo(tipo, exportar, dados):
     assert "Treino especial" in arquivo.active["A1"].value
 
 
-def test_atividade_usa_rotas_e_nome_de_planilha(dados):
+@pytest.mark.parametrize(("tipo", "controle"), [
+    ("frequencia", "frequencia"),
+    ("campeonato", "campeonato"),
+    ("troca_de_faixa", "faixas"),
+    ("entrega_de_kimono", "kimonos"),
+])
+def test_atividade_usa_rotas_e_nome_de_planilha(dados, tipo, controle):
     db, usuario, _, _, _, _, ana, _ = dados
-    atividade = Atividade(tipo="frequencia", nome="Noite do judogi", data=date(2026, 11, 3), dono_id=usuario.id)
+    usuario.nome = "Luiz Rocha Moraes"
+    atividade = Atividade(tipo=tipo, nome="Noite do judogi", data=date(2026, 11, 3), dono_id=usuario.id)
     atividade.alunos.append(ana)
     db.add(atividade)
     db.commit()
@@ -238,9 +259,9 @@ def test_atividade_usa_rotas_e_nome_de_planilha(dados):
     try:
         with TestClient(app) as cliente:
             caminho = f"/atividades/{atividade.id}"
-            resposta = cliente.get(f"{caminho}/planilha/controle-de-frequencia.xlsx")
+            resposta = cliente.get(f"{caminho}/planilha/controle-de-{controle}.xlsx")
             assert resposta.status_code == 200
-            assert "Noite%20do%20judogi.xlsx" in resposta.headers["content-disposition"]
+            assert "NOITE%20DO%20JUDOGI%20-%20SENSEI%20LUIZ%20MORAES.xlsx" in resposta.headers["content-disposition"]
             assert load_workbook(BytesIO(resposta.content)).active.title == "Noite do judogi"
             assert cliente.get(f"{caminho}/relatorio/controle-de-frequencia.xlsx").status_code == 404
     finally:

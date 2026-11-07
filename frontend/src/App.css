@@ -25,11 +25,17 @@
 .card-label { color: #bd5339; font-size: 9px; font-weight: 700; letter-spacing: 1.35px; }
 .auth-heading h2 { margin: 14px 0 8px; color: #1b3029; font-family: Georgia, 'Times New Roman', serif; font-size: 38px; font-weight: 400; line-height: 1.12; }
 .auth-form { display: grid; gap: 19px; margin-top: 34px; }
-.field { display: grid; gap: 8px; }.field > span:first-child { color: #283a33; font-size: 12px; font-weight: 650; }
+.field { display: grid; gap: 8px; }.field > span:first-child, .field > label { color: #283a33; font-size: 12px; font-weight: 650; }
 .input-wrap { display: flex; height: 48px; align-items: center; gap: 11px; padding: 0 13px; color: #7d8781; border: 1px solid #dfe3dc; border-radius: 4px; background: #fff; transition: border-color 150ms ease, box-shadow 150ms ease; }
 .input-wrap:focus-within { border-color: #47715e; box-shadow: 0 0 0 3px rgb(71 113 94 / 12%); }
 .input-wrap input { width: 100%; min-width: 0; height: 100%; padding: 0; color: #20342d; border: 0; outline: 0; background: transparent; font: inherit; font-size: 13px; }
 .input-wrap input::placeholder { color: #9aa29c; }
+.senha-visibilidade { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; padding: 0; color: #49564d; border: 0; border-radius: 3px; background: transparent; cursor: pointer; }
+.senha-visibilidade:hover { background: #f3f5f2; }
+.senha-wrap { display: flex; width: 100%; min-width: 0; min-height: 40px; align-items: center; padding-right: 4px; border: 1px solid #d9ded8; border-radius: 3px; background: #fff; }
+.senha-wrap:focus-within { border-color: #555f58; outline: 2px solid rgb(32 42 36 / 12%); }
+.senha-wrap input { width: 100%; min-width: 0; min-height: 38px; padding: 8px 10px; color: #202a24; border: 0; outline: 0; background: transparent; font: inherit; font-size: 12px; }
+@media (max-width: 700px) { .senha-wrap { min-height: 44px; } .senha-wrap input { font-size: 16px; } .senha-visibilidade { width: 40px; height: 40px; } }
 .submit-button { display: flex; min-height: 49px; align-items: center; justify-content: center; gap: 12px; margin-top: 4px; padding: 0 18px; color: #fff; border: 0; border-radius: 4px; background: #1d4438; cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; transition: background 150ms ease, transform 150ms ease; }
 .submit-button:hover:not(:disabled) { transform: translateY(-1px); background: #285747; }.submit-button:disabled { cursor: wait; opacity: .72; }
 .form-error { display: flex; align-items: flex-start; gap: 9px; margin-top: 22px; padding: 11px 12px; color: #913d2b; border: 1px solid #efd3c9; border-radius: 4px; background: #fff2ed; font-size: 12px; line-height: 1.5; }.form-error svg { flex: 0 0 auto; margin-top: 1px; }
@@ -393,6 +399,7 @@
 
 /* Rotulos, botoes e titulos em maiusculo (apenas visual) */
 .module-field, .module-field > span, .module-primary, .module-secondary, .module-heading h1, .module-form-heading h2, .module-details dt, .record-main strong, .detail-dialog h2 { text-transform: uppercase; }
+.module-field .senha-wrap input { text-transform: none; }
 .module-field > input, .module-field > select, .module-field > textarea { text-transform: none; }
 .record-main span, .module-details dd, .module-field > select, .module-field > select option { text-transform: uppercase; }
 

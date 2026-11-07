@@ -3,6 +3,7 @@ import { Mail, Pencil, UserRound } from 'lucide-react'
 import { useAutenticacao } from '../autenticacao-context'
 import { CampoModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
+import { CampoSenha } from '../components/CampoSenha'
 import { useNotificacao } from '../notificacoes-context'
 
 const formularioVazio = { nome: '', email: '', senha_atual: '', nova_senha: '', confirmar: '' }
@@ -65,9 +66,9 @@ export function PerfilPage() {
             <div className="module-form-grid">
               <CampoModulo rotulo="Nome"><input required minLength={2} maxLength={80} value={dados.nome} onChange={(event) => setDados({ ...dados, nome: event.target.value })} /></CampoModulo>
               <CampoModulo rotulo="E-mail"><input required type="email" value={dados.email} onChange={(event) => setDados({ ...dados, email: event.target.value })} /></CampoModulo>
-              <CampoModulo rotulo="Senha atual" dica="Necessária para alterar e-mail ou senha."><input type="password" autoComplete="current-password" value={dados.senha_atual} onChange={(event) => setDados({ ...dados, senha_atual: event.target.value })} /></CampoModulo>
-              <CampoModulo rotulo="Nova senha"><input type="password" minLength={6} autoComplete="new-password" value={dados.nova_senha} onChange={(event) => setDados({ ...dados, nova_senha: event.target.value })} /></CampoModulo>
-              <CampoModulo rotulo="Confirmar nova senha"><input type="password" autoComplete="new-password" value={dados.confirmar} onChange={(event) => setDados({ ...dados, confirmar: event.target.value })} /></CampoModulo>
+              <CampoSenha rotulo="Senha atual" dica="Necessária para alterar e-mail ou senha." autoComplete="current-password" value={dados.senha_atual} onChange={(event) => setDados({ ...dados, senha_atual: event.target.value })} />
+              <CampoSenha rotulo="Nova senha" minLength={6} autoComplete="new-password" value={dados.nova_senha} onChange={(event) => setDados({ ...dados, nova_senha: event.target.value })} />
+              <CampoSenha rotulo="Confirmar nova senha" autoComplete="new-password" value={dados.confirmar} onChange={(event) => setDados({ ...dados, confirmar: event.target.value })} />
             </div>
             {erro && <p className="module-error" role="alert">{erro}</p>}
             <div className="module-form-actions">

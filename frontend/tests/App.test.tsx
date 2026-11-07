@@ -72,6 +72,49 @@ describe('sessão e navegação protegida', () => {
     expect(getToken()).toBe('token-de-teste')
   })
 
+  it('permite mostrar e ocultar a senha no login e no cadastro', async () => {
+    window.history.replaceState({}, '', ROTAS.login)
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Login' })
+    const senha = screen.getByLabelText('Senha') as HTMLInputElement
+    fireEvent.change(senha, { target: { value: 'senha-segura' } })
+    expect(senha.type).toBe('password')
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar senha' }))
+    expect(senha.type).toBe('text')
+    expect(senha.value).toBe('senha-segura')
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar senha' }))
+    expect(senha.type).toBe('password')
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar senha' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cadastre-se' }))
+    await screen.findByRole('heading', { name: 'Cadastro' })
+    expect((screen.getByLabelText('Senha') as HTMLInputElement).type).toBe('password')
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar senha' }))
+    expect((screen.getByLabelText('Senha') as HTMLInputElement).type).toBe('text')
+  })
+
+  it('mostra cada senha do perfil separadamente e volta a ocultá-las ao reabrir', async () => {
+    saveToken('token-inicial')
+    window.history.replaceState({}, '', ROTAS.perfil)
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Editar perfil' }))
+    const atual = screen.getByLabelText('Senha atual') as HTMLInputElement
+    const nova = screen.getByLabelText('Nova senha') as HTMLInputElement
+    const confirmar = screen.getByLabelText('Confirmar nova senha') as HTMLInputElement
+    fireEvent.change(nova, { target: { value: 'senha-segura' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar nova senha' }))
+    expect([atual.type, nova.type, confirmar.type]).toEqual(['password', 'text', 'password'])
+    expect(nova.value).toBe('senha-segura')
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar nova senha' }))
+    expect(nova.type).toBe('password')
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar senha atual' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar confirmar nova senha' }))
+    expect([atual.type, nova.type, confirmar.type]).toEqual(['text', 'password', 'text'])
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Editar perfil' }))
+    expect((screen.getByLabelText('Senha atual') as HTMLInputElement).type).toBe('password')
+    expect((screen.getByLabelText('Confirmar nova senha') as HTMLInputElement).type).toBe('password')
+  })
+
   it('restaura a sessão persistida ao carregar o aplicativo', async () => {
     localStorage.setItem('zenyo_access_token', 'token-persistido')
 
