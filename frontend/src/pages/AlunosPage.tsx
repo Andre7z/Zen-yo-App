@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { Pencil, Plus, Trash2, UserMinus } from 'lucide-react'
 import { alunosApi, faixasApi, ordenarAlunosPorNome, rotuloFaixa, turmasApi, type Aluno, type Faixa, type Turma } from '../servicos/dominio'
 import { opcoesDeTamanho, useTamanhos } from '../hooks/use-tamanhos'
@@ -8,12 +8,12 @@ import { useNotificacao } from '../notificacoes-context'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
 import { EntradaData } from '../components/EntradaData'
+import { CampoBusca } from '../components/CampoBusca'
 import { calcularIdade, converterDataParaIso, formatarDataParaEntrada, validarDataNascimento } from '../servicos/datas'
 import { cpfValido, formatarCpf } from '../servicos/cpf'
 import { exibirTelefone, formatarTelefone } from '../servicos/telefone'
 import { formatarCodigoZempo } from '../servicos/zempo'
 import { normalizarBusca } from '../servicos/busca'
-import { ROTAS } from '../routes'
 
 const vazio = {
   nome: '', cpf: '', data_nascimento: '', genero: '', faixa_id: '', proxima_faixa: '',
@@ -168,14 +168,13 @@ export function AlunosPage() {
     <PaginaModulo kicker="CADASTROS" titulo={turmaAtual ? `Alunos · ${turmaAtual.nome}` : 'Alunos'} descricao="Cadastro dos alunos, com ou sem turma." carregando={recurso.carregando} erro={recurso.erro || erroFaixas || erroTurmas} recarregar={() => { void recurso.carregar() }}>
       <div className="module-toolbar">
         <p>{alunosListados.length} {alunosListados.length === 1 ? 'aluno' : 'alunos'}</p>
-                <Link className="module-secondary" to={ROTAS.turmas}>Turmas</Link>
                 <button className="module-primary" type="button" onClick={() => { if (modoTurma) { setIdsSelecionados([]); setBuscaAluno(''); setFormAberto(false); setSelecionando(true); return } setDados(vazio); setEditando(null); setVisualizando(null); setFormAberto(true) }}>
           <Plus size={16} />{modoTurma ? 'Adicionar alunos' : 'Novo aluno'}
         </button>
       </div>
 
       <div className="module-filters" aria-label="Filtros de alunos">
-        <CampoModulo rotulo="Buscar aluno"><input type="search" value={buscaLista} onChange={(event) => setBuscaLista(event.target.value)} placeholder="Nome do aluno" /></CampoModulo>
+        <CampoBusca rotulo="Buscar aluno" value={buscaLista} onChange={(event) => setBuscaLista(event.target.value)} placeholder="Nome do aluno" />
         {!modoTurma && <CampoModulo rotulo="Filtrar por turma"><select value={turmaFiltro} onChange={(event) => setTurmaFiltro(event.target.value)}><option value="">Todas as turmas</option>{turmas.map((turma) => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}</select></CampoModulo>}
       </div>
 
@@ -211,7 +210,7 @@ export function AlunosPage() {
           <ModalDetalhes titulo={`Adicionar alunos · ${turmaAtual.nome}`} aoFechar={() => setSelecionando(false)}>
             <div className="participant-picker-toolbar"><p>{idsSelecionados.length} {idsSelecionados.length === 1 ? 'selecionado' : 'selecionados'}</p></div>
             <div className="participant-picker-filters">
-              <CampoModulo rotulo="Buscar aluno"><input type="search" value={buscaAluno} onChange={(event) => setBuscaAluno(event.target.value)} placeholder="Digite um nome" /></CampoModulo>
+              <CampoBusca rotulo="Buscar aluno" value={buscaAluno} onChange={(event) => setBuscaAluno(event.target.value)} placeholder="Digite um nome" />
             </div>
             <div className="participant-picker-list" aria-label="Alunos disponíveis">
               {disponiveis.map((aluno) => {

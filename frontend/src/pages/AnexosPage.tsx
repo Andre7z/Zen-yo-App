@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Download, ExternalLink, Eye, Pencil, Plus, Trash2 } from 'lucide-react'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
+import { CampoBusca } from '../components/CampoBusca'
 import { useRecurso } from '../hooks/use-recurso'
 import { useNotificacao } from '../notificacoes-context'
 import { anexosApi, type Anexo } from '../servicos/dominio'
@@ -125,7 +126,7 @@ export function AnexosPage() {
     <PaginaModulo kicker="ARQUIVOS" titulo="Anexos" descricao="Organize documentos e links de referência da equipe." carregando={recurso.carregando} erro={recurso.erro || erroArquivo} recarregar={() => { void recurso.carregar() }}>
       <div className="module-toolbar"><p>{recurso.itens.length} {recurso.itens.length === 1 ? 'anexo' : 'anexos'}</p><button className="module-primary" type="button" onClick={() => { setDados(vazio); setArquivo(null); setErroArquivo(''); setErroConteudo(''); setEditando(null); setFormAberto(true) }}><Plus size={16} />Novo anexo</button></div>
       <div className="module-filters" aria-label="Filtros de anexos">
-        <CampoModulo rotulo="Buscar anexo"><input type="search" value={busca} onChange={(event) => setBusca(event.target.value)} placeholder="Título do anexo" /></CampoModulo>
+        <CampoBusca rotulo="Buscar anexo" value={busca} onChange={(event) => setBusca(event.target.value)} placeholder="Título do anexo" />
         <CampoModulo rotulo="Filtrar por categoria"><select value={categoriaFiltro} onChange={(event) => setCategoriaFiltro(event.target.value)}><option value="">Todos</option><option value="Calendarios">Calendários</option><option value="Panilhas">Planilhas</option><option value="Fichas">Fichas</option><option value="Apostilas">Apostilas</option><option value="Regulamentos">Regulamentos</option><option value="Outro">Outro</option></select></CampoModulo>
       </div>
       {formAberto && <ModalDetalhes contexto="CADASTRO" titulo={editando ? 'Editar anexo' : 'Novo anexo'} aoFechar={() => setFormAberto(false)}><form className="module-form" onSubmit={salvar}><div className="module-form-grid">

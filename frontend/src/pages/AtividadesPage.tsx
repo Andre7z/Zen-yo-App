@@ -3,6 +3,7 @@ import { ArrowLeft, Award, FileText, Pencil, Plus, Trash2 } from 'lucide-react'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
 import { EntradaData } from '../components/EntradaData'
+import { CampoBusca } from '../components/CampoBusca'
 import { calcularIdade, converterDataParaIso, dataAtividadeValida, dataAtualIso, formatarDataParaEntrada, validarDataNascimento } from '../servicos/datas'
 import { useRecurso } from '../hooks/use-recurso'
 import { useNotificacao } from '../notificacoes-context'
@@ -257,7 +258,7 @@ export function AtividadesPage() {
       <div className="module-toolbar"><p>{recurso.itens.length} {recurso.itens.length === 1 ? 'atividade' : 'atividades'}</p><button className="module-primary" type="button" onClick={() => { setDados(vazio); setEditando(null); setVisualizando(null); setSelecionandoAlunos(false); setFormAberto(true) }}><Plus size={16} />Nova atividade</button></div>
 
       <div className="module-filters" aria-label="Filtros de atividades">
-        <CampoModulo rotulo="Buscar atividade"><input value={buscaAtividade} onChange={(event) => setBuscaAtividade(event.target.value)} placeholder="Nome ou local" /></CampoModulo>
+        <CampoBusca rotulo="Buscar atividade" value={buscaAtividade} onChange={(event) => setBuscaAtividade(event.target.value)} placeholder="Nome ou local" />
         <CampoModulo rotulo="Tipo de atividade"><select value={tipoFiltro} onChange={(event) => setTipoFiltro(event.target.value)}><option value="">Todos</option><option value="frequencia">Frequência</option><option value="entrega_de_kimono">Entrega de judogi</option><option value="troca_de_faixa">Troca de faixa</option><option value="campeonato">Campeonato</option></select></CampoModulo>
         <CampoModulo rotulo="Situação"><select value={situacaoFiltro} onChange={(event) => setSituacaoFiltro(event.target.value)}><option value="">Todas</option><option value="proximas">Próximas</option><option value="realizadas">Realizadas</option></select></CampoModulo>
       </div>
@@ -302,7 +303,7 @@ export function AtividadesPage() {
                 <p>{idsParticipantes.length} {idsParticipantes.length === 1 ? 'selecionado' : 'selecionados'}</p>
               </div>
               <div className="participant-picker-filters">
-                <CampoModulo rotulo="Buscar aluno"><input type="search" value={buscaAluno} onChange={(event) => setBuscaAluno(event.target.value)} placeholder="Digite um nome ou turma" /></CampoModulo>
+                <CampoBusca rotulo="Buscar aluno" value={buscaAluno} onChange={(event) => setBuscaAluno(event.target.value)} placeholder="Digite um nome ou turma" />
                 <CampoModulo rotulo="Filtrar por turma"><select value={turmaFiltro} onChange={(event) => setTurmaFiltro(event.target.value)}><option value="">Todas as turmas</option>{turmas.map((turma) => <option key={turma.id} value={turma.id}>{turma.nome}</option>)}</select></CampoModulo>
               </div>
               {erroCadastros && <p className="module-error" role="alert">{erroCadastros}</p>}

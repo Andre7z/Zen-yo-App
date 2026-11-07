@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { FileText, Pencil, Plus, Trash2 } from 'lucide-react'
 import { BotaoIcone, CampoModulo, PaginaModulo } from '../components/PaginaModulo'
 import { ModalDetalhes } from '../components/ModalDetalhes'
+import { CampoBusca } from '../components/CampoBusca'
 import { ExportarFrequencia, RegistroFrequencia } from '../components/FrequenciaTurmas'
 import { HistoricoFrequencia } from '../components/HistoricoFrequencia'
 import { useRecurso } from '../hooks/use-recurso'
@@ -61,7 +62,7 @@ export function TurmasPage() {
   return (
     <PaginaModulo kicker="ORGANIZAÇÃO" titulo="Turmas" descricao="Organize os alunos por turma." carregando={recurso.carregando} erro={recurso.erro || erroAlunos} recarregar={() => { void recurso.carregar() }}>
       <div className="module-toolbar turmas-toolbar"><p>{recurso.itens.length} turmas</p><div className="turmas-acoes"><button className="module-primary" type="button" onClick={() => { setDados(vazio); setEditando(null); setFormAberto(true) }}><Plus size={16} />Nova turma</button><button className="module-secondary" type="button" onClick={() => setExportando(true)}><FileText size={16} aria-hidden="true" />Gerar planilha de frequência das turmas</button></div></div>
-      <div className="module-filters" aria-label="Filtros de turmas"><CampoModulo rotulo="Buscar turma"><input type="search" value={busca} onChange={(event) => setBusca(event.target.value)} placeholder="Nome ou núcleo" /></CampoModulo></div>
+      <div className="module-filters" aria-label="Filtros de turmas"><CampoBusca rotulo="Buscar turma" value={busca} onChange={(event) => setBusca(event.target.value)} placeholder="Nome ou núcleo" /></div>
       {formAberto && <ModalDetalhes contexto="CADASTRO" titulo={editando ? 'Editar turma' : 'Nova turma'} aoFechar={() => setFormAberto(false)}><form className="module-form" onSubmit={salvar}><div className="module-form-grid">
         <CampoModulo rotulo="Nome da turma"><input required minLength={2} value={dados.nome} onChange={(event) => setDados({ ...dados, nome: event.target.value })} /></CampoModulo>
         <CampoModulo rotulo="Núcleo"><input required minLength={2} maxLength={120} value={dados.nucleo} onChange={(event) => setDados({ ...dados, nucleo: event.target.value })} /></CampoModulo>

@@ -98,6 +98,19 @@ afterEach(() => {
 })
 
 describe('telas conectadas aos recursos FastAPI', () => {
+  it.each([
+    [ROTAS.alunos, 'Buscar aluno'],
+    [ROTAS.anexos, 'Buscar anexo'],
+    [ROTAS.turmas, 'Buscar turma'],
+    [ROTAS.atividades, 'Buscar atividade'],
+  ])('mostra lupa decorativa no campo de busca em %s', async (rota, rotulo) => {
+    abrir(rota)
+    const busca = await screen.findByLabelText(rotulo)
+    const icone = busca.parentElement?.querySelector('svg')
+    expect(icone?.getAttribute('aria-hidden')).toBe('true')
+    expect(icone?.classList.contains('lucide-search')).toBe(true)
+  })
+
   it('mostra o primeiro e o último nome do sensei na tela inicial', async () => {
     const padrao = requisicao.getMockImplementation()!
     requisicao.mockImplementation(async (input, init) => {
@@ -506,6 +519,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
   it('lista todos os alunos em /alunos sem depender de turma', async () => {
     abrir(ROTAS.alunos)
     await screen.findByRole('heading', { name: 'Alunos' })
+    expect(within(screen.getByRole('main')).queryByRole('link', { name: 'Turmas' })).toBeNull()
     expect(await screen.findByText('Caio Silva')).toBeTruthy()
     expect(screen.getByText('Lia Santos')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Novo aluno' }))
