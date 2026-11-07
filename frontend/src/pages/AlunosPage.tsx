@@ -11,6 +11,7 @@ import { EntradaData } from '../components/EntradaData'
 import { calcularIdade, converterDataParaIso, formatarDataParaEntrada, validarDataNascimento } from '../servicos/datas'
 import { cpfValido, formatarCpf } from '../servicos/cpf'
 import { exibirTelefone, formatarTelefone } from '../servicos/telefone'
+import { formatarCodigoZempo } from '../servicos/zempo'
 import { ROTAS } from '../routes'
 
 const vazio = {
@@ -184,14 +185,14 @@ export function AlunosPage() {
             <CampoModulo rotulo="Gênero"><select value={dados.genero} onChange={(event) => setDados({ ...dados, genero: event.target.value })}><option value="">Não informado</option><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option></select></CampoModulo>
             <CampoModulo rotulo="Faixa"><select required value={dados.faixa_id} onChange={(event) => setDados({ ...dados, faixa_id: event.target.value })}><option value="">Selecione</option>{faixas.map((faixa) => <option key={faixa.id} value={faixa.id}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
             <CampoModulo rotulo="Próxima faixa"><select value={dados.proxima_faixa} onChange={(event) => setDados({ ...dados, proxima_faixa: event.target.value })}><option value="">Não definida</option>{faixas.map((faixa) => <option key={faixa.id} value={rotuloFaixa(faixa)}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
-            <CampoModulo rotulo="Celular do aluno"><input type="tel" inputMode="tel" placeholder="(64)99988-7766" value={dados.celular} onChange={(event) => setDados({ ...dados, celular: formatarTelefone(event.target.value) })} /></CampoModulo>
+            <CampoModulo rotulo="Celular do aluno"><input type="tel" inputMode="tel" placeholder="(00)00000-0000" value={dados.celular} onChange={(event) => setDados({ ...dados, celular: formatarTelefone(event.target.value) })} /></CampoModulo>
             <CampoModulo rotulo="Peso (kg)"><input inputMode="decimal" value={dados.peso} onChange={(event) => { setErroPeso(''); setDados({ ...dados, peso: event.target.value }) }} />{erroPeso && <small className="module-field-error" role="alert">{erroPeso}</small>}</CampoModulo>
             <CampoModulo rotulo="Tamanho do judogi"><select value={dados.tamanho_kimono} onChange={(event) => setDados({ ...dados, tamanho_kimono: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.kimono, dados.tamanho_kimono).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
             <CampoModulo rotulo="Tamanho da faixa"><select value={dados.tamanho_faixa} onChange={(event) => setDados({ ...dados, tamanho_faixa: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.faixa, dados.tamanho_faixa).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
-            <CampoModulo rotulo="Código Zempo"><input value={dados.codigo_zempo} onChange={(event) => setDados({ ...dados, codigo_zempo: event.target.value })} /></CampoModulo>
+            <CampoModulo rotulo="Código Zempo"><input inputMode="numeric" placeholder="JU000000" value={dados.codigo_zempo} onChange={(event) => setDados({ ...dados, codigo_zempo: formatarCodigoZempo(event.target.value) })} /></CampoModulo>
             <CampoModulo rotulo="Nome do responsável"><input value={dados.responsavel_nome} onChange={(event) => setDados({ ...dados, responsavel_nome: event.target.value })} /></CampoModulo>
             <CampoModulo rotulo="CPF do responsável"><input aria-label="CPF do responsável" inputMode="numeric" aria-invalid={Boolean(erroCpfResponsavel)} placeholder="000.000.000-00" value={dados.responsavel_cpf} onChange={(event) => { setErroCpfResponsavel(''); setDados({ ...dados, responsavel_cpf: formatarCpf(event.target.value) }) }} />{erroCpfResponsavel && <small className="module-field-error" role="alert">{erroCpfResponsavel}</small>}</CampoModulo>
-            <CampoModulo rotulo="Celular do responsável"><input type="tel" inputMode="tel" placeholder="(64)99988-7766" value={dados.responsavel_celular} onChange={(event) => setDados({ ...dados, responsavel_celular: formatarTelefone(event.target.value) })} /></CampoModulo>
+            <CampoModulo rotulo="Celular do responsável"><input type="tel" inputMode="tel" placeholder="(00)00000-0000" value={dados.responsavel_celular} onChange={(event) => setDados({ ...dados, responsavel_celular: formatarTelefone(event.target.value) })} /></CampoModulo>
             <CampoModulo rotulo="Parentesco do responsável"><input value={dados.responsavel_parentesco} onChange={(event) => setDados({ ...dados, responsavel_parentesco: event.target.value })} /></CampoModulo>
           </div>
           <div className="module-form-actions"><button className="module-primary" disabled={recurso.salvando || Boolean(erroFaixas || erroTurmas)}>{recurso.salvando ? 'Salvando...' : editando ? 'Salvar alterações' : 'Cadastrar aluno'}</button><button className="module-secondary" type="button" onClick={() => setFormAberto(false)}>Cancelar</button></div>

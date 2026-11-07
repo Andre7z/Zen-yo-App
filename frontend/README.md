@@ -29,5 +29,6 @@ npm run dev
 ```
 
 A API é acessada em `http://localhost:8000` por padrão; para mudar, defina `VITE_API_URL` no `.env`.
+Na Vercel, configure `VITE_API_URL` com a URL pública do backend no Render e faça um novo deploy do frontend após alterá-la. O backend publicado deve incluir as rotas de frequência (`/turmas/{turma_id}/frequencias/{data}`); confirme em `/openapi.json` e atualize o serviço no Render com a branch ou commit correto. As migrações devem ser aplicadas no banco antes de usar a chamada; o Dockerfile do projeto executa `alembic upgrade head` na inicialização.
 
 Testes: `npm test`
