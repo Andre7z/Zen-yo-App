@@ -9,6 +9,7 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
 from ..ordenacao import ordenar_alunos_por_nome
+from ..planilhas_xlsx import textos_em_maiusculas
 from ._estilo_xlsx import AZUL, BORDA, CENTRO, ESQUERDA, NEGRITO, NORMAL
 
 TITULO = "CONTROLE DE CAMPEONATO"
@@ -40,7 +41,7 @@ def gerar_xlsx(alunos, confirmados=()):
 
     planilha = Workbook()
     folha = planilha.active
-    folha.title = "Controle de campeonato"
+    folha.title = "CONTROLE DE CAMPEONATO"
 
     colunas_totais = 6
     folha.merge_cells(f"A1:{get_column_letter(colunas_totais)}1")
@@ -77,6 +78,7 @@ def gerar_xlsx(alunos, confirmados=()):
     for coluna, largura in larguras.items():
         folha.column_dimensions[get_column_letter(coluna)].width = largura
 
+    textos_em_maiusculas(planilha)
     saida = BytesIO()
     planilha.save(saida)
     return saida.getvalue()

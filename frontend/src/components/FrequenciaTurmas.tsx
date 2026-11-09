@@ -58,7 +58,7 @@ export function RegistroFrequencia({ turma, aoFechar, dataInicial }: { turma: Tu
         <div className="frequencia-lista">
           {chamada.alunos.map((aluno) => <label className="frequencia-aluno" key={aluno.aluno_id}>
             <span className="frequencia-aluno-nome">{aluno.nome}</span>{' '}
-            <span className="frequencia-aluno-marcacao">
+            <span className="frequencia-aluno-marcacao activity-confirmation">
               <input type="checkbox" checked={aluno.presente} disabled={salvando} onChange={(event) => {
                 const presente = event.target.checked
                 setChamada((atual) => atual && { ...atual, alunos: atual.alunos.map((item) => item.aluno_id === aluno.aluno_id ? { ...item, presente } : item) })

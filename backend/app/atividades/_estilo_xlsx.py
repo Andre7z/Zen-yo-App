@@ -5,6 +5,8 @@ import re
 from openpyxl import load_workbook
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from ..nomes import primeiro_e_ultimo_nome
+from ..planilhas_xlsx import textos_em_maiusculas
 
 FINO = Side(style="thin", color="000000")
 BORDA = Border(left=FINO, right=FINO, top=FINO, bottom=FINO)
@@ -16,13 +18,15 @@ CENTRO = Alignment(horizontal="center", vertical="center")
 ESQUERDA = Alignment(horizontal="left", vertical="center")
 
 
-def nomear_planilha(conteudo, nome):
+def nomear_planilha(conteudo, nome, professor):
     arquivo = load_workbook(BytesIO(conteudo))
     folha = arquivo.active
-    nome = ILLEGAL_CHARACTERS_RE.sub("", nome)
-    folha["A1"] = f"{folha['A1'].value} - {nome}"
+    nome = ILLEGAL_CHARACTERS_RE.sub("", nome).upper()
+    professor = ILLEGAL_CHARACTERS_RE.sub("", primeiro_e_ultimo_nome(professor).upper())
+    folha["A1"] = f"{folha['A1'].value} - {nome} - SENSEI {professor}"
     titulo = re.sub(r'[\\/*?:\[\]]', '-', nome).strip("'")[:31].strip("'")
-    folha.title = titulo or "Planilha"
+    folha.title = titulo or "PLANILHA"
+    textos_em_maiusculas(arquivo)
     saida = BytesIO()
     arquivo.save(saida)
     return saida.getvalue()

@@ -29,13 +29,13 @@ class Atividade(Base):
         return [aluno.id for aluno in self.alunos]
 
     @property
-    def aluno_ids_pagos(self):
+    def aluno_ids_confirmados(self):
         sessao = object_session(self)
         if sessao is None or self.id is None:
             return []
         consulta = select(atividade_alunos.c.aluno_id).where(
             atividade_alunos.c.atividade_id == self.id,
-            atividade_alunos.c.pago.is_(True),
+            atividade_alunos.c.confirmado.is_(True),
         )
         return list(sessao.execute(consulta).scalars())
     

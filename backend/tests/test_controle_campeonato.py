@@ -26,7 +26,7 @@ def test_xlsx_tem_as_seis_colunas():
 
     assert folha["A1"].value == "CONTROLE DE CAMPEONATO"
     assert [c.value for c in folha[2]] == ["NOME", "IDADE", "GÊNERO", "PESO", "CÓDIGO ZEMPO", "CONFIRMADO"]
-    assert [c.value for c in folha[3]] == ["Ana", 12, "Feminino", 38.5, "ZP1", "SIM"]
+    assert [c.value for c in folha[3]] == ["ANA", 12, "FEMININO", 38.5, "ZP1", "SIM"]
 
 
 def test_aluno_calcula_idade_pela_data_de_nascimento():

@@ -58,7 +58,7 @@ class PlanilhaEntregaKimono(EstrategiaPlanilha):
 
 class PlanilhaFrequencia(EstrategiaPlanilha):
     def gerar(self, atividade):
-        alunos_presentes = set(getattr(atividade, "aluno_ids_pagos", []) or [])
+        alunos_presentes = set(getattr(atividade, "aluno_ids_confirmados", []) or [])
         return [
             {
                 "aluno": aluno.nome,

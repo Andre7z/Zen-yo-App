@@ -97,8 +97,11 @@ def test_xlsx_multiplas_turmas_dias_e_aluno_fora_da_turma(dados):
     assert folha["A1"].value == "FREQUÊNCIA DE NOVEMBRO 2026 - SENSEI ANA"
     assert folha["A3"].value == "CENTRO - INFANTIL"
     assert [folha.cell(4, i).value for i in range(1, 5)] == ["ORDEM", "NOME", 2, 5]
-    assert [folha.cell(5, i).value for i in range(1, 5)] == [1, "Ana Aluna", "V", "X"]
-    assert [folha.cell(6, i).value for i in range(1, 5)] == [2, "Bia Aluna", "-", "V"]
+    assert [folha.cell(5, i).value for i in range(1, 5)] == [1, "ANA ALUNA", "V", "X"]
+    assert [folha.cell(6, i).value for i in range(1, 5)] == [2, "BIA ALUNA", "-", "V"]
+    assert folha.title == "FREQUÊNCIA"
+    assert all(celula.value == celula.value.upper() for linha in folha.iter_rows() for celula in linha if celula.data_type == "s" and isinstance(celula.value, str))
+    assert ana.nome == "Ana Aluna"
     assert folha["C5"].font.color.rgb.endswith("008000")
     assert folha["D5"].font.color.rgb.endswith("FF0000")
     assert folha["A9"].value == "BAIRRO - ADULTOS"
@@ -237,8 +240,10 @@ def test_planilha_de_atividade_tem_nome_no_arquivo(tipo, exportar, dados):
     db.add(atividade)
     db.commit()
     arquivo = load_workbook(BytesIO(exportar(db, usuario, atividade.id)))
-    assert arquivo.active.title == "Treino especial"
-    assert "Treino especial" in arquivo.active["A1"].value
+    assert arquivo.active.title == "TREINO ESPECIAL"
+    assert "TREINO ESPECIAL" in arquivo.active["A1"].value
+    assert arquivo.active["A3"].value == "ANA ALUNA"
+    assert all(celula.value == celula.value.upper() for linha in arquivo.active.iter_rows() for celula in linha if celula.data_type == "s" and isinstance(celula.value, str))
 
 
 @pytest.mark.parametrize(("tipo", "controle"), [
@@ -262,8 +267,56 @@ def test_atividade_usa_rotas_e_nome_de_planilha(dados, tipo, controle):
             resposta = cliente.get(f"{caminho}/planilha/controle-de-{controle}.xlsx")
             assert resposta.status_code == 200
             assert "NOITE%20DO%20JUDOGI%20-%20SENSEI%20LUIZ%20MORAES.xlsx" in resposta.headers["content-disposition"]
-            assert load_workbook(BytesIO(resposta.content)).active.title == "Noite do judogi"
+            folha = load_workbook(BytesIO(resposta.content)).active
+            assert folha.title == "NOITE DO JUDOGI"
+            assert "SENSEI LUIZ MORAES" in folha["A1"].value
             assert cliente.get(f"{caminho}/relatorio/controle-de-frequencia.xlsx").status_code == 404
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_graduacao_em_lote_e_atomica_e_valida_participantes(dados):
+    db, usuario, outro, _, _, _, ana, bia = dados
+    faixa_original = ana.faixa_id
+    faixa_nova = Faixa(nome="Azul", tipo="Kyu", grau=10, dono_id=usuario.id)
+    faixa_privada = Faixa(nome="Privada", tipo="Iniciante", dono_id=outro.id)
+    atividade = Atividade(tipo="troca_de_faixa", nome="Exame", data=date(2026, 11, 3), dono_id=usuario.id)
+    atividade.alunos.extend([ana, bia])
+    db.add_all([faixa_nova, faixa_privada, atividade])
+    db.commit()
+    app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_current_user] = lambda: usuario
+    try:
+        with TestClient(app) as cliente:
+            caminho = f"/atividades/{atividade.id}/graduacoes"
+            alunos = [
+                {"aluno_id": ana.id, "faixa_id": faixa_nova.id, "tamanho_faixa": "G", "faixa_grossa": True},
+                {"aluno_id": bia.id, "faixa_id": faixa_privada.id},
+            ]
+            assert cliente.post(caminho, json={"alunos": alunos}).status_code == 404
+            db.refresh(ana)
+            assert ana.faixa_id == faixa_original
+            alunos[1]["faixa_id"] = faixa_nova.id
+            assert cliente.post(caminho, json={"alunos": [alunos[0], alunos[0]]}).status_code == 422
+            assert cliente.post(caminho, json={"alunos": [alunos[0], {"aluno_id": 99999, "faixa_id": faixa_nova.id}]}).status_code == 409
+
+            db.execute(text(f"CREATE TRIGGER falha_graduacao BEFORE UPDATE ON alunos WHEN NEW.id = {bia.id} BEGIN SELECT RAISE(ABORT, 'falha'); END"))
+            db.commit()
+            with pytest.raises(IntegrityError):
+                cliente.post(caminho, json={"alunos": alunos})
+            db.refresh(ana)
+            db.refresh(bia)
+            assert (ana.faixa_id, bia.faixa_id) == (faixa_original, faixa_original)
+            db.execute(text("DROP TRIGGER falha_graduacao"))
+            db.commit()
+
+            resposta = cliente.post(caminho, json={"alunos": alunos})
+            assert resposta.status_code == 200
+            assert len(resposta.json()) == 2
+            db.refresh(ana)
+            db.refresh(bia)
+            assert (ana.faixa_id, bia.faixa_id) == (faixa_nova.id, faixa_nova.id)
+            assert ana.tamanho_faixa == "G" and ana.faixa_grossa is True
     finally:
         app.dependency_overrides.clear()
 

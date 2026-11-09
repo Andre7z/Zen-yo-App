@@ -40,12 +40,12 @@ def buscar(db: Session, atividade_id: int):
 
 def criar(db: Session, dados: dict):
     valores = dict(dados)
-    aluno_ids_pagos = valores.pop("aluno_ids_pagos", [])
+    aluno_ids_confirmados = valores.pop("aluno_ids_confirmados", [])
     atividade = Atividade(**valores)
 
     db.add(atividade)
     db.flush()
-    _salvar_pagamentos(db, atividade.id, aluno_ids_pagos)
+    _salvar_confirmacoes(db, atividade.id, aluno_ids_confirmados)
     db.commit()
     db.refresh(atividade)  # O id nasce no banco; sem isto ele pode não estar atualizado.
 
@@ -65,14 +65,14 @@ def buscar_por_nome(db: Session, dono_id: int, nome: str):
 
 def atualizar(db: Session, atividade: Atividade, mudancas: dict):
     valores = dict(mudancas)
-    aluno_ids_pagos = valores.pop("aluno_ids_pagos", None)
+    aluno_ids_confirmados = valores.pop("aluno_ids_confirmados", None)
     # Aplica somente os campos que foram enviados para alteração.
     for campo, valor in valores.items():
         setattr(atividade, campo, valor)
 
     db.flush()
-    if aluno_ids_pagos is not None:
-        _salvar_pagamentos(db, atividade.id, aluno_ids_pagos)
+    if aluno_ids_confirmados is not None:
+        _salvar_confirmacoes(db, atividade.id, aluno_ids_confirmados)
     db.commit()
     db.refresh(atividade)
 
@@ -83,12 +83,25 @@ def apagar(db: Session, atividade: Atividade):
     db.commit()
 
 
-def _salvar_pagamentos(db: Session, atividade_id: int, aluno_ids_pagos: list[int]):
+def _salvar_confirmacoes(db: Session, atividade_id: int, aluno_ids_confirmados: list[int]):
     vinculos = atividade_alunos.update().where(
         atividade_alunos.c.atividade_id == atividade_id
     )
-    db.execute(vinculos.values(pago=False))
-    if aluno_ids_pagos:
+    db.execute(vinculos.values(confirmado=False))
+    if aluno_ids_confirmados:
         db.execute(
-            vinculos.where(atividade_alunos.c.aluno_id.in_(aluno_ids_pagos)).values(pago=True)
+            vinculos.where(atividade_alunos.c.aluno_id.in_(aluno_ids_confirmados)).values(confirmado=True)
         )
+
+
+def graduar_em_lote(db: Session, atualizacoes):
+    try:
+        for aluno, dados in atualizacoes:
+            for campo, valor in dados.items():
+                setattr(aluno, campo, valor)
+        db.flush()
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return [aluno for aluno, _ in atualizacoes]

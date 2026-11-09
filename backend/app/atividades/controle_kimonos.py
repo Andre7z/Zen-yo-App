@@ -9,6 +9,7 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
 from ..ordenacao import ordenar_alunos_por_nome
+from ..planilhas_xlsx import textos_em_maiusculas
 from ._estilo_xlsx import AMARELO, AZUL, BORDA, CENTRO, ESQUERDA, NEGRITO, NORMAL
 
 TITULO = "CONTROLE DE ENTREGA DE JUDOGIS"
@@ -81,7 +82,7 @@ def gerar_xlsx(alunos, tamanhos=None, confirmados=()):
 
     planilha = Workbook()
     folha = planilha.active
-    folha.title = "Controle de judogis"
+    folha.title = "CONTROLE DE JUDOGIS"
 
     colunas_totais = 5 + len(TAMANHOS) + 1
     ultima_coluna = get_column_letter(colunas_totais)
@@ -146,6 +147,7 @@ def gerar_xlsx(alunos, tamanhos=None, confirmados=()):
     for coluna in range(1, colunas_totais + 1):
         folha.column_dimensions[get_column_letter(coluna)].width = larguras.get(coluna, 9)
 
+    textos_em_maiusculas(planilha)
     saida = BytesIO()
     planilha.save(saida)
     return saida.getvalue()

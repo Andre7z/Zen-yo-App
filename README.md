@@ -13,6 +13,7 @@ Alunos e responsáveis — cadastro e consulta de informações e contatos.
 Turmas — organização dos alunos, com possibilidade de participar de mais de uma turma.
 Faixas e tamanhos — gerenciamento das graduações e dos tamanhos de judogi e faixa.
 Atividades — organização de treinos, campeonatos, entregas de judogi e graduações, incluindo participantes e confirmação.
+Graduação — atualização em lote dos alunos selecionados, com transação para impedir alterações parciais.
 Planilhas — consulta e exportação dos controles de frequência, campeonatos, judogis e graduações.
 Anexos — armazenamento e consulta de documentos.
 
