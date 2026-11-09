@@ -135,7 +135,7 @@
 .frequencia-aluno { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
 .frequencia-aluno-nome { min-width: 0; overflow-wrap: anywhere; }
 .frequencia-aluno-marcacao { display: flex; flex: 0 0 auto; align-items: center; gap: 5px; }
-.frequencia-aluno-marcacao input { margin: 0; }
+.activity-confirmation input[type="checkbox"] { margin: 0; }
 .frequencia-selecao input { margin-right: 5px; }
 .frequencia-data::-webkit-calendar-picker-indicator { width: 20px; height: 20px; cursor: pointer; background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23354139' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01'/%3E%3C/svg%3E"); }
 .historico-frequencia { margin-top: 24px; }
@@ -173,13 +173,13 @@
 .module-checks { display: flex; max-height: 190px; flex-wrap: wrap; gap: 8px 18px; overflow: auto; margin: 17px 0 0; padding: 12px; border: 1px solid #e2e5e0; border-radius: 3px; }
 .module-checks legend { padding: 0 5px; color: #354139; font-size: 11px; font-weight: 650; }
 .module-checks label { display: flex; min-width: min(100%, 190px); align-items: center; gap: 7px; color: #505b53; font-size: 11px; }
-.module-checks input { accent-color: #344c3d; }
+.module-checks input, .frequencia-aluno-marcacao input { accent-color: #344c3d; }
 .activity-participant-list { display: grid; width: 100%; gap: 3px; }
 .activity-participant-row { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 2px; border-bottom: 1px solid #edf0ec; }
-.activity-participant-row .activity-participant-name, .activity-participant-row .activity-payment { display: flex; min-width: 0; min-height: 38px; align-items: center; gap: 8px; margin: 0; }
+.activity-participant-row .activity-participant-name, .activity-participant-row .activity-confirmation, .frequencia-aluno-marcacao.activity-confirmation { display: flex; min-width: 0; min-height: 38px; align-items: center; gap: 8px; margin: 0; }
 .activity-participant-name { flex: 1; }
 .activity-participant-name span { overflow-wrap: anywhere; }
-.activity-participant-row .activity-payment { min-width: 68px; justify-content: flex-end; color: #344c3d; font-weight: 650; }
+.activity-participant-row .activity-confirmation, .frequencia-aluno-marcacao.activity-confirmation { min-width: 68px; justify-content: flex-end; color: #344c3d; font-size: 11px; font-weight: 650; }
 .activity-not-added { color: #888; font-size: 10px; white-space: nowrap; }
 .module-list { border-top: 1px solid #dfe3dc; }
 .module-record { display: flex; min-width: 0; align-items: center; gap: 14px; padding: 15px 4px; border-bottom: 1px solid #e2e5e0; }
@@ -211,7 +211,7 @@
   .activity-participant-row { flex-wrap: wrap; align-items: flex-start; }
   .activity-participant-fields { flex-direction: column; align-items: stretch; }
   .activity-participant-fields button { width: 100%; min-height: 40px; }
-  .activity-participant-row input[type="checkbox"] { width: 22px; height: 22px; }
+  .activity-participant-row input[type="checkbox"], .frequencia-aluno-marcacao input[type="checkbox"] { width: 22px; height: 22px; }
   .module-details { grid-template-columns: 1fr; }
 }
 .module-details { display: grid; margin: 0; gap: 8px; }
@@ -361,7 +361,7 @@
   .module-checks { gap: 6px; }
   .module-checks label { min-height: 36px; }
   .activity-participant-row { gap: 6px; }
-  .activity-participant-row .activity-participant-name, .activity-participant-row .activity-payment { min-height: 44px; }
+  .activity-participant-row .activity-participant-name, .activity-participant-row .activity-confirmation, .frequencia-aluno-marcacao.activity-confirmation { min-height: 44px; }
 }
 
 @media (max-width: 390px) {

@@ -50,7 +50,7 @@ def _nomes_da_planilha(conteudo):
 
 def test_dados_e_planilhas_ordenam_alunos_por_nome():
     alunos = _alunos()
-    atividade = SimpleNamespace(data=date(2026, 11, 2), aluno_ids_pagos=[], nova_faixa=None)
+    atividade = SimpleNamespace(data=date(2026, 11, 2), aluno_ids_confirmados=[], nova_faixa=None)
 
     planilhas = [
         (controle_frequencia.gerar_planilha(atividade, alunos), controle_frequencia.gerar_xlsx(atividade, alunos)),
@@ -61,4 +61,11 @@ def test_dados_e_planilhas_ordenam_alunos_por_nome():
 
     for dados, planilha in planilhas:
         assert [linha["nome"] for linha in dados["linhas"]] == ["Álvaro", "Zeca"]
-        assert _nomes_da_planilha(planilha) == ["Álvaro", "Zeca"]
+        assert _nomes_da_planilha(planilha) == ["ÁLVARO", "ZECA"]
+        arquivo = load_workbook(BytesIO(planilha))
+        for folha in arquivo.worksheets:
+            assert folha.title == folha.title.upper()
+            for linha in folha.iter_rows():
+                for celula in linha:
+                    if celula.data_type == "s" and isinstance(celula.value, str):
+                        assert celula.value == celula.value.upper()

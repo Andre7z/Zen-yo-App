@@ -69,7 +69,7 @@ def test_factory_gera_planilha_para_varios_alunos():
 def test_planilha_de_frequencia_retorna_presenca_individual():
     atividade = SimpleNamespace(
         data=date(2026, 10, 19),
-        aluno_ids_pagos=[7],
+        aluno_ids_confirmados=[7],
         alunos=[
             SimpleNamespace(id=7, nome="Ana"),
             SimpleNamespace(id=8, nome="Beto"),

@@ -36,5 +36,5 @@ atividade_alunos = Table(
         ForeignKey("alunos.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column("pago", Boolean, nullable=False, default=False, server_default=false()),
+    Column("pago", Boolean, key="confirmado", nullable=False, default=False, server_default=false()),
 )

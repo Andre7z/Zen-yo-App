@@ -79,6 +79,7 @@ export function AnexosPage() {
 
   async function baixar(anexo: Anexo) {
     if (!anexo.arquivo_url) return
+    if (!window.confirm(`Deseja baixar o arquivo ${anexo.titulo}?`)) return
     setErroArquivo('')
     try {
       const url = URL.createObjectURL(await baixarArquivo(anexo.arquivo_url))

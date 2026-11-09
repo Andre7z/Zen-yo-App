@@ -34,7 +34,12 @@ Testes: `poetry run pytest`
 
 A chamada usa a lista atual de alunos ao ser registrada pela primeira vez, com todos marcados como presentes; desmarque quem faltou e salve. Chamadas já salvas mantêm os participantes e as marcações mesmo após mudanças de turma. A planilha usa `V` para presença, `X` para ausência e `-` quando o aluno não estava na chamada. Ao excluir um aluno ou uma turma, os registros de frequência correspondentes também são excluídos. As rotas de atividades usam `/planilha` no lugar de `/relatorio`.
 Nos detalhes da turma, o histórico lista as datas com chamada registrada, da mais recente para a mais antiga, e permite editar cada registro. Na planilha mensal, os cabeçalhos das chamadas mostram somente o dia.
-Os arquivos de planilhas incluem o primeiro e o último nome do sensei; na planilha mensal de turmas, esse nome também aparece no cabeçalho.
+Os arquivos e os cabeçalhos das planilhas de atividades e da frequência de turmas incluem o primeiro e o último nome do sensei.
+Os textos das planilhas XLSX, incluindo nomes e títulos das abas, são exibidos em maiúsculas sem modificar os cadastros.
+
+As atividades retornam `aluno_ids_confirmados` para as confirmações ou presenças. Para compatibilidade, o nome anterior `aluno_ids_pagos` ainda é aceito nas requisições, mas não é retornado; clientes devem usar o novo nome. A coluna existente no banco é preservada.
+
+`POST /atividades/{id}/graduacoes` recebe `{"alunos": [{"aluno_id": 1, "faixa_id": 2, "tamanho_faixa": "G", "faixa_grossa": false}]}`. A atividade deve ser de troca de faixa, os alunos devem ser participantes e as faixas devem pertencer ao usuário. Todas as alterações são confirmadas juntas ou revertidas.
 
 ## Docker
 O Dockerfile na raiz gera uma imagem somente para a API. Execute os comandos a partir da raiz do repositório:

@@ -11,6 +11,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 from ..ordenacao import ordenar_alunos_por_nome
+from ..planilhas_xlsx import textos_em_maiusculas
 
 TITULO = "CONTROLE DE FAIXAS"
 FAIXAS = [
@@ -43,7 +44,7 @@ def normalizar_tamanho(texto):
 
 
 def montar_linhas(atividade, alunos):
-    confirmados = set(getattr(atividade, "aluno_ids_pagos", []) or [])
+    confirmados = set(getattr(atividade, "aluno_ids_confirmados", []) or [])
     linhas = []
     for aluno in ordenar_alunos_por_nome(alunos):
         faixa = aluno.proxima_faixa or atividade.nova_faixa or aluno.faixa_obj.nome
@@ -95,7 +96,7 @@ def gerar_xlsx(atividade, alunos, tamanhos=None):
 
     planilha = Workbook()
     folha = planilha.active
-    folha.title = "Controle de faixas"
+    folha.title = "CONTROLE DE FAIXAS"
 
     fino = Side(style="thin", color="000000")
     borda = Border(left=fino, right=fino, top=fino, bottom=fino)
@@ -170,6 +171,7 @@ def gerar_xlsx(atividade, alunos, tamanhos=None):
     for coluna in range(1, colunas_totais + 1):
         folha.column_dimensions[get_column_letter(coluna)].width = larguras.get(coluna, 9)
 
+    textos_em_maiusculas(planilha)
     saida = BytesIO()
     planilha.save(saida)
     return saida.getvalue()

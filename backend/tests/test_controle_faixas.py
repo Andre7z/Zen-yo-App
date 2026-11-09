@@ -24,7 +24,7 @@ def _atividade():
         _aluno("Caio", "Azul - 8º Kyu", "N2", id=3),
         _aluno("Duda", None, "GG", id=4),
     ]
-    return SimpleNamespace(nova_faixa="Verde", alunos=alunos, aluno_ids_pagos=[1]), alunos
+    return SimpleNamespace(nova_faixa="Verde", alunos=alunos, aluno_ids_confirmados=[1]), alunos
 
 
 def test_quantidades_por_faixa_e_tamanho_com_totais():
@@ -54,10 +54,10 @@ def test_xlsx_preserva_layout_da_tabela_original():
     assert "A1:N1" in [str(m) for m in folha.merged_cells.ranges]
     assert [c.value for c in folha[2]] == [
         "NOME", "FAIXA", "TAMANHO", "GROSSA", "CONFIRMADO", "QUANTIDADES",
-        "PP", "P", "N2", "M", "G", "N4", "GG", "Total",
+        "PP", "P", "N2", "M", "G", "N4", "GG", "TOTAL",
     ]
     assert [folha.cell(row=r, column=6).value for r in range(3, 15)] == [*controle_faixas.FAIXAS, "TOTAL:"]
-    assert folha["A3"].value == "Ana"
+    assert folha["A3"].value == "ANA"
     assert folha["D4"].value == "SIM"
     assert folha["E3"].value == "SIM"
     assert folha["E4"].value == "NÃO"

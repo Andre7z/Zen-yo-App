@@ -29,7 +29,7 @@ const atividade = {
   local: 'Tatame 1',
   descricao: null,
   aluno_ids: [7],
-  aluno_ids_pagos: [],
+  aluno_ids_confirmados: [],
   nova_faixa: null,
   presenca: true,
 }
@@ -51,6 +51,9 @@ const requisicao = vi.fn<typeof fetch>()
 function configurarApi() {
   requisicao.mockImplementation(async (input, init) => {
     const caminho = new URL(String(input)).pathname
+    if (caminho === '/atividades/10/graduacoes' && init?.method === 'POST') {
+      return Response.json([{ ...aluno, faixa_id: 3, proxima_faixa: null, tamanho_faixa: 'G' }])
+    }
     const metodo = init?.method ?? 'GET'
     if (caminho === '/usuarios/eu' && metodo === 'GET') return Response.json(usuario)
     if (/^\/turmas\/\d+\/alunos$/.test(caminho) && metodo === 'POST') return new Response(null, { status: 204 })
@@ -179,6 +182,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
     await within(dialogo).findByText('Caio Silva')
     const presencas = within(dialogo).getAllByRole('checkbox', { name: /Presente/ }) as HTMLInputElement[]
     expect(presencas.map((checkbox) => checkbox.checked)).toEqual([true, true])
+    expect(presencas[0].parentElement?.classList.contains('activity-confirmation')).toBe(true)
     fireEvent.click(presencas[0])
     expect(presencas[0].checked).toBe(false)
     expect(within(dialogo).getByRole('checkbox', { name: 'Caio Silva Faltou' })).toBeTruthy()
@@ -403,7 +407,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
 
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/9'), expect.objectContaining({ method: 'PATCH' })))
     const atualizacao = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/atividades/9') && init?.method === 'PATCH')
-    expect(JSON.parse(String(atualizacao?.[1]?.body))).toMatchObject({ aluno_ids: [7, 8], aluno_ids_pagos: [] })
+    expect(JSON.parse(String(atualizacao?.[1]?.body))).toMatchObject({ aluno_ids: [7, 8], aluno_ids_confirmados: [] })
   })
 
   it('ordena alfabeticamente os alunos ao abrir o seletor de participantes', async () => {
@@ -437,7 +441,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações dos alunos' }))
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/9'), expect.objectContaining({ method: 'PATCH' })))
     const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/atividades/9') && init?.method === 'PATCH')
-    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ aluno_ids: [7], aluno_ids_pagos: [7] })
+    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ aluno_ids: [7], aluno_ids_confirmados: [7] })
     expect(JSON.parse(String(envio?.[1]?.body))).not.toHaveProperty('presenca')
   })
 
@@ -494,9 +498,9 @@ describe('telas conectadas aos recursos FastAPI', () => {
       const caminho = new URL(String(input)).pathname
       if (caminho === '/atividades/10' && init?.method === 'PATCH') {
         marcado = true
-        return Response.json({ ...atividadeFaixa, aluno_ids_pagos: [7] })
+        return Response.json({ ...atividadeFaixa, aluno_ids_confirmados: [7] })
       }
-      if (caminho === '/atividades/' && !init?.method) return Response.json([atividade, { ...atividadeFaixa, aluno_ids_pagos: marcado ? [7] : [] }])
+      if (caminho === '/atividades/' && !init?.method) return Response.json([atividade, { ...atividadeFaixa, aluno_ids_confirmados: marcado ? [7] : [] }])
       return padrao(input, init)
     })
     expect((screen.getByRole('button', { name: /Graduar selecionados/ }) as HTMLButtonElement).disabled).toBe(true)
@@ -511,9 +515,9 @@ describe('telas conectadas aos recursos FastAPI', () => {
     fireEvent.click(botao)
     expect(confirmar).toHaveBeenCalledTimes(2)
 
-    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/aluno/7'), expect.objectContaining({ method: 'PATCH' })))
-    const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/aluno/7') && init?.method === 'PATCH')
-    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ faixa_id: 3, proxima_faixa: null, tamanho_faixa: 'G' })
+    await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/10/graduacoes'), expect.objectContaining({ method: 'POST' })))
+    const envio = requisicao.mock.calls.find(([url, init]) => String(url).endsWith('/atividades/10/graduacoes') && init?.method === 'POST')
+    expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ alunos: [{ aluno_id: 7, faixa_id: 3, tamanho_faixa: 'G' }] })
   })
 
   it('lista todos os alunos em /alunos sem depender de turma', async () => {
@@ -798,6 +802,7 @@ describe('telas conectadas aos recursos FastAPI', () => {
   })
 
   it('exporta a planilha de uma atividade em xlsx sem pré-visualização', async () => {
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
     const padrao = requisicao.getMockImplementation()!
     requisicao.mockImplementation(async (input, init) => {
       if (new URL(String(input)).pathname === '/usuarios/eu') return Response.json({ ...usuario, nome: 'Luiz Rocha Moraes' })
@@ -815,12 +820,64 @@ describe('telas conectadas aos recursos FastAPI', () => {
     abrir(ROTAS.atividades)
     expect(await screen.findByText('Treino infantil')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Planilha de Treino infantil' }))
+    expect(confirmar).toHaveBeenLastCalledWith('Deseja gerar a planilha de Treino infantil?')
+    expect(requisicao.mock.calls.some(([url]) => String(url).includes('/planilha/controle-de-frequencia.xlsx'))).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Planilha de Treino infantil' }))
 
     await waitFor(() => expect(requisicao).toHaveBeenCalledWith(expect.stringContaining('/atividades/9/planilha/controle-de-frequencia.xlsx'), expect.anything()))
     expect(criarObjectURL).toHaveBeenCalled()
     expect(nomeArquivo).toBe('TREINO INFANTIL - SENSEI LUIZ MORAES.xlsx')
     expect(screen.queryByRole('region', { name: 'Planilha da atividade' })).toBeNull()
+    confirmar.mockRestore()
     clique.mockRestore()
+  })
+
+  it('pede confirmação antes de baixar qualquer anexo pelo ícone', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/anexos/') {
+        return Response.json([{ ...anexo, arquivo_url: '/anexos/arquivos/3' }])
+      }
+      if (new URL(String(input)).pathname === '/anexos/arquivos/3') return new Response(new Blob(['arquivo']))
+      return padrao(input, init)
+    })
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
+    URL.createObjectURL = vi.fn(() => 'blob:anexo')
+    URL.revokeObjectURL = vi.fn()
+    const clique = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    abrir(ROTAS.anexos)
+    const botao = await screen.findByRole('button', { name: 'Baixar Calendário anual' })
+    fireEvent.click(botao)
+    expect(confirmar).toHaveBeenCalledWith('Deseja baixar o arquivo Calendário anual?')
+    expect(requisicao.mock.calls.some(([url]) => String(url).includes('/anexos/arquivos/3'))).toBe(false)
+    fireEvent.click(botao)
+    await waitFor(() => expect(requisicao.mock.calls.some(([url]) => String(url).endsWith('/anexos/arquivos/3'))).toBe(true))
+    await waitFor(() => expect(clique).toHaveBeenCalledOnce())
+    confirmar.mockRestore()
+    clique.mockRestore()
+  })
+
+  it('pede confirmação ao baixar pela prévia e pelos detalhes do anexo', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    requisicao.mockImplementation(async (input, init) => {
+      const url = new URL(String(input))
+      if (url.pathname === '/anexos/') return Response.json([{ ...anexo, arquivo_url: '/anexos/arquivos/3' }])
+      if (url.pathname === '/anexos/arquivos/3' && url.searchParams.has('inline')) return new Response(new Blob(['arquivo'], { type: 'application/pdf' }))
+      return padrao(input, init)
+    })
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    URL.createObjectURL = vi.fn(() => 'blob:previa')
+    URL.revokeObjectURL = vi.fn()
+    abrir(ROTAS.anexos)
+    fireEvent.click(await screen.findByRole('button', { name: 'Visualizar Calendário anual' }))
+    const previa = await screen.findByRole('dialog', { name: 'Calendário anual' })
+    fireEvent.click(within(previa).getByRole('button', { name: 'Baixar arquivo' }))
+    fireEvent.click(within(previa).getByRole('button', { name: 'Detalhes' }))
+    const detalhes = await screen.findByRole('dialog', { name: 'Calendário anual' })
+    fireEvent.click(within(detalhes).getByRole('button', { name: 'Baixar arquivo' }))
+    expect(confirmar).toHaveBeenCalledTimes(2)
+    expect(requisicao.mock.calls.some(([url]) => String(url).endsWith('/anexos/arquivos/3'))).toBe(false)
+    confirmar.mockRestore()
   })
 
   it('envia arquivo e metadados de anexo em multipart', async () => {

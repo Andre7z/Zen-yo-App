@@ -44,7 +44,7 @@ export type Atividade = Identificado & {
   local: string | null
   descricao: string | null
   aluno_ids: number[]
-  aluno_ids_pagos: number[]
+  aluno_ids_confirmados: number[]
   nova_faixa: string | null
 }
 export type Anexo = Identificado & {
@@ -75,7 +75,15 @@ function recurso<T extends Identificado>(rota: string) {
 }
 
 export const alunosApi = recurso<Aluno>('/aluno/')
-export const atividadesApi = recurso<Atividade>('/atividades/')
+export const atividadesApi = {
+  ...recurso<Atividade>('/atividades/'),
+  graduar: (id: number, alunos: { aluno_id: number; faixa_id: number; tamanho_faixa: string | null; faixa_grossa: boolean }[]) =>
+    apiRequest<Aluno[]>(`/atividades/${id}/graduacoes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alunos }),
+    }),
+}
 export const anexosApi = {
   ...recurso<Anexo>('/anexos/'),
   enviarArquivo: (dados: object, arquivo: File) => {

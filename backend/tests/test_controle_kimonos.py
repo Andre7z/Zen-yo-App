@@ -53,9 +53,9 @@ def test_xlsx_preserva_layout_da_tabela():
 
     assert folha["A1"].value == "CONTROLE DE ENTREGA DE JUDOGIS"
     assert [c.value for c in folha[2]] == [
-        "NOME", "TURMA", "TAMANHO", "CONFIRMADO", "QUANTIDADES", "PP", "P", "N2", "M", "G", "N4", "GG", "Total",
+        "NOME", "TURMA", "TAMANHO", "CONFIRMADO", "QUANTIDADES", "PP", "P", "N2", "M", "G", "N4", "GG", "TOTAL",
     ]
-    assert folha["A3"].value == "Ana"
+    assert folha["A3"].value == "ANA"
     assert folha["D3"].value == "SIM"
     assert folha["D4"].value == "NÃO"
     assert folha["F3"].value.startswith("=COUNTIFS(")

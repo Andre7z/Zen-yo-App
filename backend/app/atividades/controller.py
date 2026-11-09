@@ -8,6 +8,7 @@ from ..database import get_db
 from ..nomes import primeiro_e_ultimo_nome
 from ..seguranca import get_current_user
 from ..usuarios.models import Usuario
+from ..alunos.schemas import AlunoPublico
 
 from . import service
 from .dependencias import obter_facade
@@ -16,6 +17,7 @@ from .schemas import (
     AtividadeEntrada,
     AtividadeAtualizar,
     AtividadePublico,
+    GraduacaoEmLote,
 )
 
 
@@ -96,6 +98,16 @@ def atualizar(
         atividade_id,
         dados.model_dump(exclude_unset=True),
     )
+
+
+@router.post("/{atividade_id}/graduacoes", response_model=list[AlunoPublico])
+def graduar_em_lote(
+    atividade_id: int,
+    dados: GraduacaoEmLote,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return service.graduar_em_lote(db, usuario, atividade_id, dados.alunos)
 
 
 @router.delete("/{atividade_id}", status_code=204)

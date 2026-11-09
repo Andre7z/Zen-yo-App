@@ -13,7 +13,7 @@ def _aluno(id, nome):
 
 def _atividade():
     alunos = [_aluno(1, "Ana"), _aluno(2, "Beto"), _aluno(3, "Caio")]
-    atividade = SimpleNamespace(data=date(2026, 10, 13), aluno_ids_pagos=[1, 3])
+    atividade = SimpleNamespace(data=date(2026, 10, 13), aluno_ids_confirmados=[1, 3])
     return atividade, alunos
 
 
@@ -32,8 +32,8 @@ def test_xlsx_preserva_layout_da_tabela():
     folha = planilha.active
 
     assert folha["A1"].value == "CONTROLE DE FREQUENCIA"
-    assert [c.value for c in folha[2]] == ["NOME", "PRESENÇA", "DATA", "QUANTIDADES", "Total"]
-    assert folha["A3"].value == "Ana"
+    assert [c.value for c in folha[2]] == ["NOME", "PRESENÇA", "DATA", "QUANTIDADES", "TOTAL"]
+    assert folha["A3"].value == "ANA"
     assert folha["B3"].value == "PRESENTE"
     assert folha["B4"].value == "AUSENTE"
     assert folha["C3"].value == "2026-10-13"

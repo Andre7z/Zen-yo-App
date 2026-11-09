@@ -9,6 +9,7 @@ from openpyxl.utils import get_column_letter
 from ..atividades._estilo_xlsx import BORDA, CENTRO, ESQUERDA, NEGRITO
 from ..ordenacao import ordenar_alunos_por_nome
 from ..nomes import primeiro_e_ultimo_nome
+from ..planilhas_xlsx import textos_em_maiusculas
 
 MESES = ("JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO",
          "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO")
@@ -22,7 +23,7 @@ def texto_seguro(valor):
 def gerar_xlsx(sensei, ano, mes, blocos):
     arquivo = Workbook()
     folha = arquivo.active
-    folha.title = "Frequência"
+    folha.title = "FREQUÊNCIA"
     maior = max([2 + len(chamadas) for _, chamadas in blocos] + [3])
     folha.merge_cells(start_row=1, start_column=1, end_row=1, end_column=maior)
     titulo_geral = texto_seguro(f"FREQUÊNCIA DE {MESES[mes - 1]} {ano} - SENSEI {primeiro_e_ultimo_nome(sensei).upper()}")
@@ -64,6 +65,7 @@ def gerar_xlsx(sensei, ano, mes, blocos):
                 if coluna > 2 and valor in ("V", "X"):
                     celula.font = Font(name="Calibri", bold=True, color="008000" if valor == "V" else "FF0000")
         linha += 3
+    textos_em_maiusculas(arquivo)
     saida = BytesIO()
     arquivo.save(saida)
     return saida.getvalue()

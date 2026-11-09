@@ -86,13 +86,13 @@ export function AtividadesPage() {
     setRascunhos((atuais) => ({ ...atuais, [aluno.id]: { ...rascunhoDe(aluno), ...parcial } }))
   }
 
-  function pagosDe(item: Atividade) {
-    return marcacoes[item.id] ?? item.aluno_ids_pagos
+  function confirmadosDe(item: Atividade) {
+    return marcacoes[item.id] ?? item.aluno_ids_confirmados
   }
 
   function marcacaoAlterada(item: Atividade) {
     const staged = marcacoes[item.id]
-    return !!staged && (staged.length !== item.aluno_ids_pagos.length || staged.some((id) => !item.aluno_ids_pagos.includes(id)))
+    return !!staged && (staged.length !== item.aluno_ids_confirmados.length || staged.some((id) => !item.aluno_ids_confirmados.includes(id)))
   }
 
   function limparMarcacao(itemId: number) {
@@ -127,7 +127,7 @@ export function AtividadesPage() {
     }
     setErroGraduacao('')
     if (marcacaoAlterada(item)) {
-      const sucesso = await recurso.executar(() => atividadesApi.atualizar(item.id, { aluno_ids: item.aluno_ids, aluno_ids_pagos: pagosDe(item) }))
+      const sucesso = await recurso.executar(() => atividadesApi.atualizar(item.id, { aluno_ids: item.aluno_ids, aluno_ids_confirmados: confirmadosDe(item) }))
       if (!sucesso) return
       limparMarcacao(item.id)
     }
@@ -149,14 +149,14 @@ export function AtividadesPage() {
   }
 
   function alternarMarcacao(item: Atividade, alunoId: number, marcado: boolean) {
-    const atuais = pagosDe(item).filter((id) => id !== alunoId)
+    const atuais = confirmadosDe(item).filter((id) => id !== alunoId)
     setMarcacoes((anteriores) => ({ ...anteriores, [item.id]: marcado ? [...atuais, alunoId] : atuais }))
   }
 
   async function salvarParticipantes(item: Atividade) {
     const sucesso = await recurso.executar(() => atividadesApi.atualizar(item.id, {
       aluno_ids: idsParticipantes,
-      aluno_ids_pagos: pagosDe(item).filter((id) => idsParticipantes.includes(id)),
+      aluno_ids_confirmados: confirmadosDe(item).filter((id) => idsParticipantes.includes(id)),
     }))
     if (sucesso) {
       limparMarcacao(item.id)
@@ -165,7 +165,7 @@ export function AtividadesPage() {
   }
 
   async function graduarSelecionados(item: Atividade, participantes: Aluno[]) {
-    const selecionados = participantes.filter((aluno) => pagosDe(item).includes(aluno.id))
+    const selecionados = participantes.filter((aluno) => confirmadosDe(item).includes(aluno.id))
     if (!selecionados.length) {
       setErroGraduacao('Selecione ao menos um aluno para graduar.')
       return
@@ -179,14 +179,19 @@ export function AtividadesPage() {
     setErroGraduacao('')
     setGraduando(-1)
     try {
-      for (const aluno of selecionados) {
+      const graduacoes = selecionados.map((aluno) => {
         const rascunho = rascunhoDe(aluno)
         const faixa = faixas.find((f) => rotuloFaixa(f) === rascunho.proxima_faixa)
-        if (!faixa) continue
-        const atualizado = await alunosApi.atualizar(aluno.id, { faixa_id: faixa.id, proxima_faixa: null, tamanho_faixa: rascunho.tamanho_faixa || null, faixa_grossa: rascunho.faixa_grossa })
-        setAlunos((atuais) => atuais.map((outro) => outro.id === atualizado.id ? { ...outro, ...atualizado } : outro))
-        setRascunhos((atuais) => { const { [aluno.id]: _descartado, ...restantes } = atuais; return restantes })
-      }
+        if (!faixa) throw new Error(`Faixa de ${aluno.nome} não encontrada.`)
+        return { aluno_id: aluno.id, faixa_id: faixa.id, tamanho_faixa: rascunho.tamanho_faixa || null, faixa_grossa: rascunho.faixa_grossa }
+      })
+      const atualizados = await atividadesApi.graduar(item.id, graduacoes)
+      setAlunos((atuais) => atuais.map((aluno) => atualizados.find((atualizado) => atualizado.id === aluno.id) ?? aluno))
+      setRascunhos((atuais) => {
+        const restantes = { ...atuais }
+        atualizados.forEach((aluno) => { delete restantes[aluno.id] })
+        return restantes
+      })
       notificacao.sucesso(selecionados.length === 1 ? 'Aluno graduado com sucesso.' : 'Alunos graduados com sucesso.')
     } catch (falha) {
       const mensagem = falha instanceof Error ? falha.message : 'Não foi possível graduar os alunos.'
@@ -232,6 +237,7 @@ export function AtividadesPage() {
   }
 
   async function exportarPlanilha(item: Atividade) {
+    if (!window.confirm(`Deseja gerar a planilha de ${item.nome}?`)) return
     setErroPlanilha('')
     const caminho = caminhoPlanilhaXlsx(item.tipo, item.id)
     if (!caminho) { setErroPlanilha('Não existe planilha para este tipo de atividade.'); return }
@@ -339,7 +345,7 @@ export function AtividadesPage() {
                   const rascunho = rascunhoDe(aluno)
                   return <div className="activity-participant-row" key={aluno.id}>
                     <span className="activity-participant-name"><span>{aluno.nome} · {faixas.find((faixa) => faixa.id === aluno.faixa_id)?.nome ?? 'Faixa não informada'}</span></span>
-                    <label className="activity-payment"><input aria-label={item.tipo === 'frequencia' ? `Presença de ${aluno.nome}` : `Confirmação de ${aluno.nome}`} title={item.tipo === 'frequencia' ? 'Presença do aluno' : 'Confirmação do aluno'} type="checkbox" checked={pagosDe(item).includes(aluno.id)} onChange={(event) => alternarMarcacao(item, aluno.id, event.target.checked)} />                    {item.tipo === 'frequencia' ? 'Presente' : 'Confirmado'}</label>
+                    <label className="activity-confirmation"><input aria-label={item.tipo === 'frequencia' ? `Presença de ${aluno.nome}` : `Confirmação de ${aluno.nome}`} title={item.tipo === 'frequencia' ? 'Presença do aluno' : 'Confirmação do aluno'} type="checkbox" checked={confirmadosDe(item).includes(aluno.id)} onChange={(event) => alternarMarcacao(item, aluno.id, event.target.checked)} />                    {item.tipo === 'frequencia' ? 'Presente' : 'Confirmado'}</label>
                     {item.tipo === 'entrega_de_kimono' && <div className="activity-participant-fields">
                                           <CampoModulo rotulo="Tamanho do judogi"><select aria-label={`Tamanho do judogi de ${aluno.nome}`} value={rascunho.tamanho_kimono} onChange={(event) => alterarRascunho(aluno, { tamanho_kimono: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.kimono, rascunho.tamanho_kimono).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
                     </div>}
@@ -352,14 +358,14 @@ export function AtividadesPage() {
                                         {item.tipo === 'troca_de_faixa' && <div className="activity-participant-fields">
                                           <CampoModulo rotulo="Próxima faixa"><select aria-label={`Próxima faixa de ${aluno.nome}`} value={rascunho.proxima_faixa} onChange={(event) => alterarRascunho(aluno, { proxima_faixa: event.target.value })}><option value="">Não definida</option>{faixas.map((faixa) => <option key={faixa.id} value={rotuloFaixa(faixa)}>{rotuloFaixa(faixa)}</option>)}</select></CampoModulo>
                                           <CampoModulo rotulo="Tamanho da faixa"><select aria-label={`Tamanho da faixa de ${aluno.nome}`} value={rascunho.tamanho_faixa} onChange={(event) => alterarRascunho(aluno, { tamanho_faixa: event.target.value })}><option value="">Não definido</option>{opcoesDeTamanho(tamanhos.faixa, rascunho.tamanho_faixa).map((tamanho) => <option key={tamanho} value={tamanho}>{tamanho}</option>)}</select></CampoModulo>
-                                          <label className="activity-payment"><input aria-label={`Faixa grossa de ${aluno.nome}`} type="checkbox" checked={rascunho.faixa_grossa} onChange={(event) => alterarRascunho(aluno, { faixa_grossa: event.target.checked })} />                                          Grossa</label>                                        </div>}
+                                          <label className="activity-confirmation"><input aria-label={`Faixa grossa de ${aluno.nome}`} type="checkbox" checked={rascunho.faixa_grossa} onChange={(event) => alterarRascunho(aluno, { faixa_grossa: event.target.checked })} />                                          Grossa</label>                                        </div>}
                                       </div>
                                     })}
                                     {!participantes.length && <small>Nenhum aluno associado à atividade.</small>}
                                   </div>
                                   {(participantes.length > 0 || item.tipo === 'troca_de_faixa') && <div className="activity-participant-actions">
                                                                       {participantes.length > 0 && <button className="module-primary" type="button" disabled={graduando !== null || recurso.salvando || !(marcacaoAlterada(item) || (item.tipo !== 'frequencia' && participantes.some((aluno) => rascunhos[aluno.id])))} onClick={() => void salvarAlteracoes(item, participantes)}>Salvar alterações dos alunos</button>}
-                                    {item.tipo === 'troca_de_faixa' && <button className="module-primary" type="button" disabled={graduando !== null || !pagosDe(item).some((id) => item.aluno_ids.includes(id))} onClick={() => void graduarSelecionados(item, participantes)}><Award size={15} />Graduar selecionados ({participantes.filter((aluno) => pagosDe(item).includes(aluno.id)).length})</button>}
+                                    {item.tipo === 'troca_de_faixa' && <button className="module-primary" type="button" disabled={graduando !== null || !confirmadosDe(item).some((id) => item.aluno_ids.includes(id))} onClick={() => void graduarSelecionados(item, participantes)}><Award size={15} />Graduar selecionados ({participantes.filter((aluno) => confirmadosDe(item).includes(aluno.id)).length})</button>}
                                   </div>}
               {erroGraduacao && <small role="alert">{erroGraduacao}</small>}
             </fieldset>
@@ -370,7 +376,7 @@ export function AtividadesPage() {
 
       <div className="module-list" aria-label="Lista de atividades">
         {atividadesFiltradas.map((item) => (
-          <article className="module-record" key={item.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${item.nome}`} onClick={() => { setFormAberto(false); setEditando(null); setErroGraduacao(''); setVisualizando(item.id) }}><strong>{item.nome}</strong><span>{formatarDataParaEntrada(item.data)} · {rotuloTipoAtividade(item.tipo)} · {item.aluno_ids.length} alunos · {item.aluno_ids_pagos?.length ?? 0} {item.tipo === 'frequencia' ? 'presentes' : 'confirmados'}{item.local ? ` · ${item.local}` : ''}</span></button><div className="record-actions"><BotaoIcone label={`Planilha de ${item.nome}`} onClick={() => void exportarPlanilha(item)}><FileText size={16} /></BotaoIcone><BotaoIcone label={`Editar ${item.nome}`} onClick={() => iniciarEdicao(item)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${item.nome}`} onClick={() => void apagar(item)}><Trash2 size={16} /></BotaoIcone></div></article>
+          <article className="module-record" key={item.id}><button className="record-main record-open" type="button" aria-label={`Ver detalhes de ${item.nome}`} onClick={() => { setFormAberto(false); setEditando(null); setErroGraduacao(''); setVisualizando(item.id) }}><strong>{item.nome}</strong><span>{formatarDataParaEntrada(item.data)} · {rotuloTipoAtividade(item.tipo)} · {item.aluno_ids.length} alunos · {item.aluno_ids_confirmados?.length ?? 0} {item.tipo === 'frequencia' ? 'presentes' : 'confirmados'}{item.local ? ` · ${item.local}` : ''}</span></button><div className="record-actions"><BotaoIcone label={`Planilha de ${item.nome}`} onClick={() => void exportarPlanilha(item)}><FileText size={16} /></BotaoIcone><BotaoIcone label={`Editar ${item.nome}`} onClick={() => iniciarEdicao(item)}><Pencil size={16} /></BotaoIcone><BotaoIcone label={`Excluir ${item.nome}`} onClick={() => void apagar(item)}><Trash2 size={16} /></BotaoIcone></div></article>
         ))}
         {!atividadesFiltradas.length && <p className="module-empty">{recurso.itens.length ? 'Nenhuma atividade encontrada com esses filtros.' : 'Nenhuma atividade cadastrada.'}</p>}
       </div>
