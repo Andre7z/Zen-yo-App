@@ -47,7 +47,7 @@ export function RegistroFrequencia({ turma, aoFechar, dataInicial }: { turma: Tu
     }
   }
 
-  return <ModalDetalhes contexto="FREQUÊNCIA" titulo={`Registro de frequência · ${turma.nome}`} aoFechar={aoFechar} grande>
+  return <ModalDetalhes contexto="FREQUÊNCIA" titulo={`Registro de frequência · ${turma.nome}`} aoFechar={aoFechar}>
     <form className="module-form" onSubmit={(event) => void salvar(event)}>
       <CampoModulo rotulo="Data da aula"><input className="frequencia-data" type="date" required value={data} disabled={salvando} onChange={(event) => { setChamada(null); setErro(''); setData(event.target.value) }} /></CampoModulo>
       {erro && <div className="module-error" role="alert">{erro}{!chamada && data && <button className="module-secondary" type="button" onClick={() => { setErro(''); setTentativa((atual) => atual + 1) }}>Tentar novamente</button>}</div>}
