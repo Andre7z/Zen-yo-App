@@ -197,6 +197,33 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect((within(dialogo).getByRole('checkbox', { name: 'Lia Santos Presente' }) as HTMLInputElement).checked).toBe(true)
   })
 
+  it('permite alterar e salvar uma chamada com muitos alunos', async () => {
+    const padrao = requisicao.getMockImplementation()!
+    const alunos = Array.from({ length: 30 }, (_, indice) => ({ aluno_id: indice + 1, nome: `Aluno ${indice + 1}`, presente: true }))
+    requisicao.mockImplementation(async (input, init) => {
+      const caminho = new URL(String(input)).pathname
+      if (/^\/turmas\/5\/frequencias\/\d{4}-\d{2}-\d{2}$/.test(caminho)) {
+        return Response.json({ data: caminho.slice(-10), registrada: init?.method === 'PUT', alunos })
+      }
+      return padrao(input, init)
+    })
+    abrir(ROTAS.turmas)
+    const turma = (await screen.findByText('Infantil A')).closest('article')!
+    fireEvent.click(within(turma).getByRole('button', { name: 'Registro de frequência' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Registro de frequência · Infantil A' })
+    const ultimoAluno = await within(dialogo).findByRole('checkbox', { name: 'Aluno 30 Presente' })
+    expect(dialogo.classList.contains('detail-dialog-wide')).toBe(false)
+    expect(ultimoAluno.closest('.detail-dialog-content')).toBeTruthy()
+    fireEvent.click(ultimoAluno)
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Salvar frequência' }))
+    await waitFor(() => {
+      const envio = requisicao.mock.calls.find(([url, init]) => String(url).includes('/turmas/5/frequencias/') && init?.method === 'PUT')
+      const corpo = JSON.parse(String(envio?.[1]?.body)) as { alunos: { aluno_id: number; presente: boolean }[] }
+      expect(corpo.alunos).toHaveLength(30)
+      expect(corpo.alunos[29]).toEqual({ aluno_id: 30, presente: false })
+    })
+  })
+
   it('explica quando a rota de chamada não existe no backend publicado', async () => {
     const padrao = requisicao.getMockImplementation()!
     requisicao.mockImplementation(async (input, init) => {
