@@ -20,3 +20,27 @@ Anexos — armazenamento e consulta de documentos.
 ## Para rodar
 Para rodar utilize o comando:
 npm.cmd run dev
+
+## Testes
+
+Execute os comandos abaixo a partir da raiz do projeto. Na primeira execução, instale as dependências em cada pasta.
+
+### Backend — pytest
+
+Requer Python 3.13 ou superior e Poetry instalado.
+
+```powershell
+cd backend
+poetry install
+poetry run pytest
+```
+
+### Frontend — Vitest e Testing Library
+
+Requer Node.js e npm instalados. Em outro terminal, a partir da raiz do projeto:
+
+```powershell
+cd frontend
+npm.cmd install
+npm.cmd test
+```
