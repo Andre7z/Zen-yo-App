@@ -12,6 +12,7 @@ import { TamanhosPage } from './pages/TamanhosPage'
 import { LayoutProtegido } from './components/LayoutProtegido'
 import { AutenticacaoProvider } from './autenticacao-contexto'
 import { NotificacaoProvider } from './notificacoes-contexto'
+import { NavigacaoProvider } from './contexts/NavigacaoContext'
 import { useAutenticacao } from './autenticacao-context'
 import { ROTAS } from './routes'
 import './App.css'
@@ -20,28 +21,30 @@ function App() {
   return (
     <NotificacaoProvider>
     <AutenticacaoProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<RotasPublicas />}>
-            <Route path={ROTAS.login} element={<AutenticacaoPage tela="login" />} />
-            <Route path={ROTAS.cadastro} element={<AutenticacaoPage tela="cadastro" />} />
-          </Route>
-          <Route element={<RotaProtegida />}>
-            <Route element={<LayoutProtegido />}>
-              <Route path={ROTAS.inicio} element={<InicioPage />} />
-              <Route path={ROTAS.perfil} element={<PerfilPage />} />
-              <Route path={ROTAS.alunos} element={<AlunosPage />} />
-              <Route path={`${ROTAS.atividades}/*`} element={<AtividadesPage />} />
-              <Route path={ROTAS.anexos} element={<AnexosPage />} />
-              <Route path={ROTAS.faixas} element={<FaixasPage />} />
-              <Route path={ROTAS.turmas} element={<TurmasPage />} />
-              <Route path={ROTAS.tamanhos} element={<TamanhosPage />} />
-              <Route path={ROTAS.turmaAlunos} element={<AlunosPage />} />
+      <NavigacaoProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<RotasPublicas />}>
+              <Route path={ROTAS.login} element={<AutenticacaoPage tela="login" />} />
+              <Route path={ROTAS.cadastro} element={<AutenticacaoPage tela="cadastro" />} />
             </Route>
-          </Route>
-          <Route path="*" element={<Navigate to={ROTAS.inicio} replace />} />
-        </Routes>
-      </BrowserRouter>
+            <Route element={<RotaProtegida />}>
+              <Route element={<LayoutProtegido />}>
+                <Route path={ROTAS.inicio} element={<InicioPage />} />
+                <Route path={ROTAS.perfil} element={<PerfilPage />} />
+                <Route path={ROTAS.alunos} element={<AlunosPage />} />
+                <Route path={`${ROTAS.atividades}/*`} element={<AtividadesPage />} />
+                <Route path={ROTAS.anexos} element={<AnexosPage />} />
+                <Route path={ROTAS.faixas} element={<FaixasPage />} />
+                <Route path={ROTAS.turmas} element={<TurmasPage />} />
+                <Route path={ROTAS.tamanhos} element={<TamanhosPage />} />
+                <Route path={ROTAS.turmaAlunos} element={<AlunosPage />} />
+              </Route>
+            </Route>
+            <Route path="*" element={<Navigate to={ROTAS.inicio} replace />} />
+          </Routes>
+        </BrowserRouter>
+      </NavigacaoProvider>
     </AutenticacaoProvider>
     </NotificacaoProvider>
   )

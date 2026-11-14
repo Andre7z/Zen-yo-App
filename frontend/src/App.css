@@ -431,3 +431,67 @@
 .detail-dialog.detail-dialog-wide { width: min(1100px, 96vw); max-width: 96vw; height: 92vh; max-height: 92vh; display: flex; flex-direction: column; }
 .detail-dialog-wide .detail-dialog-content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
 .detail-dialog-wide .module-form-actions { flex-shrink: 0; }
+
+/* Botão de voltar para módulos e diálogos */
+.module-back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  margin-right: 8px;
+  color: #1d5945;
+  border: 1px solid #d8ddd7;
+  border-radius: 6px;
+  background: #f9faf8;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.module-back-button:hover {
+  transform: translateY(-1px);
+  border-color: #bfc8c0;
+  background: #eff1ec;
+}
+
+.detail-dialog-back {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  margin-right: 8px;
+  color: #344039;
+  border: 1px solid #d8ddd7;
+  border-radius: 6px;
+  background: #f9faf8;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+  flex: 0 0 auto;
+}
+
+.detail-dialog-back:hover {
+  transform: translateY(-1px);
+  border-color: #bfc8c0;
+  background: #eff1ec;
+}
+
+.module-heading {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 700px) {
+  .module-back-button {
+    width: 32px;
+    height: 32px;
+    margin-right: 6px;
+  }
+
+  .detail-dialog-back {
+    display: flex;
+  }
+}
+

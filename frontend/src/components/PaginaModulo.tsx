@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { AlertCircle, RefreshCw } from 'lucide-react'
+import { AlertCircle, RefreshCw, ChevronLeft } from 'lucide-react'
 
 type Props = {
   kicker: string
@@ -9,12 +9,25 @@ type Props = {
   erro?: string
   recarregar?: () => void
   children: ReactNode
+  mostrarBotaoVoltar?: boolean
+  aoVoltar?: () => void
 }
 
-export function PaginaModulo({ kicker, titulo, descricao, carregando, erro, recarregar, children }: Props) {
+export function PaginaModulo({ kicker, titulo, descricao, carregando, erro, recarregar, children, mostrarBotaoVoltar = false, aoVoltar }: Props) {
   return (
     <main className="module-page">
       <header className="module-heading">
+        {mostrarBotaoVoltar && aoVoltar && (
+          <button 
+            className="module-back-button" 
+            type="button" 
+            aria-label="Voltar"
+            onClick={aoVoltar}
+            title="Voltar para a página anterior"
+          >
+            <ChevronLeft size={20} />
+          </button>
+        )}
         <div className="home-kicker"><i />{kicker}</div>
         <h1>{titulo}</h1>
         <p className="home-intro">{descricao}</p>
