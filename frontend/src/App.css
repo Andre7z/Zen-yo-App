@@ -121,6 +121,8 @@
 .sidebar-label-spaced { margin-top: 25px; }
 .module-page { width: min(1040px, calc(100% - 64px)); margin: 0 auto; padding: 48px 0 56px; animation: enter 350ms ease both; }
 .module-heading { margin-bottom: 30px; }
+.module-heading-com-acao { position: relative; padding-right: 56px; }
+.module-heading-acao { position: absolute; top: 0; right: 0; }
 .module-heading h1 { margin: 14px 0 8px; color: #161616; font-family: Georgia, 'Times New Roman', serif; font-size: 42px; font-weight: 400; letter-spacing: 0; line-height: 1.12; }
 .module-heading .home-intro { max-width: 620px; }
 .module-toolbar { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }

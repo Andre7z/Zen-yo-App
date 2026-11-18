@@ -12,7 +12,7 @@ import { normalizarBusca } from '../servicos/busca'
 
 const vazio = { titulo: '', categoria: 'Calendarios' as Anexo['categoria'], descricao: '', nome_arquivo: '', arquivo_url: '', link: '' }
 type DadosAnexo = typeof vazio
-const TAMANHO_MAXIMO_ARQUIVO = 50 * 1024 * 1024
+const TAMANHO_MAXIMO_ARQUIVO = 25 * 1024 * 1024
 
 // Navegadores de celular não renderizam PDF em iframe e mostram só um botão "Abrir".
 const telaPequena = () => window.matchMedia?.('(max-width: 700px)').matches ?? false
@@ -138,7 +138,7 @@ export function AnexosPage() {
           if (escolhido && escolhido.size > TAMANHO_MAXIMO_ARQUIVO) {
             event.target.value = ''
             setArquivo(null)
-            const mensagem = 'Não é possível salvar este arquivo: o tamanho máximo é 50 MB.'
+            const mensagem = 'Não é possível salvar este arquivo: o tamanho máximo é 25 MB.'
             setErroArquivo(mensagem)
             notificacao.erro(mensagem)
             return

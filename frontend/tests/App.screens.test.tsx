@@ -331,6 +331,26 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Bruna Costa', data_nascimento: '2010-05-15', faixa_id: 2, celular: null, cpf: null, tamanho_kimono: null, tamanho_faixa: null, codigo_zempo: null })
   })
 
+  it('fecha o gerenciamento de alunos e retorna para turmas', async () => {
+    abrir(ROTAS.turmas)
+    await screen.findByText('Infantil A')
+    fireEvent.click(screen.getAllByRole('link', { name: 'Gerenciar alunos' })[0])
+    await screen.findByRole('heading', { name: 'Alunos · Infantil A' })
+    fireEvent.click(screen.getByRole('link', { name: 'Fechar gerenciamento de alunos' }))
+    expect(await screen.findByRole('heading', { name: 'Turmas' })).toBeTruthy()
+    expect(window.location.pathname).toBe(ROTAS.turmas)
+  })
+
+  it('permite fechar o gerenciamento acessado diretamente, sem mostrar o X na lista geral', async () => {
+    abrir('/turmas/5/alunos')
+    await screen.findByRole('heading', { name: 'Alunos · Infantil A' })
+    fireEvent.click(screen.getByRole('link', { name: 'Fechar gerenciamento de alunos' }))
+    expect(await screen.findByRole('heading', { name: 'Turmas' })).toBeTruthy()
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Cadastros' })).getByRole('link', { name: 'Alunos' }))
+    await screen.findByRole('heading', { name: 'Alunos' })
+    expect(screen.queryByRole('link', { name: 'Fechar gerenciamento de alunos' })).toBeNull()
+  })
+
   it('bloqueia CPF inválido ao cadastrar aluno e aceita CPF válido com máscara', async () => {
     abrir(ROTAS.alunos)
     await screen.findByText('Caio Silva')

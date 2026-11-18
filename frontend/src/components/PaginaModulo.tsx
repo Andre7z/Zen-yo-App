@@ -8,16 +8,18 @@ type Props = {
   carregando?: boolean
   erro?: string
   recarregar?: () => void
+  acaoCabecalho?: ReactNode
   children: ReactNode
 }
 
-export function PaginaModulo({ kicker, titulo, descricao, carregando, erro, recarregar, children }: Props) {
+export function PaginaModulo({ kicker, titulo, descricao, carregando, erro, recarregar, acaoCabecalho, children }: Props) {
   return (
     <main className="module-page">
-      <header className="module-heading">
+      <header className={acaoCabecalho ? 'module-heading module-heading-com-acao' : 'module-heading'}>
         <div className="home-kicker"><i />{kicker}</div>
         <h1>{titulo}</h1>
         <p className="home-intro">{descricao}</p>
+        {acaoCabecalho && <div className="module-heading-acao">{acaoCabecalho}</div>}
       </header>
       {erro && (
         <div className="module-error" role="alert">

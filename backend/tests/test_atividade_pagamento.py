@@ -1,8 +1,11 @@
 from datetime import date
+from pathlib import Path
 
 import pytest
+from alembic import command
+from alembic.config import Config
 from pydantic import ValidationError
-from sqlalchemy import create_engine, insert, select
+from sqlalchemy import create_engine, insert, inspect, select, text
 from sqlalchemy.orm import Session
 
 from app.associacoes import atividade_alunos
@@ -65,3 +68,27 @@ def test_repository_grava_e_limpa_confirmacao_no_vinculo():
             )
         ).scalars().all()
         assert confirmados == []
+
+
+@pytest.mark.parametrize("coluna_anterior", ["pago", "confirmado"])
+def test_migracao_preserva_confirmacoes_existentes(tmp_path, monkeypatch, coluna_anterior):
+    url = f"sqlite:///{(tmp_path / 'confirmacoes.db').as_posix()}"
+    monkeypatch.setenv("DATABASE_URL", url)
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    command.upgrade(config, "c4d5e6f7a8b9")
+    engine = create_engine(url)
+    with engine.begin() as conexao:
+        conexao.execute(text("INSERT INTO atividade_alunos (atividade_id, aluno_id, pago) VALUES (1, 1, 1), (1, 2, 0)"))
+        if coluna_anterior == "confirmado":
+            conexao.execute(text("ALTER TABLE atividade_alunos RENAME COLUMN pago TO confirmado"))
+
+    command.upgrade(config, "head")
+    assert "pago" not in {coluna["name"] for coluna in inspect(engine).get_columns("atividade_alunos")}
+    with engine.connect() as conexao:
+        assert conexao.execute(text("SELECT aluno_id, confirmado FROM atividade_alunos ORDER BY aluno_id")).all() == [(1, 1), (2, 0)]
+
+    command.downgrade(config, "c4d5e6f7a8b9")
+    with engine.connect() as conexao:
+        assert conexao.execute(text("SELECT aluno_id, pago FROM atividade_alunos ORDER BY aluno_id")).all() == [(1, 1), (2, 0)]
+    command.upgrade(config, "head")
+    engine.dispose()
