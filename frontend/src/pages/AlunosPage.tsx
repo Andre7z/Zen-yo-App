@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { Pencil, Plus, Trash2, UserMinus, ChevronLeft } from 'lucide-react'
+import { Link, useParams } from 'react-router-dom'
+import { Pencil, Plus, Trash2, UserMinus, X } from 'lucide-react'
 import { alunosApi, faixasApi, ordenarAlunosPorNome, rotuloFaixa, turmasApi, type Aluno, type Faixa, type Turma } from '../servicos/dominio'
 import { opcoesDeTamanho, useTamanhos } from '../hooks/use-tamanhos'
 import { useRecurso } from '../hooks/use-recurso'
@@ -26,7 +26,6 @@ type DadosAluno = typeof vazio
 
 export function AlunosPage() {
   const { turmaId = '' } = useParams()
-  const navigate = useNavigate()
   const [turmaFiltro, setTurmaFiltro] = useState(turmaId)
   const [selecionando, setSelecionando] = useState(false)
   const [idsSelecionados, setIdsSelecionados] = useState<number[]>([])
@@ -167,7 +166,7 @@ export function AlunosPage() {
   }
 
   return (
-    <PaginaModulo kicker="CADASTROS" titulo={turmaAtual ? `Alunos · ${turmaAtual.nome}` : 'Alunos'} descricao="Cadastro dos alunos, com ou sem turma." carregando={recurso.carregando} erro={recurso.erro || erroFaixas || erroTurmas} recarregar={() => { void recurso.carregar() }} mostrarBotaoVoltar={modoTurma} aoVoltar={() => navigate(ROTAS.turmas)}>
+    <PaginaModulo kicker="CADASTROS" titulo={turmaAtual ? `Alunos · ${turmaAtual.nome}` : 'Alunos'} descricao="Cadastro dos alunos, com ou sem turma." carregando={recurso.carregando} erro={recurso.erro || erroFaixas || erroTurmas} recarregar={() => { void recurso.carregar() }} acaoCabecalho={modoTurma ? <Link className="detail-dialog-close" to={ROTAS.turmas} aria-label="Fechar gerenciamento de alunos" title="Voltar para turmas"><X size={18} aria-hidden="true" /></Link> : undefined}>
       <div className="module-toolbar">
         <p>{alunosListados.length} {alunosListados.length === 1 ? 'aluno' : 'alunos'}</p>
                 <button className="module-primary" type="button" onClick={() => { if (modoTurma) { setIdsSelecionados([]); setBuscaAluno(''); setFormAberto(false); setSelecionando(true); return } setDados(vazio); setEditando(null); setVisualizando(null); setFormAberto(true) }}>

@@ -30,7 +30,7 @@
 | RNF.004 | O sistema deve permitir salvar apenas caso os campos obrigatórios estejam preenchidos e válidos (por exemplo, o CPF do aluno). | RF.002 a RF.005, RF.007, RF.013 a RF.015 |
 | RNF.005 | O sistema, ao gerar planilha de troca de faixa, deve colocar na planilha a faixa atual, a nova faixa do aluno e o tamanho da faixa. | RF.011, RF.012 |
 | RNF.006 | O sistema, ao gerar planilha de entrega de judogis, deve colocar na planilha o tamanho do judogi que o aluno usa. | RF.011, RF.012 |
-| RNF.007 | O sistema deve limitar o tamanho dos anexos enviados a 50 MB. | RF.013 |
+| RNF.007 | O sistema deve limitar o tamanho dos anexos enviados a 25 MB. | RF.013 |
 | RNF.008 | O sistema deve usar banco de dados relacional (SQLite ou PostgreSQL) com SQLAlchemy e controlar o esquema com Alembic. | Todos |
 | RNF.009 | O sistema deve separar API, regras de negócio e acesso a dados em camadas distintas. | Todos |
 | RNF.010 | O sistema deve aceitar requisições CORS somente das origens configuradas. | Todos |

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { AlertCircle, RefreshCw, ChevronLeft } from 'lucide-react'
+import { AlertCircle, RefreshCw } from 'lucide-react'
 
 type Props = {
   kicker: string
@@ -8,29 +8,18 @@ type Props = {
   carregando?: boolean
   erro?: string
   recarregar?: () => void
+  acaoCabecalho?: ReactNode
   children: ReactNode
-  mostrarBotaoVoltar?: boolean
-  aoVoltar?: () => void
 }
 
-export function PaginaModulo({ kicker, titulo, descricao, carregando, erro, recarregar, children, mostrarBotaoVoltar = false, aoVoltar }: Props) {
+export function PaginaModulo({ kicker, titulo, descricao, carregando, erro, recarregar, acaoCabecalho, children }: Props) {
   return (
     <main className="module-page">
-      <header className="module-heading">
-        {mostrarBotaoVoltar && aoVoltar && (
-          <button 
-            className="module-back-button" 
-            type="button" 
-            aria-label="Voltar"
-            onClick={aoVoltar}
-            title="Voltar para a página anterior"
-          >
-            <ChevronLeft size={20} />
-          </button>
-        )}
+      <header className={acaoCabecalho ? 'module-heading module-heading-com-acao' : 'module-heading'}>
         <div className="home-kicker"><i />{kicker}</div>
         <h1>{titulo}</h1>
         <p className="home-intro">{descricao}</p>
+        {acaoCabecalho && <div className="module-heading-acao">{acaoCabecalho}</div>}
       </header>
       {erro && (
         <div className="module-error" role="alert">

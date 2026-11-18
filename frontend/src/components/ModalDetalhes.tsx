@@ -1,6 +1,6 @@
 import { useEffect, useRef, useId, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { X, ChevronLeft } from 'lucide-react'
+import { X } from 'lucide-react'
 
 type Props = {
   titulo: string
@@ -8,10 +8,9 @@ type Props = {
   children: ReactNode
   grande?: boolean
   contexto?: string
-  mostrarBotaoVoltar?: boolean
 }
 
-export function ModalDetalhes({ titulo, aoFechar, children, grande = false, contexto = 'VISUALIZAÇÃO', mostrarBotaoVoltar = false }: Props) {
+export function ModalDetalhes({ titulo, aoFechar, children, grande = false, contexto = 'VISUALIZAÇÃO' }: Props) {
   const idTitulo = useId()
   const dialogRef = useRef<HTMLElement>(null)
   const aoFecharRef = useRef(aoFechar)
@@ -55,16 +54,6 @@ export function ModalDetalhes({ titulo, aoFechar, children, grande = false, cont
       >
         <header className="detail-dialog-heading">
           <div className="detail-dialog-title">
-            {mostrarBotaoVoltar && (
-              <button 
-                className="detail-dialog-back" 
-                type="button" 
-                aria-label="Voltar"
-                onClick={aoFechar}
-              >
-                <ChevronLeft size={18} />
-              </button>
-            )}
             <span>{contexto}</span>
             <h2 id={idTitulo}>{titulo}</h2>
           </div>

@@ -18,8 +18,14 @@ Planilhas — consulta e exportação dos controles de frequência, campeonatos,
 Anexos — armazenamento e consulta de documentos.
 
 ## Para rodar
-Para rodar utilize o comando:
+Antes de iniciar, aplique as migrações ao banco configurado em `backend/.env`:
+
+```powershell
+cd backend
+poetry run alembic upgrade head
+cd ..
 npm.cmd run dev
+```
 
 ## Testes
 

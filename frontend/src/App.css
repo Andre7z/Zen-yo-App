@@ -121,6 +121,8 @@
 .sidebar-label-spaced { margin-top: 25px; }
 .module-page { width: min(1040px, calc(100% - 64px)); margin: 0 auto; padding: 48px 0 56px; animation: enter 350ms ease both; }
 .module-heading { margin-bottom: 30px; }
+.module-heading-com-acao { position: relative; padding-right: 56px; }
+.module-heading-acao { position: absolute; top: 0; right: 0; }
 .module-heading h1 { margin: 14px 0 8px; color: #161616; font-family: Georgia, 'Times New Roman', serif; font-size: 42px; font-weight: 400; letter-spacing: 0; line-height: 1.12; }
 .module-heading .home-intro { max-width: 620px; }
 .module-toolbar { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
@@ -431,67 +433,3 @@
 .detail-dialog.detail-dialog-wide { width: min(1100px, 96vw); max-width: 96vw; height: 92vh; max-height: 92vh; display: flex; flex-direction: column; }
 .detail-dialog-wide .detail-dialog-content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
 .detail-dialog-wide .module-form-actions { flex-shrink: 0; }
-
-/* Botão de voltar para módulos e diálogos */
-.module-back-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  margin-right: 8px;
-  color: #1d5945;
-  border: 1px solid #d8ddd7;
-  border-radius: 6px;
-  background: #f9faf8;
-  cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
-}
-
-.module-back-button:hover {
-  transform: translateY(-1px);
-  border-color: #bfc8c0;
-  background: #eff1ec;
-}
-
-.detail-dialog-back {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  margin-right: 8px;
-  color: #344039;
-  border: 1px solid #d8ddd7;
-  border-radius: 6px;
-  background: #f9faf8;
-  cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
-  flex: 0 0 auto;
-}
-
-.detail-dialog-back:hover {
-  transform: translateY(-1px);
-  border-color: #bfc8c0;
-  background: #eff1ec;
-}
-
-.module-heading {
-  display: flex;
-  align-items: center;
-}
-
-@media (max-width: 700px) {
-  .module-back-button {
-    width: 32px;
-    height: 32px;
-    margin-right: 6px;
-  }
-
-  .detail-dialog-back {
-    display: flex;
-  }
-}
-
