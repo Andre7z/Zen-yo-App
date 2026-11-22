@@ -4,7 +4,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from datetime import date
 
-from fastapi import UploadFile
+import pytest
+from fastapi import HTTPException, UploadFile
 
 from app.anexos import controller
 from app.anexos.models import Anexo
@@ -40,6 +41,23 @@ def test_anexo_model_cria_instancia_com_data():
     assert anexo.categoria == "Autorização"
     assert anexo.nome_arquivo == "autorizacao.pdf"
     assert isinstance(AnexoPublico.model_validate(anexo).criado_em, date)
+
+
+def test_tamanho_maximo_do_anexo_e_25_mb():
+    assert controller._TAMANHO_MAXIMO_ARQUIVO == 25 * 1024 * 1024
+
+
+def test_upload_rejeita_arquivo_acima_de_25_mb():
+    arquivo = UploadFile(
+        file=BytesIO(b"x" * (controller._TAMANHO_MAXIMO_ARQUIVO + 1)),
+        filename="grande.pdf",
+    )
+
+    with pytest.raises(HTTPException) as falha:
+        asyncio.run(controller._salvar_arquivo(arquivo))
+
+    assert falha.value.status_code == 413
+    assert falha.value.detail == "O arquivo deve ter no máximo 25 MB."
 
 
 def test_upload_salva_arquivo_com_nome_seguro_e_metadados(tmp_path, monkeypatch):

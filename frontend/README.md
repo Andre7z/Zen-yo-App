@@ -19,6 +19,8 @@ Interface web do Zen’yo, que consome a API do backend.
 - Atividades — treinos, campeonatos, entregas e graduações, com planilhas.
 - Anexos — envio e consulta de documentos.
 
+Ao gerenciar alunos de uma turma, use o X no cabeçalho para retornar à lista de turmas.
+
 Anexos são listados por título em ordem alfabética, com números em ordem natural (por exemplo, Apostila 2 antes de Apostila 10).
 
 Telas internas exigem login; sem sessão válida o app redireciona para o login. O token fica só na memória, então recarregar a página encerra a sessão.

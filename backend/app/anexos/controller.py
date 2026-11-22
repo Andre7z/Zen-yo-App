@@ -15,7 +15,7 @@ from . import service
 from .schemas import AnexoAtualizar, AnexoEntrada, AnexoPublico
 
 _DIRETORIO_ARQUIVOS = Path(__file__).resolve().parents[2] / "uploads" / "anexos"
-_TAMANHO_MAXIMO_ARQUIVO = 50 * 1024 * 1024
+_TAMANHO_MAXIMO_ARQUIVO = 25 * 1024 * 1024
 
 router = APIRouter(
     prefix="/anexos",
@@ -40,7 +40,7 @@ async def _salvar_arquivo(arquivo: UploadFile):
     conteudo = await arquivo.read(_TAMANHO_MAXIMO_ARQUIVO + 1)
     await arquivo.close()
     if len(conteudo) > _TAMANHO_MAXIMO_ARQUIVO:
-        raise HTTPException(status_code=413, detail="O arquivo deve ter no mÃ¡ximo 50 MB.")
+        raise HTTPException(status_code=413, detail="O arquivo deve ter no máximo 25 MB.")
 
     chave = uuid4().hex
     tipo = arquivo.content_type or mimetypes.guess_type(nome)[0] or "application/octet-stream"
