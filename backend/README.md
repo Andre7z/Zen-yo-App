@@ -42,8 +42,9 @@ As atividades retornam `aluno_ids_confirmados` para as confirmações ou presen�
 `POST /atividades/{id}/graduacoes` recebe `{"alunos": [{"aluno_id": 1, "faixa_id": 2, "tamanho_faixa": "G", "faixa_grossa": false}]}`. A atividade deve ser de troca de faixa, os alunos devem ser participantes e as faixas devem pertencer ao usuário. Todas as alterações são confirmadas juntas ou revertidas.
 
 ## Docker
-O Dockerfile na raiz gera uma imagem somente para a API. Execute os comandos a partir da raiz do repositório:
+O Dockerfile em `backend/` gera uma imagem somente para a API. Execute os comandos a partir da pasta do backend:
 ```
+cd backend
 docker build -t zenyo-api .
 docker run --rm -p 8000:8000 -e DATABASE_URL="postgresql+psycopg://usuario:senha@host.docker.internal:5432/zenyo" zenyo-api
 ```
