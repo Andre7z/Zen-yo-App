@@ -197,6 +197,8 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect((within(dialogo).getByRole('checkbox', { name: 'Lia Santos Presente' }) as HTMLInputElement).checked).toBe(true)
   })
 
+
+
   it('permite alterar e salvar uma chamada com muitos alunos', async () => {
     const padrao = requisicao.getMockImplementation()!
     const alunos = Array.from({ length: 30 }, (_, indice) => ({ aluno_id: indice + 1, nome: `Aluno ${indice + 1}`, presente: true }))
@@ -1052,5 +1054,22 @@ describe('telas conectadas aos recursos FastAPI', () => {
     expect(JSON.parse(String(envio?.[1]?.body))).toMatchObject({ nome: 'Ana Sensei', email: 'ana@example.com' })
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Editar perfil' })).toBeNull())
     expect(await screen.findByRole('heading', { name: 'Sensei Ana Sensei' })).toBeTruthy()
+  })
+
+  it('volta do registro de frequência para a lista de turmas', async () => {
+    abrir(ROTAS.turmas)
+    const turma = (await screen.findByText('Infantil A')).closest('article')!
+    fireEvent.click(within(turma).getByRole('button', { name: 'Registro de frequência' }))
+    expect(await screen.findByRole('dialog', { name: 'Registro de frequência · Infantil A' })).toBeTruthy()
+    expect(window.location.hash).toBe('#modal')
+
+    window.history.back()
+
+    await waitFor(() => {
+      expect(window.location.hash).toBe('')
+      expect(screen.queryByRole('dialog', { name: 'Registro de frequência · Infantil A' })).toBeNull()
+    })
+    expect(window.location.pathname).toBe(ROTAS.turmas)
+    expect(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: 'Turmas' }).getAttribute('aria-current')).toBe('page')
   })
 })
